@@ -1,4 +1,17 @@
+# ide folders
+**/.idea
+
+# generated folders
 **/target
+/build/**
+!/build/mvn
+!/build/sbt
+!/build/sbt-launch-0.13.18.jar
+!/build/sbt-launch-lib.bash
+!/build/spark-build-info
+
+# generated files
+*.generated.xml
 
 *.class
 *.log
