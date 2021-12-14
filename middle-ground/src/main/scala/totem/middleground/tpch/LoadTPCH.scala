@@ -27,13 +27,14 @@ class LoadTPCH (bootstrap: String,
                 data_root_dir: String,
                 checkpoint: String,
                 largeDataset: Boolean) {
-
   TPCHSchema.datadir = data_root_dir
   TPCHSchema.checkpointLocation = checkpoint
   TPCHSchema.largeDataset = largeDataset
 
-  def loadOneTable(tableName: String, schema: StructType, path: String, topics: String): Unit =
-  {
+  def loadOneTable(tableName: String,
+                   schema: StructType,
+                   path: String,
+                   topics: String): Unit = {
     printf(s"Loading into ${topics} with path ${path}\n")
     val spark = SparkSession.builder()
       .appName("Loading " + tableName)
@@ -56,10 +57,9 @@ class LoadTPCH (bootstrap: String,
     query.awaitTermination()
   }
 
-  def loadTable(tableName: String): Unit =
-  {
+  def loadTable(tableName: String): Unit = {
     TPCHSchema.GetMetaData(tableName) match {
-      case Some((schema, _, path, _, topics, _)) if schema != null && topics != null =>
+      case Some((schema, _, path, _, topics, _, _)) if schema != null && topics != null =>
         loadOneTable(tableName, schema, path, topics)
       case _ =>
         return
@@ -68,14 +68,12 @@ class LoadTPCH (bootstrap: String,
 }
 
 class WritingThread(streamLoader: LoadTPCH, tableName: String) extends Thread {
-
   override def run(): Unit = {
     streamLoader.loadTable(tableName)
   }
 }
 
 object LoadTPCH {
-
   def main(args: Array[String]): Unit = {
     if (args.length < 4) {
       System.err.println("Usage: LoadTPCH <bootstrap-servers> <data-root-dir> <checkpoint> <largeDataset>")
@@ -91,6 +89,5 @@ object LoadTPCH {
     loadThreads.map(_.start())
     loadThreads.map(_.join())
   }
-
 }
 // scalastyle:off println

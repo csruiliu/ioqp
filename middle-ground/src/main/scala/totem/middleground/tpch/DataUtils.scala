@@ -35,7 +35,9 @@ object DataUtils {
   def loadStreamTable(spark: SparkSession,
                       tableName: String,
                       alias: String): DataFrame = {
-    val (_, avroSchema, _, _, topics, offsetPerTrigger) = TPCHSchema.GetMetaData(tableName).get
+    val (_, avroSchema, _, _, topics, offsetPerTrigger, sampleSize) = TPCHSchema.GetMetaData(tableName).get
+
+    printf("Table Sample Size %d\n", sampleSize)
 
     return spark
       .readStream
@@ -44,12 +46,15 @@ object DataUtils {
       .option("subscribe", topics)
       .option("startingOffsets", "earliest")
       .option("maxOffsetsPerTrigger", offsetPerTrigger)
-      .load().select(from_avro(col("value"), avroSchema).as(alias))
+      .load()
+      .select(from_avro(col("value"), avroSchema).as(alias))
       .selectExpr(alias + ".*")
   }
 
-  def loadStaticTable(spark: SparkSession, tableName: String, alias: String): DataFrame = {
-    val (schema, _, _, staticPath, _, _) = TPCHSchema.GetMetaData(tableName).get
+  def loadStaticTable(spark: SparkSession,
+                      tableName: String,
+                      alias: String): DataFrame = {
+    val (schema, _, _, staticPath, _, _, sampleSize) = TPCHSchema.GetMetaData(tableName).get
 
     return spark
       .read
@@ -97,7 +102,9 @@ object DataUtils {
     q.awaitTermination()
   }
 
-  def writeToFile(query_result: DataFrame, query_name: String, path: String): Unit = {
+  def writeToFile(query_result: DataFrame,
+                  query_name: String,
+                  path: String): Unit = {
     val q = query_result.coalesce(1)
       .writeStream
       .outputMode("append")

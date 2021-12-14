@@ -118,21 +118,11 @@ object TPCHSchema {
   val avroRegionSchema = SchemaConverters.toAvroType(regionSchema)
 
   var datadir = "/home/totemtang/slothdb/slothdb_testsuite/datadir/tpchdata"
-  private def supplierPath =
-    if (!largeDataset) datadir + "/supplier"
-    else datadir + "/supplier_large"
-  private def partPath =
-    if (!largeDataset) datadir + "/part"
-    else datadir + "/part_large"
-  private def partsuppPath =
-    if (!largeDataset) datadir + "/partsupp"
-    else datadir + "/partsupp_large"
-  private def customerPath =
-    if (!largeDataset) datadir + "/customer"
-    else datadir + "/customer_large"
-  private def ordersPath =
-    if (!largeDataset) datadir + "/orders"
-    else datadir + "/orders_large"
+  private def supplierPath = if (!largeDataset) datadir + "/supplier" else datadir + "/supplier_large"
+  private def partPath = if (!largeDataset) datadir + "/part" else datadir + "/part_large"
+  private def partsuppPath = if (!largeDataset) datadir + "/partsupp" else datadir + "/partsupp_large"
+  private def customerPath = if (!largeDataset) datadir + "/customer" else datadir + "/customer_large"
+  private def ordersPath = if (!largeDataset) datadir + "/orders" else datadir + "/orders_large"
   private def lineitemPath = datadir + "/lineitem"
   private def nationPath = datadir  + "/nation"
   private def regionPath = datadir + "/region"
@@ -141,13 +131,11 @@ object TPCHSchema {
   private def regionStaticPath = staticTableLocation + "/region.tbl"
   private val Empty_Static = ""
 
-  // val nationPath = "hdfs://localhost:9000/tpch_data/nation.tbl"
-  // val regionPath = "hdfs://localhost:9000/tpch_data/region.tbl"
-
   var numMiniBatch = 4
   var scaleFactor = 1.0
   var partitions = 1
   var largeDataset = false
+  var sampleRate = 0.0
 
   def lineitemSize: Int =
     if (scaleFactor == 10) 59986052
@@ -175,58 +163,54 @@ object TPCHSchema {
   def nationOffset: Int = 25
   def regionOffset: Int = 5
 
-  def GetMetaData(tableName: String):
-  Option[(StructType, String, String, String, String, Long)] =
+  def lineitemSampleSize: Int = (lineitemSize * sampleRate).toInt
+  def ordersSampleSize: Int = (ordersSize * sampleRate).toInt
+  def customerSampleSize: Int = (customerSize * sampleRate).toInt
+  def partSampleSize: Int = (partSize * sampleRate).toInt
+  def partsuppSampleSize: Int = (partsuppSize * sampleRate).toInt
+  def supplierSampleSize: Int = (supplierSize * sampleRate).toInt
+  def nationSampleSize: Int = 25
+  def regionSampleSize: Int = 5
+
+  def GetMetaData(tableName: String): Option[(StructType, String, String, String, String, Long, Long)] =
   {
     tableName.toLowerCase match {
       case "part" =>
-        val realTopics =
-          if (largeDataset) largePartTopics
-          else partTopics
-        Some((partSchema, avroPartSchema.toString, partPath, Empty_Static, realTopics, partOffset))
+        val realTopics = if (largeDataset) largePartTopics else partTopics
+        Some((partSchema, avroPartSchema.toString, partPath, Empty_Static, realTopics, partOffset, partSampleSize))
       case "partsupp" =>
-        val realTopics =
-          if (largeDataset) largePartSuppTopics
-          else partsuppTopics
-        Some((partsuppSchema, avroPartSuppSchema.toString,
-          partsuppPath, Empty_Static, realTopics, partsuppOffset))
+        val realTopics = if (largeDataset) largePartSuppTopics else partsuppTopics
+        Some((partsuppSchema, avroPartSuppSchema.toString, partsuppPath, Empty_Static, realTopics, partsuppOffset, partsuppSampleSize))
       case "supplier" =>
-        val realTopics =
-          if (largeDataset) largeSupplierTopics
-          else supplierTopics
-        Some((supplierSchema, avroSupplierSchema.toString,
-          supplierPath, Empty_Static, realTopics, supplierOffset))
+        val realTopics = if (largeDataset) largeSupplierTopics else supplierTopics
+        Some((supplierSchema, avroSupplierSchema.toString, supplierPath, Empty_Static, realTopics, supplierOffset, supplierSampleSize))
       case "customer" =>
-        val realTopics =
-          if (largeDataset) largeCustomerTopics
-          else customerTopics
-        Some((customerSchema, avroCustomerSchema.toString,
-          customerPath, Empty_Static, realTopics, customerOffset))
+        val realTopics = if (largeDataset) largeCustomerTopics else customerTopics
+        Some((customerSchema, avroCustomerSchema.toString, customerPath, Empty_Static, realTopics, customerOffset, customerSampleSize))
       case "orders" =>
-        val realTopics =
-          if (largeDataset) largeOrdersTopics
-          else ordersTopics
-        Some((ordersSchema, avroOrdersSchema.toString,
-          ordersPath, Empty_Static, realTopics, ordersOffset))
+        val realTopics = if (largeDataset) largeOrdersTopics else ordersTopics
+        Some((ordersSchema, avroOrdersSchema.toString, ordersPath, Empty_Static, realTopics, ordersOffset, ordersSampleSize))
       case "lineitem" =>
-        Some((lineitemSchema, avroLineitemSchema.toString,
-          lineitemPath, Empty_Static, lineitemTopics, lineitemOffset))
+        Some((lineitemSchema, avroLineitemSchema.toString, lineitemPath, Empty_Static, lineitemTopics, lineitemOffset, lineitemSampleSize))
       case "nation" =>
-        Some((nationSchema, avroNationSchema.toString, nationPath, nationStaticPath,
-          nationTopics, nationOffset))
+        Some((nationSchema, avroNationSchema.toString, nationPath, nationStaticPath, nationTopics, nationOffset, nationSampleSize))
       case "region" =>
-        Some((regionSchema, avroRegionSchema.toString, regionPath, regionStaticPath,
-          regionTopics, regionOffset))
+        Some((regionSchema, avroRegionSchema.toString, regionPath, regionStaticPath, regionTopics, regionOffset, regionSampleSize))
       case _ =>
         printf("Unrecoganized Table %s\n", tableName)
         throw new Exception("Unrecoganized Table")
     }
   }
 
-  def setQueryMetaData(numBatch: Int, SF: Double, hdfsRoot: String,
-                       inputPartition: Int, largeDataset: Boolean): Unit = {
+  def setQueryMetaData(numBatch: Int,
+                       SF: Double,
+                       SR: Double,
+                       hdfsRoot: String,
+                       inputPartition: Int,
+                       largeDataset: Boolean): Unit = {
     numMiniBatch = numBatch
     scaleFactor = SF
+    this.sampleRate = SR
     checkpointLocation = hdfsRoot + "/tpch_checkpoint"
     staticTableLocation = hdfsRoot + "/tpch_static"
     partitions = inputPartition

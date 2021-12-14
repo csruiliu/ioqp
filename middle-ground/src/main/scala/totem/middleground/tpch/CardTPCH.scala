@@ -23,11 +23,20 @@ import org.apache.spark.sql.{DataFrame, SparkSession}
 import org.apache.spark.sql.functions._
 import org.apache.spark.sql.internal.SQLConf
 
-class CardTPCH (bootstrap: String, query: String, numBatch: Int,
-                 shuffleNum: String, statDIR: String, SF: Double, hdfsRoot: String,
-                 execution_mode: String, inputPartitions: Int, constraint: String,
-                 largeDataset: Boolean, iOLAPConf: Int, iOLAPRoot: String)
-{
+class CardTPCH (bootstrap: String,
+                query: String,
+                numBatch: Int,
+                shuffleNum: String,
+                statDIR: String,
+                SF: Double,
+                hdfsRoot: String,
+                execution_mode: String,
+                inputPartitions: Int,
+                constraint: String,
+                largeDataset: Boolean,
+                iOLAPConf: Int,
+                iOLAPRoot: String,
+                SR: Double) {
   val iOLAP_Q11_src = "/q11_config.csv"
   val iOLAP_Q17_src = "/q17_config.csv"
   val iOLAP_Q18_src = "/q18_config.csv"
@@ -45,7 +54,7 @@ class CardTPCH (bootstrap: String, query: String, numBatch: Int,
   val iOLAP_TRAINING = 2
 
   DataUtils.bootstrap = bootstrap
-  TPCHSchema.setQueryMetaData(numBatch, SF, hdfsRoot, inputPartitions, largeDataset)
+  TPCHSchema.setQueryMetaData(numBatch, SF, SR, hdfsRoot, inputPartitions, largeDataset)
 
   private var query_name: String = null
 
@@ -387,8 +396,7 @@ class CardTPCH (bootstrap: String, query: String, numBatch: Int,
 
     val doubleSum = new DoubleSum
 
-    val p = DataUtils.loadStreamTable(spark, "part", "p")
-      .filter($"p_name" like("%green%"))
+    val p = DataUtils.loadStreamTable(spark, "part", "p").filter($"p_name" like("%green%"))
     val s = DataUtils.loadStreamTable(spark, "supplier", "s")
     val l = DataUtils.loadStreamTable(spark, "lineitem", "l")
     val ps = DataUtils.loadStreamTable(spark, "partsupp", "ps")
@@ -916,13 +924,13 @@ object CardTPCH {
         "<numBatch> <number-shuffle-partition> <statistics dir> <SF> <HDFS root>" +
         "<execution mode [0: inc-aware(subpath), 1: inc-aware(subplan), 2: inc-oblivious, " +
         "3: generate inc statistics, 4: training]>  <num of input partitions>" +
-        "<performance constraint> <large dataset> <iOLAP Config> <iOLAP root>")
+        "<performance constraint> <large dataset> <iOLAP Config> <iOLAP root> <sample rate>")
       System.exit(1)
     }
 
     val tpch = new CardTPCH(args(0), args(1), args(2).toInt, args(3),
       args(4), args(5).toDouble, args(6), args(7), args(8).toInt, args(9),
-      args(10).toBoolean, args(11).toInt, args(12))
+      args(10).toBoolean, args(11).toInt, args(12), args(13).toDouble)
     tpch.execQuery(args(1))
   }
 }

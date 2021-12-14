@@ -23,11 +23,23 @@ import org.apache.spark.sql.{DataFrame, SparkSession}
 import org.apache.spark.sql.functions._
 import org.apache.spark.sql.internal.SQLConf
 
-class QueryTPCH (bootstrap: String, query: String, numBatch: Int, shuffleNum: String,
-                 statDIR: String, SF: Double, hdfsRoot: String, execution_mode: String,
-                 inputPartitions: Int, constraint: String, largeDataset: Boolean, iOLAPConf: Int,
-                 incPercentage: String, costBias: String, maxStep: String, sampleTime: String)
-{
+class QueryTPCH (bootstrap: String,
+                 query: String,
+                 numBatch: Int,
+                 shuffleNum: String,
+                 statDIR: String,
+                 SF: Double,
+                 hdfsRoot: String,
+                 execution_mode: String,
+                 inputPartitions: Int,
+                 constraint: String,
+                 largeDataset: Boolean,
+                 iOLAPConf: Int,
+                 incPercentage: String,
+                 costBias: String,
+                 maxStep: String,
+                 sampleTime: String,
+                 SR: Double) {
   val iOLAP_Q11_src = "/q11_config.csv"
   val iOLAP_Q17_src = "/q17_config.csv"
   val iOLAP_Q18_src = "/q18_config.csv"
@@ -45,13 +57,12 @@ class QueryTPCH (bootstrap: String, query: String, numBatch: Int, shuffleNum: St
   val iOLAP_TRAINING = 2
 
   DataUtils.bootstrap = bootstrap
-  TPCHSchema.setQueryMetaData(numBatch, SF, hdfsRoot, inputPartitions, largeDataset)
+  TPCHSchema.setQueryMetaData(numBatch, SF, SR, hdfsRoot, inputPartitions, largeDataset)
+  printf("Sample Rate %f\n", SR)
 
   private var query_name: String = null
 
-  val enable_iOLAP =
-    if (iOLAPConf == iOLAP_ON) "true"
-    else "false"
+  val enable_iOLAP = if (iOLAPConf == iOLAP_ON) "true" else "false"
 
   def execQuery(query: String): Unit = {
     query_name = query.toLowerCase
@@ -78,66 +89,36 @@ class QueryTPCH (bootstrap: String, query: String, numBatch: Int, shuffleNum: St
       .getOrCreate()
 
     query_name match {
-      case "q1" =>
-        execQ1(spark)
-      case "q2" =>
-        execQ2(spark)
-      case "q3" =>
-        execQ3(spark)
-      case "q4" =>
-        execQ4(spark)
-      case "q5" =>
-        execQ5(spark)
-      case "q6" =>
-        execQ6(spark)
-      case "q7" =>
-        execQ7(spark)
-      case "q8" =>
-        execQ8(spark)
-      case "q9" =>
-        execQ9(spark)
-      case "q10" =>
-        execQ10(spark)
-      case "q11" =>
-        execQ11(spark)
-      case "q12" =>
-        execQ12(spark)
-      case "q13" =>
-        execQ13(spark)
-      case "q14" =>
-        execQ14(spark)
-      case "q15" =>
-        execQ15(spark)
-      case "q16" =>
-        execQ16(spark)
-      case "q17" =>
-        execQ17(spark)
-      case "q18" =>
-        execQ18(spark)
-      case "q19" =>
-        execQ19(spark)
-      case "q20" =>
-        execQ20(spark)
-      case "q21" =>
-        execQ21(spark)
-      case "q22" =>
-        execQ22(spark)
-      case "q_highbalance" =>
-        execHighBalance(spark)
-      case "q_scan" =>
-        execScan(spark)
-      case "q_static" =>
-        execStatic(spark)
-      case "q_anti" =>
-        execAnti(spark)
-      case "q_outer" =>
-        execOuter(spark)
-      case "q_agg" =>
-        execAgg(spark)
-      case "q_aggjoin" =>
-        execAggJoin(spark)
-      case _ =>
-        printf("Not yet supported %s\n", query)
+      case "q1" => execQ1(spark)
+      case "q2" => execQ2(spark)
+      case "q3" => execQ3(spark)
+      case "q4" => execQ4(spark)
+      case "q5" => execQ5(spark)
+      case "q6" => execQ6(spark)
+      case "q7" => execQ7(spark)
+      case "q8" => execQ8(spark)
+      case "q9" => execQ9(spark)
+      case "q10" => execQ10(spark)
+      case "q11" => execQ11(spark)
+      case "q12" => execQ12(spark)
+      case "q13" => execQ13(spark)
+      case "q14" => execQ14(spark)
+      case "q15" => execQ15(spark)
+      case "q16" => execQ16(spark)
+      case "q17" => execQ17(spark)
+      case "q18" => execQ18(spark)
+      case "q19" => execQ19(spark)
+      case "q20" => execQ20(spark)
+      case "q21" => execQ21(spark)
+      case "q22" => execQ22(spark)
+      case "q_highbalance" => execHighBalance(spark)
+      case "q_scan" => execScan(spark)
+      case "q_static" => execStatic(spark)
+      case "q_anti" => execAnti(spark)
+      case "q_outer" => execOuter(spark)
+      case "q_agg" => execAgg(spark)
+      case "q_aggjoin" => execAggJoin(spark)
+      case _ => printf("Not yet supported %s\n", query)
     }
   }
 
@@ -155,9 +136,10 @@ class QueryTPCH (bootstrap: String, query: String, numBatch: Int, shuffleNum: St
 
     val l = DataUtils.loadStreamTable(spark, "lineitem", "l")
 
-    val result = l.filter($"l_shipdate" <= "1998-09-01")
-      .select($"l_returnflag", $"l_linestatus",
-        $"l_quantity", $"l_extendedprice", $"l_discount", $"l_tax")
+    val l_sampled = l.sample(false, SR, 42)
+
+    val result = l_sampled.filter($"l_shipdate" <= "1998-09-01")
+      .select($"l_returnflag", $"l_linestatus", $"l_quantity", $"l_extendedprice", $"l_discount", $"l_tax")
       .groupBy($"l_returnflag", $"l_linestatus")
       .agg(
         sum_qty($"l_quantity").as("sum_qty"),
@@ -1008,13 +990,13 @@ object QueryTPCH {
         "<execution mode [0: inc-aware(subpath), 1: inc-aware(subplan), 2: inc-oblivious, " +
         "3: generate inc statistics, 4: training]>  <num of input partitions>" +
         "<performance constraint> <large dataset> <iOLAP Config> <inc_percentage>" +
-        "<cost model bias> <max step> <sample time>")
+        "<cost model bias> <max step> <sample time> <sample rate>")
       System.exit(1)
     }
 
     val tpch = new QueryTPCH(args(0), args(1), args(2).toInt, args(3),
       args(4), args(5).toDouble, args(6), args(7), args(8).toInt, args(9),
-      args(10).toBoolean, args(11).toInt, args(12), args(13), args(14), args(15))
+      args(10).toBoolean, args(11).toInt, args(12), args(13), args(14), args(15), args(16).toDouble)
     tpch.execQuery(args(1))
   }
 }
