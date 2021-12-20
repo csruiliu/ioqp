@@ -169,20 +169,13 @@ class SlothDBCostModel extends Logging {
   private def buildOperator(logicalPlan: LogicalPlan):
   Tuple2[OperatorCostModel, LogicalPlan] = {
     logicalPlan match {
-      case _: Aggregate =>
-        (new AggregateCostModel, logicalPlan)
-      case _: Join =>
-        (new JoinCostModel, logicalPlan)
-      case _: StreamingExecutionRelation =>
-        (new ScanCostModel, logicalPlan)
-      case _: Filter =>
-        (new SelectCostModel, logicalPlan)
-      case _: Sort =>
-        (new SortCostModel, logicalPlan)
-      case _: Deduplicate =>
-        (new DistinctCostModel, logicalPlan)
-      case _ =>
-        buildOperator(logicalPlan.children(0))
+      case _: Aggregate => (new AggregateCostModel, logicalPlan)
+      case _: Join => (new JoinCostModel, logicalPlan)
+      case _: StreamingExecutionRelation => (new ScanCostModel, logicalPlan)
+      case _: Filter => (new SelectCostModel, logicalPlan)
+      case _: Sort => (new SortCostModel, logicalPlan)
+      case _: Deduplicate => (new DistinctCostModel, logicalPlan)
+      case _ => buildOperator(logicalPlan.children(0))
     }
   }
 
@@ -791,13 +784,14 @@ class SlothDBCostModel extends Logging {
         while (currentStep < MAX_BATCHNUM) {
           currentStep += 1
 
+          printf(s"currentStep [for test] ${currentStep}\n")
+
           subPlans.foreach(_.resetMPExecutable())
           findExecutableMPs(subPlans(0), currentStep)
 
           val isExecutable = subPlans.flatMap(
             subPlan => {
-              subPlan.mpExecutable.map(executable =>
-              executable)
+              subPlan.mpExecutable.map(executable => executable)
             }
           ).exists(executable => executable)
 
@@ -821,7 +815,7 @@ class SlothDBCostModel extends Logging {
               }
             }).toMap
 
-            printf(s"currentStep ${currentStep}\n")
+            printf(s"currentStep [mpDecompose] ${currentStep}\n")
 
             return sourceMap
           }
@@ -853,6 +847,8 @@ class SlothDBCostModel extends Logging {
                 (source, SlothOffsetUtils.offsetToJSON(offset))
               })
             }).toMap
+
+            printf(s"currentStep ${currentStep}\n")
           }
 
         }
