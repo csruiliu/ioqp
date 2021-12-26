@@ -23,12 +23,10 @@ import org.apache.spark.sql.expressions.UserDefinedAggregateFunction
 import org.apache.spark.sql.types._
 
 // sum over double
-class DoubleSum extends  UserDefinedAggregateFunction {
-  override def inputSchema: org.apache.spark.sql.types.StructType =
-    StructType(StructField("double", DoubleType) :: Nil)
+class DoubleSum extends UserDefinedAggregateFunction {
+  override def inputSchema: StructType = StructType(StructField("double", DoubleType) :: Nil)
 
-  override def bufferSchema: StructType = StructType(
-    StructField("sum", DoubleType) :: Nil)
+  override def bufferSchema: StructType = StructType(StructField("sum", DoubleType) :: Nil)
 
   override def dataType: DataType = DoubleType
 
@@ -56,13 +54,11 @@ class DoubleSum extends  UserDefinedAggregateFunction {
 }
 
 // Avg over double
-class DoubleAvg extends  UserDefinedAggregateFunction {
-  override def inputSchema: org.apache.spark.sql.types.StructType =
-    StructType(StructField("input", DoubleType) :: Nil)
+class DoubleAvg extends UserDefinedAggregateFunction {
+  override def inputSchema: StructType = StructType(StructField("input", DoubleType) :: Nil)
 
   override def bufferSchema: StructType = StructType(
-    StructField("count", DoubleType) ::
-    StructField("sum", DoubleType) :: Nil
+    StructField("count", DoubleType) :: StructField("sum", DoubleType) :: Nil
   )
 
   override def dataType: DataType = DoubleType
@@ -95,7 +91,7 @@ class DoubleAvg extends  UserDefinedAggregateFunction {
 }
 
 // Count
-class Count extends  UserDefinedAggregateFunction {
+class Count extends UserDefinedAggregateFunction {
   override def inputSchema: org.apache.spark.sql.types.StructType =
     StructType(StructField("input", IntegerType) :: Nil)
 
@@ -128,7 +124,7 @@ class Count extends  UserDefinedAggregateFunction {
 }
 
 // Count not null
-class Count_not_null extends  UserDefinedAggregateFunction {
+class Count_not_null extends UserDefinedAggregateFunction {
   override def inputSchema: org.apache.spark.sql.types.StructType =
     StructType(StructField("input", LongType) :: Nil)
 
@@ -161,7 +157,7 @@ class Count_not_null extends  UserDefinedAggregateFunction {
 }
 
 // sum(l_extendedprice * (1 - l_discount))
-class Sum_disc_price extends  UserDefinedAggregateFunction {
+class Sum_disc_price extends UserDefinedAggregateFunction {
      // This is the input fields for your aggregate function.
   override def inputSchema: org.apache.spark.sql.types.StructType =
     StructType(StructField("l_extendedprice", DoubleType) ::
@@ -203,7 +199,7 @@ class Sum_disc_price extends  UserDefinedAggregateFunction {
 }
 
 // sum(l_extendedprice * (1 - l_discount)) * (tax + 1)
-class Sum_disc_price_with_tax extends  UserDefinedAggregateFunction {
+class Sum_disc_price_with_tax extends UserDefinedAggregateFunction {
      // This is the input fields for your aggregate function.
   override def inputSchema: org.apache.spark.sql.types.StructType =
     StructType(StructField("l_extendedprice", DoubleType) ::
