@@ -316,9 +316,6 @@ class MicroBatchExecution(
         }
 
         // Must be outside reportTimeTaken so it is recorded
-        val currentStep =
-          if (slothCostModel != null) slothCostModel.currentStep
-          else 0
         finishTrigger(currentBatchHasNewData, slothCostModel.currentStep)
 
         // Signal waiting threads. Note this must be after finishTrigger() to ensure all

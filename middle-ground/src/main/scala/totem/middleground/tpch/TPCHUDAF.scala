@@ -55,6 +55,21 @@ class DoubleSum extends UserDefinedAggregateFunction {
 
 // Avg over double
 class DoubleAvg extends UserDefinedAggregateFunction {
+
+  var startTime = System.currentTimeMillis()
+  var currentTime = startTime
+
+  var aggregationSchemaName: String = _
+  var aggregationInterval: Int = 0
+
+  def setAggregationInterval(inputInterval: Int): Unit = {
+    this.aggregationInterval = inputInterval
+  }
+
+  def setAggregationSchemaName(inputSchemaName: String): Unit = {
+    this.aggregationSchemaName = inputSchemaName
+  }
+
   override def inputSchema: StructType = StructType(StructField("input", DoubleType) :: Nil)
 
   override def bufferSchema: StructType = StructType(
@@ -73,6 +88,15 @@ class DoubleAvg extends UserDefinedAggregateFunction {
   override def update(buffer: MutableAggregationBuffer, input: Row): Unit = {
     buffer(0) = buffer.getDouble(0) + 1.0
     buffer(1) = buffer.getDouble(1) + input.getDouble(0)
+
+    this.currentTime = System.currentTimeMillis()
+
+    if (this.aggregationInterval != 0 && this.currentTime - this.startTime > this.aggregationInterval) {
+      println("Avg Aggregation on %s: %.3f at %d".format(
+        this.aggregationSchemaName, buffer.getDouble(1)/buffer.getDouble(0), this.currentTime)
+      )
+      this.startTime = System.currentTimeMillis()
+    }
   }
 
   override def delete(buffer: MutableAggregationBuffer, input: Row): Unit = {
@@ -92,11 +116,9 @@ class DoubleAvg extends UserDefinedAggregateFunction {
 
 // Count
 class Count extends UserDefinedAggregateFunction {
-  override def inputSchema: org.apache.spark.sql.types.StructType =
-    StructType(StructField("input", IntegerType) :: Nil)
+  override def inputSchema: StructType = StructType(StructField("input", IntegerType) :: Nil)
 
-  override def bufferSchema: StructType = StructType(
-    StructField("count", IntegerType) :: Nil)
+  override def bufferSchema: StructType = StructType(StructField("count", IntegerType) :: Nil)
 
   override def dataType: DataType = IntegerType
 
@@ -125,11 +147,9 @@ class Count extends UserDefinedAggregateFunction {
 
 // Count not null
 class Count_not_null extends UserDefinedAggregateFunction {
-  override def inputSchema: org.apache.spark.sql.types.StructType =
-    StructType(StructField("input", LongType) :: Nil)
+  override def inputSchema: StructType = StructType(StructField("input", LongType) :: Nil)
 
-  override def bufferSchema: StructType = StructType(
-    StructField("count", LongType) :: Nil)
+  override def bufferSchema: StructType = StructType(StructField("count", LongType) :: Nil)
 
   override def dataType: DataType = LongType
 
@@ -159,14 +179,11 @@ class Count_not_null extends UserDefinedAggregateFunction {
 // sum(l_extendedprice * (1 - l_discount))
 class Sum_disc_price extends UserDefinedAggregateFunction {
      // This is the input fields for your aggregate function.
-  override def inputSchema: org.apache.spark.sql.types.StructType =
-    StructType(StructField("l_extendedprice", DoubleType) ::
-      StructField("l_discount", DoubleType) :: Nil)
+  override def inputSchema: StructType = StructType(StructField("l_extendedprice", DoubleType) ::
+    StructField("l_discount", DoubleType) :: Nil)
 
   // This is the internal fields you keep for computing your aggregate.
-  override def bufferSchema: StructType = StructType(
-    StructField("sum_disc_price", DoubleType) :: Nil
-  )
+  override def bufferSchema: StructType = StructType(StructField("sum_disc_price", DoubleType) :: Nil)
 
   // This is the output type of your aggregatation function.
   override def dataType: DataType = DoubleType
@@ -201,15 +218,13 @@ class Sum_disc_price extends UserDefinedAggregateFunction {
 // sum(l_extendedprice * (1 - l_discount)) * (tax + 1)
 class Sum_disc_price_with_tax extends UserDefinedAggregateFunction {
      // This is the input fields for your aggregate function.
-  override def inputSchema: org.apache.spark.sql.types.StructType =
+  override def inputSchema: StructType =
     StructType(StructField("l_extendedprice", DoubleType) ::
       StructField("l_discount", DoubleType) ::
       StructField("tax", DoubleType) :: Nil)
 
   // This is the internal fields you keep for computing your aggregate.
-  override def bufferSchema: StructType = StructType(
-    StructField("sum_disc_price_with_tax", DoubleType) :: Nil
-  )
+  override def bufferSchema: StructType = StructType(StructField("sum_disc_price_with_tax", DoubleType) :: Nil)
 
   // This is the output type of your aggregatation function.
   override def dataType: DataType = DoubleType
@@ -293,13 +308,10 @@ class UDAF_Q8 extends UserDefinedAggregateFunction {
 
 class UDAF_Q12_HIGH extends UserDefinedAggregateFunction {
     // This is the input fields for your aggregate function.
-  override def inputSchema: org.apache.spark.sql.types.StructType =
-    StructType(StructField("o_orderpriority", StringType) :: Nil)
+  override def inputSchema: StructType = StructType(StructField("o_orderpriority", StringType) :: Nil)
 
   // This is the internal fields you keep for computing your aggregate.
-  override def bufferSchema: StructType = StructType(
-    StructField("count", LongType) :: Nil
-  )
+  override def bufferSchema: StructType = StructType(StructField("count", LongType) :: Nil)
 
   // This is the output type of your aggregatation function.
   override def dataType: DataType = LongType
@@ -333,13 +345,10 @@ class UDAF_Q12_HIGH extends UserDefinedAggregateFunction {
 
 class UDAF_Q12_LOW extends UserDefinedAggregateFunction {
     // This is the input fields for your aggregate function.
-  override def inputSchema: org.apache.spark.sql.types.StructType =
-    StructType(StructField("o_orderpriority", StringType) :: Nil)
+  override def inputSchema: StructType = StructType(StructField("o_orderpriority", StringType) :: Nil)
 
   // This is the internal fields you keep for computing your aggregate.
-  override def bufferSchema: StructType = StructType(
-    StructField("count", LongType) :: Nil
-  )
+  override def bufferSchema: StructType = StructType(StructField("count", LongType) :: Nil)
 
   // This is the output type of your aggregatation function.
   override def dataType: DataType = LongType

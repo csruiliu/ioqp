@@ -19,6 +19,7 @@ package totem.middleground.tpch
 
 import java.io.{BufferedReader, FileReader}
 import java.util.concurrent.TimeUnit
+import java.time.Instant
 
 import scala.collection.mutable.ArrayBuffer
 

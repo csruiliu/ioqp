@@ -40,7 +40,9 @@ class QueryTPCH (bootstrap: String,
                  maxStep: String,
                  sampleTime: String,
                  SR: Double,
-                 trigger_interval: Int) {
+                 trigger_interval: Int,
+                 aggregation_interval: Int) {
+
   val iOLAP_Q11_src = "/q11_config.csv"
   val iOLAP_Q17_src = "/q17_config.csv"
   val iOLAP_Q18_src = "/q18_config.csv"
@@ -134,6 +136,9 @@ class QueryTPCH (bootstrap: String,
     val avg_price = new DoubleAvg
     val avg_disc = new DoubleAvg
     val count_order = new Count
+
+    avg_qty.setAggregationInterval(aggregation_interval)
+    avg_qty.setAggregationSchemaName("avg_qty")
 
     val l = DataUtils.loadStreamTable(spark, "lineitem", "l")
 
@@ -985,20 +990,20 @@ class QueryTPCH (bootstrap: String,
 object QueryTPCH {
   def main(args: Array[String]): Unit = {
 
-    if (args.length < 18) {
+    if (args.length < 19) {
       System.err.println("Usage: QueryTPCH <bootstrap-servers> <query>" +
         "<numBatch> <number-shuffle-partition> <statistics dir> <SF> <HDFS root>" +
         "<execution mode [0: inc-aware(subpath), 1: inc-aware(subplan), 2: inc-oblivious, " +
         "3: generate inc statistics, 4: training]>  <num of input partitions>" +
         "<performance constraint> <large dataset> <iOLAP Config> <inc_percentage>" +
-        "<cost model bias> <max step> <sample time> <sample rate> <trigger interval>")
+        "<cost model bias> <max step> <sample time> <sample rate> <trigger interval> <aggregation interval>")
       System.exit(1)
     }
 
     val tpch = new QueryTPCH(args(0), args(1), args(2).toInt, args(3),
       args(4), args(5).toDouble, args(6), args(7), args(8).toInt, args(9),
       args(10).toBoolean, args(11).toInt, args(12), args(13), args(14),
-      args(15), args(16).toDouble, args(17).toInt)
+      args(15), args(16).toDouble, args(17).toInt, args(18).toInt)
     tpch.execQuery(args(1))
   }
 }

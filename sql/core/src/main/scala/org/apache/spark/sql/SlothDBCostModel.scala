@@ -784,7 +784,7 @@ class SlothDBCostModel extends Logging {
         while (currentStep < MAX_BATCHNUM) {
           currentStep += 1
 
-          printf(s"currentStep [for test] ${currentStep}\n")
+          printf(s"currentStep ${currentStep}\n")
 
           subPlans.foreach(_.resetMPExecutable())
           findExecutableMPs(subPlans(0), currentStep)
@@ -814,8 +814,6 @@ class SlothDBCostModel extends Logging {
                   })
               }
             }).toMap
-
-            printf(s"currentStep [mpDecompose] ${currentStep}\n")
 
             return sourceMap
           }
@@ -869,7 +867,6 @@ class SlothDBCostModel extends Logging {
               endOffsets(tmpIndex).getOffsetByIndex(totalBatchNum, totalBatchStep)
             (source, SlothOffsetUtils.offsetToJSON(offset))
           }).toMap
-
 
           printf(s"currentStep ${currentStep}\n")
 
