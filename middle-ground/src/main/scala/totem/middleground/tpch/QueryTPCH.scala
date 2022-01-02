@@ -139,6 +139,10 @@ class QueryTPCH (bootstrap: String,
 
     avg_qty.setAggregationInterval(aggregation_interval)
     avg_qty.setAggregationSchemaName("avg_qty")
+    avg_price.setAggregationInterval(aggregation_interval)
+    avg_price.setAggregationSchemaName("avg_price")
+    avg_disc.setAggregationInterval(aggregation_interval)
+    avg_disc.setAggregationSchemaName("avg_disc")
 
     val l = DataUtils.loadStreamTable(spark, "lineitem", "l")
 
