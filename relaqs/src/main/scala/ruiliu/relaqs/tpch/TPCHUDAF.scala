@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package totem.middleground.tpch
+package ruiliu.relaqs.tpch
 
 import org.apache.spark.sql.{Column, Row}
 import org.apache.spark.sql.expressions.MutableAggregationBuffer

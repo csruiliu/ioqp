@@ -16,33 +16,27 @@
  */
 
 // scalastyle:off println
-package totem.middleground.tpch
+package ruiliu.relaqs.tpch
 
 import org.apache.spark.SparkConf
 import org.apache.spark.sql.{DataFrame, SparkSession}
 import org.apache.spark.sql.functions._
 import org.apache.spark.sql.internal.SQLConf
 
-class QueryTPCH (bootstrap: String,
-                 query: String,
-                 numBatch: Int,
-                 shuffleNum: String,
-                 statDIR: String,
-                 SF: Double,
-                 hdfsRoot: String,
-                 execution_mode: String,
-                 inputPartitions: Int,
-                 constraint: String,
-                 largeDataset: Boolean,
-                 iOLAPConf: Int,
-                 incPercentage: String,
-                 costBias: String,
-                 maxStep: String,
-                 sampleTime: String,
-                 SR: Double,
-                 trigger_interval: Int,
-                 aggregation_interval: Int) {
-
+class CardTPCH (bootstrap: String,
+                query: String,
+                numBatch: Int,
+                shuffleNum: String,
+                statDIR: String,
+                SF: Double,
+                hdfsRoot: String,
+                execution_mode: String,
+                inputPartitions: Int,
+                constraint: String,
+                largeDataset: Boolean,
+                iOLAPConf: Int,
+                iOLAPRoot: String,
+                SR: Double) {
   val iOLAP_Q11_src = "/q11_config.csv"
   val iOLAP_Q17_src = "/q17_config.csv"
   val iOLAP_Q18_src = "/q18_config.csv"
@@ -55,17 +49,18 @@ class QueryTPCH (bootstrap: String,
   val iOLAP_Q20_dst = "/iOLAP/q20_config.dst"
   val iOLAP_Q22_dst = "/iOLAP/q22_config.dst"
 
-  val iOLAP_OFF = 0
-  val iOLAP_ON = 1
+  val iOLAP_ON = 0
+  val iOLAP_OFF = 1
   val iOLAP_TRAINING = 2
 
   DataUtils.bootstrap = bootstrap
   TPCHSchema.setQueryMetaData(numBatch, SF, SR, hdfsRoot, inputPartitions, largeDataset)
-  printf("Sample Rate %f\n", SR)
 
   private var query_name: String = null
 
-  val enable_iOLAP = if (iOLAPConf == iOLAP_ON) "true" else "false"
+  val enable_iOLAP =
+    if (iOLAPConf == iOLAP_ON) "true"
+    else "false"
 
   def execQuery(query: String): Unit = {
     query_name = query.toLowerCase
@@ -77,10 +72,6 @@ class QueryTPCH (bootstrap: String,
       .set(SQLConf.SLOTHDB_BATCH_NUM.key, numBatch.toString)
       .set(SQLConf.SLOTHDB_IOLAP.key, enable_iOLAP)
       .set(SQLConf.SLOTHDB_QUERYNAME.key, query_name)
-      .set(SQLConf.SLOTHDB_INC_PERCENTAGE.key, incPercentage)
-      .set(SQLConf.SLOTHDB_COST_MODEL_BIAS.key, costBias)
-      .set(SQLConf.SLOTHDB_MAX_STEP.key, maxStep)
-      .set(SQLConf.SLOTHDB_SAMPLE_TIME.key, sampleTime)
 
     val digit_constraint = constraint.toDouble
     if (digit_constraint <= 1.0) sparkConf.set(SQLConf.SLOTHDB_LATENCY_CONSTRAINT.key, constraint)
@@ -92,36 +83,58 @@ class QueryTPCH (bootstrap: String,
       .getOrCreate()
 
     query_name match {
-      case "q1" => execQ1(spark)
-      case "q2" => execQ2(spark)
-      case "q3" => execQ3(spark)
-      case "q4" => execQ4(spark)
-      case "q5" => execQ5(spark)
-      case "q6" => execQ6(spark)
-      case "q7" => execQ7(spark)
-      case "q8" => execQ8(spark)
-      case "q9" => execQ9(spark)
-      case "q10" => execQ10(spark)
-      case "q11" => execQ11(spark)
-      case "q12" => execQ12(spark)
-      case "q13" => execQ13(spark)
-      case "q14" => execQ14(spark)
-      case "q15" => execQ15(spark)
-      case "q16" => execQ16(spark)
-      case "q17" => execQ17(spark)
-      case "q18" => execQ18(spark)
-      case "q19" => execQ19(spark)
-      case "q20" => execQ20(spark)
-      case "q21" => execQ21(spark)
-      case "q22" => execQ22(spark)
-      case "q_highbalance" => execHighBalance(spark)
-      case "q_scan" => execScan(spark)
-      case "q_static" => execStatic(spark)
-      case "q_anti" => execAnti(spark)
-      case "q_outer" => execOuter(spark)
-      case "q_agg" => execAgg(spark)
-      case "q_aggjoin" => execAggJoin(spark)
-      case _ => printf("Not yet supported %s\n", query)
+      case "q1" =>
+        execQ1(spark)
+      case "q2" =>
+        execQ2(spark)
+      case "q3" =>
+        execQ3(spark)
+      case "q4" =>
+        execQ4(spark)
+      case "q5" =>
+        execQ5(spark)
+      case "q6" =>
+        execQ6(spark)
+      case "q7" =>
+        execQ7(spark)
+      case "q8" =>
+        execQ8(spark)
+      case "q9" =>
+        execQ9(spark)
+      case "q10" =>
+        execQ10(spark)
+      case "q11" =>
+        execQ11(spark)
+      case "q12" =>
+        execQ12(spark)
+      case "q13" =>
+        execQ13(spark)
+      case "q14" =>
+        execQ14(spark)
+      case "q15" =>
+        execQ15(spark)
+      case "q16" =>
+        execQ16(spark)
+      case "q17" =>
+        execQ17(spark)
+      case "q18" =>
+        execQ18(spark)
+      case "q19" =>
+        execQ19(spark)
+      case "q20" =>
+        execQ20(spark)
+      case "q21" =>
+        execQ21(spark)
+      case "q22" =>
+        execQ22(spark)
+      case "q_highbalance" =>
+        execHighBalance(spark)
+      case "q_scan" =>
+        execScan(spark)
+      case "q_static" =>
+        execStatic(spark)
+      case _ =>
+        printf("Not yet supported %s\n", query)
     }
   }
 
@@ -137,19 +150,11 @@ class QueryTPCH (bootstrap: String,
     val avg_disc = new DoubleAvg
     val count_order = new Count
 
-    avg_qty.setAggregationInterval(aggregation_interval)
-    avg_qty.setAggregationSchemaName("avg_qty")
-    avg_price.setAggregationInterval(aggregation_interval)
-    avg_price.setAggregationSchemaName("avg_price")
-    avg_disc.setAggregationInterval(aggregation_interval)
-    avg_disc.setAggregationSchemaName("avg_disc")
-
     val l = DataUtils.loadStreamTable(spark, "lineitem", "l")
 
-    val l_sampled = l.sample(false, SR, 42)
-
-    val result = l_sampled.filter($"l_shipdate" <= "1998-09-01")
-      .select($"l_returnflag", $"l_linestatus", $"l_quantity", $"l_extendedprice", $"l_discount", $"l_tax")
+    val result = l.filter($"l_shipdate" <= "1998-09-01")
+      .select($"l_returnflag", $"l_linestatus",
+        $"l_quantity", $"l_extendedprice", $"l_discount", $"l_tax")
       .groupBy($"l_returnflag", $"l_linestatus")
       .agg(
         sum_qty($"l_quantity").as("sum_qty"),
@@ -165,7 +170,7 @@ class QueryTPCH (bootstrap: String,
 
     // result.explain(true)
 
-    DataUtils.writeToSink(result, query_name, trigger_interval)
+    DataUtils.writeToSink(result, query_name)
   }
 
   def execQ2_subquery(spark: SparkSession): DataFrame = {
@@ -391,8 +396,7 @@ class QueryTPCH (bootstrap: String,
 
     val doubleSum = new DoubleSum
 
-    val p = DataUtils.loadStreamTable(spark, "part", "p")
-      .filter($"p_name" like("%green%"))
+    val p = DataUtils.loadStreamTable(spark, "part", "p").filter($"p_name" like("%green%"))
     val s = DataUtils.loadStreamTable(spark, "supplier", "s")
     val l = DataUtils.loadStreamTable(spark, "lineitem", "l")
     val ps = DataUtils.loadStreamTable(spark, "partsupp", "ps")
@@ -605,8 +609,8 @@ class QueryTPCH (bootstrap: String,
       .filter($"s_comment" like("%Customer%Complaints%"))
       .select($"s_suppkey")
 
-    val result = ps.join(p, $"ps_partkey" === $"p_partkey")
-      .join(s, $"ps_suppkey" === $"s_suppkey", "left_anti")
+    val result = ps.join(s, $"ps_suppkey" === $"s_suppkey", "left_anti")
+      .join(p, $"ps_partkey" === $"p_partkey")
       .select($"p_brand", $"p_type", $"p_size", $"ps_suppkey")
       // .dropDuplicates()
       .groupBy($"p_brand", $"p_type", $"p_size")
@@ -645,9 +649,9 @@ class QueryTPCH (bootstrap: String,
 
     } else {
       val result =
-        l.join(agg_l, $"l_partkey" === $"agg_l_partkey"
-            and $"l_quantity" < $"avg_quantity")
-            .join(p, $"l_partkey" === $"p_partkey")
+        p.join(agg_l, $"p_partkey" === $"agg_l_partkey")
+            .join(l, $"agg_l_partkey" === $"l_partkey"
+              and $"avg_quantity" > $"l_quantity")
             .agg((doubleSum($"l_extendedprice") / 7.0).as("avg_yearly"))
 
       DataUtils.writeToSink(result, query_name)
@@ -675,8 +679,8 @@ class QueryTPCH (bootstrap: String,
     } else {
       val result =
         o.join(agg_l, $"o_orderkey" === $"agg_orderkey", "left_semi")
-            .join(l, $"o_orderkey" === $"l_orderkey")
             .join(c, $"o_custkey" === $"c_custkey")
+            .join(l, $"o_orderkey" === $"l_orderkey")
             .groupBy("c_name", "c_custkey", "o_orderkey", "o_orderdate", "o_totalprice")
             .agg(doubleSum2($"l_quantity"))
 
@@ -762,9 +766,9 @@ class QueryTPCH (bootstrap: String,
       DataUtils.writeToFile(subquery, query_name, hdfsRoot + iOLAP_Q20_dst)
     } else {
       val result =
-        s.join(subquery, $"s_suppkey" === $"ps_suppkey", "left_semi")
-            .join(n, $"s_nationkey" === $"n_nationkey")
-            .select($"s_name", $"s_address")
+        s.join(n, $"s_nationkey" === $"n_nationkey")
+          .join(subquery, $"s_suppkey" === $"ps_suppkey", "left_semi")
+          .select($"s_name", $"s_address")
         // if (iOLAPConf == iOLAP_ON) {
         //   val keyArray = DataUtils.loadIOLAPLongTable(spark, iOLAPRoot + iOLAP_Q20_src)
         //   s.filter($"s_suppkey".isInCollection(keyArray))
@@ -791,8 +795,7 @@ class QueryTPCH (bootstrap: String,
     val n = DataUtils.loadStreamTable(spark, "nation", "n")
       .filter($"n_name" === "SAUDI ARABIA")
 
-    val init_result = l1.join(o, $"l_orderkey" === $"o_orderkey")
-      .join(s, $"l_suppkey" === $"s_suppkey")
+    val init_result = l1.join(s, $"l_suppkey" === $"s_suppkey")
       .join(n, $"s_nationkey" === $"n_nationkey")
 
     val l2 = DataUtils.loadStreamTable(spark, "lineitem", "l2")
@@ -806,6 +809,7 @@ class QueryTPCH (bootstrap: String,
     val result = init_result
       .join(l2, ($"l_orderkey" === $"l2_orderkey")
         and ($"l_suppkey" =!= $"l2_suppkey"), "left_semi")
+      .join(o, $"l_orderkey" === $"o_orderkey")
       .join(l3, ($"l_orderkey" === $"l3_orderkey")
         and ($"l_suppkey" =!= $"l3_suppkey"), "left_anti")
       .groupBy("s_name")
@@ -910,104 +914,23 @@ class QueryTPCH (bootstrap: String,
     // DataUtils.writeToSink(result, "q_static")
 
   }
-
-  def execAnti(spark: SparkSession): Unit = {
-    import spark.implicits._
-
-    val count = new Count
-
-    val p = DataUtils.loadStreamTable(spark, "part", "p")
-    val ps = DataUtils.loadStreamTable(spark, "partsupp", "ps")
-    val l = DataUtils.loadStreamTable(spark, "lineitem", "l")
-    val o = DataUtils.loadStreamTable(spark, "orders", "o")
-    val result = p
-        .join(ps, $"p_partkey" === $"ps_partkey", "left_anti")
-        .join(l, $"p_partkey" === $"l_partkey")
-        .join(o, $"l_orderkey" === $"o_orderkey")
-        .agg(count(lit(1L)))
-
-    DataUtils.writeToSink(result, query_name)
-  }
-
-  def execOuter(spark: SparkSession): Unit = {
-    import spark.implicits._
-
-    val count = new Count
-
-    val p = DataUtils.loadStreamTable(spark, "part", "p")
-    val ps = DataUtils.loadStreamTable(spark, "partsupp", "ps")
-    val l = DataUtils.loadStreamTable(spark, "lineitem", "l")
-    val o = DataUtils.loadStreamTable(spark, "orders", "o")
-
-    val result = p
-        .join(ps, $"p_partkey" === $"ps_partkey", "left_outer")
-        .filter($"ps_partkey".isNull || ($"ps_partkey".isNotNull && $"ps_partkey"%10000 === 0))
-        .join(l, $"p_partkey" === $"l_partkey")
-        .join(o, $"l_orderkey" === $"o_orderkey")
-        .agg(count(lit(1L)))
-
-    DataUtils.writeToSink(result, query_name)
-  }
-
-  def execAgg(spark: SparkSession): Unit = {
-    import spark.implicits._
-
-    val c_count = new Count_not_null
-    val custdist = new Count
-
-    val o = DataUtils.loadStreamTable(spark, "orders", "o")
-
-    val result = o
-      .groupBy($"o_custkey")
-      .agg(
-        c_count($"o_orderkey").as("c_count"))
-      .groupBy($"c_count")
-      .agg(
-        custdist(lit(1)).as("custdist"))
-
-    DataUtils.writeToSink(result, query_name)
-  }
-
-  def execAggJoin(spark: SparkSession): Unit = {
-    import spark.implicits._
-
-    val doubleAvg = new DoubleAvg
-    val doubleAvg2 = new DoubleAvg
-
-    val c = DataUtils.loadStreamTable(spark, "customer", "c")
-    val o = DataUtils.loadStreamTable(spark, "orders", "o")
-
-    val agg_o = DataUtils.loadStreamTable(spark, "orders", "o")
-      .groupBy("o_custkey")
-      .agg(doubleAvg($"o_totalprice").as("avg_totalprice"))
-      .select($"o_custkey", $"avg_totalprice")
-
-    val result = agg_o
-          .join(c, $"o_custkey" === $"c_custkey")
-          .agg(doubleAvg2($"avg_totalprice").as("sum_totalprice"))
-
-    DataUtils.writeToSink(result, query_name)
-  }
-
 }
 
-object QueryTPCH {
+object CardTPCH {
   def main(args: Array[String]): Unit = {
 
-    if (args.length < 19) {
-      System.err.println("Usage: QueryTPCH <bootstrap-servers> <query>" +
+    if (args.length < 13) {
+      System.err.println("Usage: CardTPCH <bootstrap-servers> <query>" +
         "<numBatch> <number-shuffle-partition> <statistics dir> <SF> <HDFS root>" +
         "<execution mode [0: inc-aware(subpath), 1: inc-aware(subplan), 2: inc-oblivious, " +
         "3: generate inc statistics, 4: training]>  <num of input partitions>" +
-        "<performance constraint> <large dataset> <iOLAP Config> <inc_percentage>" +
-        "<cost model bias> <max step> <sample time> <sample rate> <trigger interval> <aggregation interval>")
+        "<performance constraint> <large dataset> <iOLAP Config> <iOLAP root> <sample rate>")
       System.exit(1)
     }
 
-    val tpch = new QueryTPCH(args(0), args(1), args(2).toInt, args(3),
+    val tpch = new CardTPCH(args(0), args(1), args(2).toInt, args(3),
       args(4), args(5).toDouble, args(6), args(7), args(8).toInt, args(9),
-      args(10).toBoolean, args(11).toInt, args(12), args(13), args(14),
-      args(15), args(16).toDouble, args(17).toInt, args(18).toInt)
+      args(10).toBoolean, args(11).toInt, args(12), args(13).toDouble)
     tpch.execQuery(args(1))
   }
 }

@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package totem.middleground.tpch.unittest
+package ruiliu.relaqs.tpch.unittest
 
 import org.apache.spark.sql.Row
 import org.apache.spark.sql.expressions.MutableAggregationBuffer

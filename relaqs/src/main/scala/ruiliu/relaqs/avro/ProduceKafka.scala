@@ -16,39 +16,38 @@
  */
 
 // scalastyle:off println
-package totem.middleground.avro
+package ruiliu.relaqs.avro
 
 import org.apache.spark.sql.SparkSession
-import org.apache.spark.sql.avro.from_avro
+import org.apache.spark.sql.avro.to_avro
 import org.apache.spark.sql.functions._
 
-class ConsumeKafka (bootstrap: String) {
-  def readAvro(): Unit = {
-        val spark = SparkSession.builder()
-      .appName("Read Avro")
+class ProduceKafka(bootstrap: String) {
+
+  def convertToAvro(): Unit = {
+    val spark = SparkSession.builder()
+      .appName("Produce Avro")
       .getOrCreate()
 
-    val user = spark
-      .readStream
-      .format("kafka")
-      .option("kafka.bootstrap.servers", bootstrap)
-      .option("subscribe", KafkaMeta.userTopics)
-      .option("startingOffsets", "earliest")
-      .load()
+    val rows = spark.readStream
+        .format("csv")
+        .option("sep", "|")
+        .schema(KafkaMeta.userschema)
+        .load(KafkaMeta.userPath)
 
-    val query =
-      user.select(from_avro(col("value"), KafkaMeta.userAvroSchema.toString).as("user"))
-      .selectExpr("user.*")
+    val query = rows.select(to_avro(struct("*")) as "value")
       .writeStream
-      .format("console")
-      .outputMode("append")
+      .format("kafka")
+      .option("topic", KafkaMeta.userTopics)
+      .option("kafka.bootstrap.servers", bootstrap)
+      .option("checkpointLocation", KafkaMeta.checkpointLocation + "/user")
       .start()
 
     query.awaitTermination()
   }
 }
 
-object ConsumeKafka {
+object ProduceKafka {
   def main(args: Array[String]): Unit = {
 
     if (args.length < 1) {
@@ -56,7 +55,7 @@ object ConsumeKafka {
       System.exit(1)
     }
 
-    val query = new ConsumeKafka(args(0))
-    query.readAvro()
+    val query = new ProduceKafka(args(0))
+    query.convertToAvro()
   }
 }

@@ -15,12 +15,11 @@
  * limitations under the License.
  */
 
-package totem.middleground.tpch.unittest
-
-import totem.middleground.tpch.DataUtils
+package ruiliu.relaqs.tpch.unittest
 
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.functions._
+import ruiliu.relaqs.tpch.DataUtils
 
 // scalastyle:off println
 

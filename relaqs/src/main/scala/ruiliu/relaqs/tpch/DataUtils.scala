@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package totem.middleground.tpch
+package ruiliu.relaqs.tpch
 
 import java.io.{BufferedReader, FileReader}
 import java.util.concurrent.TimeUnit

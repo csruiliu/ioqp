@@ -16,7 +16,9 @@
   ~ limitations under the License.
   -->
 
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
   <parent>
     <groupId>org.apache.spark</groupId>
@@ -25,13 +27,13 @@
     <relativePath>../pom.xml</relativePath>
   </parent>
 
-  <artifactId>totem-middle-ground_2.11</artifactId>
+  <artifactId>ruiliu-relaqs_2.11</artifactId>
   <packaging>jar</packaging>
-  <name>Exploring Middle Ground</name>
+  <name>Best-effort Prototype of ReLAQS</name>
   <url>I do not care</url>
 
   <properties>
-    <sbt.project.name>middle-ground</sbt.project.name>
+    <sbt.project.name>relaqs</sbt.project.name>
     <build.testJarPhase>none</build.testJarPhase>
     <build.copyDependenciesPhase>package</build.copyDependenciesPhase>
     <hadoop.deps.scope>provided</hadoop.deps.scope>

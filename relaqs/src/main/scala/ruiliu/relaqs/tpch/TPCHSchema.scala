@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package totem.middleground.tpch
+package ruiliu.relaqs.tpch
 
 import org.apache.spark.sql.avro.SchemaConverters
 import org.apache.spark.sql.types.StructType

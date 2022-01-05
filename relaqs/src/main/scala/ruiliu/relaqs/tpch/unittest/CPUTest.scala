@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package totem.middleground.tpch.unittest
+package ruiliu.relaqs.tpch.unittest
 
 import java.lang.management.ManagementFactory
 

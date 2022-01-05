@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package totem.middleground.kafka
+package ruiliu.relaqs.kafka
 
 import org.apache.spark.sql.types.StructType
 

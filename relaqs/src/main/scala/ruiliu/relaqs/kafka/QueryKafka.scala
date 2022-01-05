@@ -16,7 +16,7 @@
  */
 
 // scalastyle:off println
-package totem.middleground.kafka
+package ruiliu.relaqs.kafka
 
 // import org.apache.spark.sql.Dataset
 import org.apache.spark.sql.SparkSession

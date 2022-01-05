@@ -16,7 +16,7 @@
  */
 
 // scalastyle:off println
-package totem.middleground.tpch
+package ruiliu.relaqs.tpch
 
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.avro.to_avro
