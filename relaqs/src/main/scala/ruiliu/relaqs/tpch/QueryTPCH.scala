@@ -62,7 +62,7 @@ class QueryTPCH(bootstrap: String,
 
   DataUtils.bootstrap = bootstrap
   TPCHSchema.setQueryMetaData(numBatch, SF, SR, hdfsRoot, inputPartitions, largeDataset)
-  printf("Sample Rate %f\n", SR)
+  println("Sample Rate %f\n", SR)
 
   private var query_name: String = null
 
@@ -92,7 +92,9 @@ class QueryTPCH(bootstrap: String,
       .appName("Executing Query " + query)
       .getOrCreate()
 
-    query_name match {
+    val query_name_prefix = query_name.split("_")(0)
+
+    query_name_prefix match {
       case "q1" => execQ1(spark)
       case "q2" => execQ2(spark)
       case "q3" => execQ3(spark)
