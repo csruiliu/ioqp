@@ -1,6 +1,11 @@
 # ide folders
 **/.idea
 
+# images
+*.png
+*.jpg
+*.pdf
+
 # generated folders
 **/target
 /build/**
