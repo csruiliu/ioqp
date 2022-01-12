@@ -27,13 +27,13 @@
     <relativePath>../pom.xml</relativePath>
   </parent>
 
-  <artifactId>ruiliu-relaqs_2.11</artifactId>
+  <artifactId>ruiliu-aqp_2.11</artifactId>
   <packaging>jar</packaging>
-  <name>Best-effort Prototype of ReLAQS</name>
+  <name>AQP System Prototype</name>
   <url>I do not care</url>
 
   <properties>
-    <sbt.project.name>relaqs</sbt.project.name>
+    <sbt.project.name>aqp</sbt.project.name>
     <build.testJarPhase>none</build.testJarPhase>
     <build.copyDependenciesPhase>package</build.copyDependenciesPhase>
     <hadoop.deps.scope>provided</hadoop.deps.scope>

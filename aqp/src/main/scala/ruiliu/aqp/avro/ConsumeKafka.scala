@@ -16,7 +16,7 @@
  */
 
 // scalastyle:off println
-package ruiliu.relaqs.avro
+package ruiliu.aqp.avro
 
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.avro.from_avro

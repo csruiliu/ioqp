@@ -120,8 +120,12 @@ class SlothDBCostModel extends Logging {
                         numPart: Int): OperatorCostModel = {
     var modelFile: String = null
     try {
-      modelFile = slothdbStatDir + s"/${name}.model"
-
+      if (name.contains("_")) {
+        val name_prefix: String = name.split("_")(0)
+        modelFile = slothdbStatDir + s"/${name_prefix}.model"
+      } else {
+        modelFile = slothdbStatDir + s"/${name}.model"
+      }
       val modelBr = new BufferedReader(new FileReader(modelFile))
       return buildChildPlan(0, logicalPlan, numPart, modelBr)
     } catch {

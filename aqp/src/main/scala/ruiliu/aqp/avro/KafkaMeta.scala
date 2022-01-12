@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package ruiliu.relaqs.avro
+package ruiliu.aqp.avro
 
 import org.apache.spark.sql.avro.SchemaConverters
 import org.apache.spark.sql.types.StructType

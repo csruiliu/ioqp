@@ -16,7 +16,7 @@
  */
 
 // scalastyle:off println
-package ruiliu.relaqs.kafka
+package ruiliu.aqp.kafka
 
 // import org.apache.spark.sql.Dataset
 import org.apache.spark.sql.SparkSession

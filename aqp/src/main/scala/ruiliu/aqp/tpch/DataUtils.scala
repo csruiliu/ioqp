@@ -15,11 +15,10 @@
  * limitations under the License.
  */
 
-package ruiliu.relaqs.tpch
+package ruiliu.aqp.tpch
 
 import java.io.{BufferedReader, FileReader}
 import java.util.concurrent.TimeUnit
-import java.time.Instant
 
 import scala.collection.mutable.ArrayBuffer
 

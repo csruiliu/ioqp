@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package ruiliu.relaqs.tpch.unittest
+package ruiliu.aqp.tpch.unittest
 
 import java.lang.management.ManagementFactory
 

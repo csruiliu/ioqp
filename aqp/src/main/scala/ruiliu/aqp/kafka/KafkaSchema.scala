@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package ruiliu.relaqs.kafka
+package ruiliu.aqp.kafka
 
 import org.apache.spark.sql.types.StructType
 

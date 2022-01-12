@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package ruiliu.relaqs.tpch
+package ruiliu.aqp.tpch
 
 import org.apache.spark.sql.{Column, Row}
 import org.apache.spark.sql.expressions.MutableAggregationBuffer

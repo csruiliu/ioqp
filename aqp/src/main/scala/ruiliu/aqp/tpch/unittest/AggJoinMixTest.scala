@@ -15,10 +15,10 @@
  * limitations under the License.
  */
 
-package ruiliu.relaqs.tpch.unittest
+package ruiliu.aqp.tpch.unittest
 
 import org.apache.spark.sql.SparkSession
-import ruiliu.relaqs.tpch.DataUtils
+import ruiliu.aqp.tpch.DataUtils
 
 // scalastyle:off println
 
