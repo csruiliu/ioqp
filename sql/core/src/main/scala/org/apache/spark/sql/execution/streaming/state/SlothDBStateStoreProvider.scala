@@ -43,8 +43,7 @@ private[state] class SlothDBStateStoreProvider extends StateStoreProvider with L
   type MapType = java.util.concurrent.ConcurrentHashMap[UnsafeRow, UnsafeRow]
 
   /** Implementation of [[StateStore]] API which is backed by a HDFS-compatible file system */
-  class SlothDBStateStore(val version: Long, mapToUpdate: MapType)
-    extends StateStore {
+  class SlothDBStateStore(val version: Long, mapToUpdate: MapType) extends StateStore {
 
     /** Trait and classes representing the internal state of the store */
     trait STATE
@@ -73,9 +72,8 @@ private[state] class SlothDBStateStoreProvider extends StateStoreProvider with L
       mapToUpdate.remove(key)
     }
 
-    override def getRange(
-        start: Option[UnsafeRow],
-        end: Option[UnsafeRow]): Iterator[UnsafeRowPair] = {
+    override def getRange(start: Option[UnsafeRow],
+                          end: Option[UnsafeRow]): Iterator[UnsafeRowPair] = {
       verify(state == UPDATING, "Cannot getRange after already committed or aborted")
       iterator()
     }
@@ -191,7 +189,9 @@ private[state] class SlothDBStateStoreProvider extends StateStoreProvider with L
   }
 
   override def supportedCustomMetrics: Seq[StateStoreCustomMetric] = {
-    metricStateOnCurrentVersionSizeBytes :: metricLoadedMapCacheHit :: metricLoadedMapCacheMiss ::
+    metricStateOnCurrentVersionSizeBytes ::
+      metricLoadedMapCacheHit ::
+      metricLoadedMapCacheMiss ::
       Nil
   }
 
@@ -201,7 +201,6 @@ private[state] class SlothDBStateStoreProvider extends StateStoreProvider with L
   }
 
   /* Internal fields and methods */
-
   @volatile private var stateStoreId_ : StateStoreId = _
   @volatile private var keySchema: StructType = _
   @volatile private var valueSchema: StructType = _
@@ -281,7 +280,7 @@ private[state] class SlothDBStateStoreProvider extends StateStoreProvider with L
       if (version > 0) {
         throw new IllegalArgumentException("Does not find a cache")
       } else {
-        return new MapType
+        new MapType
       }
     }
   }

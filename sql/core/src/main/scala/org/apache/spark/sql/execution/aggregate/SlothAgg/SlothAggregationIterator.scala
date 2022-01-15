@@ -52,8 +52,7 @@ class SlothAggregationIterator (
     watermarkForData: Option[Predicate],
     deltaOutput: Boolean,
     updateOuput: Boolean,
-    repairMode: Boolean)
-extends Iterator[InternalRow] with Logging {
+    repairMode: Boolean) extends Iterator[InternalRow] with Logging {
 
   private val opRtId = new SlothRuntimeOpId(stateInfo.get.operatorId, stateInfo.get.queryRunId)
   private val retRT = SlothRuntimeCache.get(opRtId)

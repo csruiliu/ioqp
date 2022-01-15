@@ -35,8 +35,10 @@ case class NonIncMetaPerExpr(aggExpr: AggregateExpression,
                              rowOffset: Int,
                              dataType: DataType)
 
-case class AggMetaData (var counter: Int, val oldMaxID: Long,
-                   var newMaxID: Long, val hasChange: Array[Boolean])
+case class AggMetaData (var counter: Int,
+                        val oldMaxID: Long,
+                        var newMaxID: Long,
+                        val hasChange: Array[Boolean])
 
 class SlothAggMetaMap (
     groupExpressions: Seq[NamedExpression],
@@ -189,13 +191,14 @@ class SlothAggMetaMap (
     private val storeName = "GroupKeytoMetaStore"
 
     private val keySchema = StructType(
-      groupExpression.zipWithIndex
-        .map{case (k, i) => StructField(s"field$i", k.dataType, k.nullable)})
+      groupExpression.zipWithIndex.map{case (k, i) =>
+      StructField(s"field$i", k.dataType, k.nullable)})
 
     private val valSchema = new StructType()
       .add("counter", "int")
       .add("maxid", "long")
       .add("hasChange", "boolean")
+
     private val valueProj = UnsafeProjection.create(valSchema)
     private val valueRow = valueProj(new SpecificInternalRow(valSchema))
 
@@ -222,8 +225,10 @@ class SlothAggMetaMap (
         if (tmpValRow.getBoolean(hasChangeIndex)) {
           nonIncHasChange.zipWithIndex.foreach(pair => nonIncHasChange(pair._2) = true)
         }
-        new AggMetaData(tmpValRow.getInt(counterIndex), tmpValRow.getLong(maxIdIndex),
-          tmpValRow.getLong(maxIdIndex), nonIncHasChange)
+        new AggMetaData(tmpValRow.getInt(counterIndex),
+          tmpValRow.getLong(maxIdIndex),
+          tmpValRow.getLong(maxIdIndex),
+          nonIncHasChange)
       }
     }
 
@@ -279,10 +284,19 @@ class SlothAggMetaMap (
     /** Get the StateStore with the given schema */
     private def getStateStore(keySchema: StructType, valueSchema: StructType): StateStore = {
       val storeProviderId = StateStoreProviderId(
-        stateInfo.get, TaskContext.getPartitionId(), storeName)
+        stateInfo.get,
+        TaskContext.getPartitionId(),
+        storeName)
+
       val store = StateStore.get(
-        storeProviderId, keySchema, valueSchema, None,
-        stateInfo.get.storeVersion, storeConf, hadoopConf)
+        storeProviderId,
+        keySchema,
+        valueSchema,
+        None,
+        stateInfo.get.storeVersion,
+        storeConf,
+        hadoopConf)
+
       logInfo(s"Loaded store ${store.id}")
       store
     }

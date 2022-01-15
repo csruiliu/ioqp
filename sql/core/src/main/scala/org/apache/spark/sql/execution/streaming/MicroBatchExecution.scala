@@ -79,7 +79,7 @@ class MicroBatchExecution(
   var finalAggStartId = 300
 
   // SlothDB: Cost model
-  val slothCostModel = new SlothDBCostModel();
+  val slothCostModel = new SlothDBCostModel()
 
   override lazy val logicalPlan: LogicalPlan = {
     assert(queryExecutionThread eq Thread.currentThread,

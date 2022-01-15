@@ -248,7 +248,10 @@ object StateStoreProviderId {
       partitionIndex: Int,
       storeName: String): StateStoreProviderId = {
     val storeId = StateStoreId(
-      stateInfo.checkpointLocation, stateInfo.operatorId, partitionIndex, storeName)
+      stateInfo.checkpointLocation,
+      stateInfo.operatorId,
+      partitionIndex,
+      storeName)
     StateStoreProviderId(storeId, stateInfo.queryRunId)
   }
 }
@@ -366,7 +369,12 @@ object StateStore extends Logging {
       val provider = loadedProviders.getOrElseUpdate(
         storeProviderId,
         StateStoreProvider.createAndInit(
-          storeProviderId.storeId, keySchema, valueSchema, indexOrdinal, storeConf, hadoopConf)
+          storeProviderId.storeId,
+          keySchema,
+          valueSchema,
+          indexOrdinal,
+          storeConf,
+          hadoopConf)
       )
       reportActiveStoreInstance(storeProviderId)
       provider
