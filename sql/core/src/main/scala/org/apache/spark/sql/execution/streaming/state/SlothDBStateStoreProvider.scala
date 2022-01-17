@@ -272,7 +272,7 @@ private[state] class SlothDBStateStoreProvider extends StateStoreProvider with L
 
     if (loadedCurrentVersionMap.isDefined) {
       loadedMapCacheHitCount.increment()
-      return loadedCurrentVersionMap.get
+      loadedCurrentVersionMap.get
     } else {
       logWarning(s"The state for version $version doesn't exist in loadedMaps. " +
         "Reading snapshot file and delta files if needed..." +

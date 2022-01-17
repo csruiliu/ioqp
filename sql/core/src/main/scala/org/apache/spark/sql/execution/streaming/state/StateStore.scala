@@ -247,6 +247,7 @@ object StateStoreProviderId {
       stateInfo: StatefulOperatorStateInfo,
       partitionIndex: Int,
       storeName: String): StateStoreProviderId = {
+    println(stateInfo)
     val storeId = StateStoreId(
       stateInfo.checkpointLocation,
       stateInfo.operatorId,

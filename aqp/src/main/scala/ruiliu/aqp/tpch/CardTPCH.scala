@@ -83,58 +83,32 @@ class CardTPCH (bootstrap: String,
       .getOrCreate()
 
     query_name match {
-      case "q1" =>
-        execQ1(spark)
-      case "q2" =>
-        execQ2(spark)
-      case "q3" =>
-        execQ3(spark)
-      case "q4" =>
-        execQ4(spark)
-      case "q5" =>
-        execQ5(spark)
-      case "q6" =>
-        execQ6(spark)
-      case "q7" =>
-        execQ7(spark)
-      case "q8" =>
-        execQ8(spark)
-      case "q9" =>
-        execQ9(spark)
-      case "q10" =>
-        execQ10(spark)
-      case "q11" =>
-        execQ11(spark)
-      case "q12" =>
-        execQ12(spark)
-      case "q13" =>
-        execQ13(spark)
-      case "q14" =>
-        execQ14(spark)
-      case "q15" =>
-        execQ15(spark)
-      case "q16" =>
-        execQ16(spark)
-      case "q17" =>
-        execQ17(spark)
-      case "q18" =>
-        execQ18(spark)
-      case "q19" =>
-        execQ19(spark)
-      case "q20" =>
-        execQ20(spark)
-      case "q21" =>
-        execQ21(spark)
-      case "q22" =>
-        execQ22(spark)
-      case "q_highbalance" =>
-        execHighBalance(spark)
-      case "q_scan" =>
-        execScan(spark)
-      case "q_static" =>
-        execStatic(spark)
-      case _ =>
-        printf("Not yet supported %s\n", query)
+      case "q1" => execQ1(spark)
+      case "q2" => execQ2(spark)
+      case "q3" => execQ3(spark)
+      case "q4" => execQ4(spark)
+      case "q5" => execQ5(spark)
+      case "q6" => execQ6(spark)
+      case "q7" => execQ7(spark)
+      case "q8" => execQ8(spark)
+      case "q9" => execQ9(spark)
+      case "q10" => execQ10(spark)
+      case "q11" => execQ11(spark)
+      case "q12" => execQ12(spark)
+      case "q13" => execQ13(spark)
+      case "q14" => execQ14(spark)
+      case "q15" => execQ15(spark)
+      case "q16" => execQ16(spark)
+      case "q17" => execQ17(spark)
+      case "q18" => execQ18(spark)
+      case "q19" => execQ19(spark)
+      case "q20" => execQ20(spark)
+      case "q21" => execQ21(spark)
+      case "q22" => execQ22(spark)
+      case "q_highbalance" => execHighBalance(spark)
+      case "q_scan" => execScan(spark)
+      case "q_static" => execStatic(spark)
+      case _ => printf("Not yet supported %s\n", query)
     }
   }
 

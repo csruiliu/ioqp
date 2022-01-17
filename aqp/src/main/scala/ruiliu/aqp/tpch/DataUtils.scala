@@ -39,7 +39,7 @@ object DataUtils {
 
     printf("Table Sample Size %d\n", sampleSize)
 
-    return spark
+    spark
       .readStream
       .format("kafka")
       .option("kafka.bootstrap.servers", bootstrap)

@@ -68,7 +68,7 @@ class QueryTPCH(bootstrap: String,
 
   val enable_iOLAP = if (iOLAPConf == iOLAP_ON) "true" else "false"
 
-  def execQuery(query: String): Unit = {
+  def execQuery(): Unit = {
     query_name = query.toLowerCase
 
     val sparkConf = new SparkConf()
@@ -89,7 +89,7 @@ class QueryTPCH(bootstrap: String,
 
     val spark = SparkSession.builder()
       .config(sparkConf)
-      .appName("Executing Query " + query)
+      .appName("Executing Query " + query_name)
       .getOrCreate()
 
     val query_name_prefix = query_name.split("_")(0)
@@ -124,7 +124,7 @@ class QueryTPCH(bootstrap: String,
       case "q_outer" => execOuter(spark)
       case "q_agg" => execAgg(spark)
       case "q_aggjoin" => execAggJoin(spark)
-      case _ => printf("Not yet supported %s\n", query)
+      case _ => printf("Not yet supported %s\n", query_name_prefix)
     }
   }
 
@@ -140,6 +140,7 @@ class QueryTPCH(bootstrap: String,
     val avg_disc = new DoubleAvg
     val count_order = new Count
 
+    // set aggregation interval for aggregate operations
     avg_qty.setAggregationInterval(aggregation_interval)
     avg_qty.setAggregationSchemaName("avg_qty")
     avg_price.setAggregationInterval(aggregation_interval)
@@ -294,8 +295,7 @@ class QueryTPCH(bootstrap: String,
     val result = query_a.join(query_b, $"s_nationkey" === $"c_nationkey"
       and $"s_suppkey" === $"l_suppkey")
       .groupBy("n_name")
-      .agg(
-        sum_disc_price($"l_extendedprice", $"l_discount" ).alias("revenue"))
+      .agg(sum_disc_price($"l_extendedprice", $"l_discount" ).alias("revenue"))
     //  .orderBy(desc("revenue"))
 
     // result.explain(true)
@@ -345,8 +345,7 @@ class QueryTPCH(bootstrap: String,
       .select($"supp_nation", $"cust_nation", year($"l_shipdate").as("l_year"),
         $"l_extendedprice", $"l_discount")
       .groupBy("supp_nation", "cust_nation", "l_year")
-      .agg(
-        sum_disc_price($"l_extendedprice", $"l_discount").as("revenue"))
+      .agg(sum_disc_price($"l_extendedprice", $"l_discount").as("revenue"))
     //  .orderBy("supp_nation", "cust_nation", "l_year")
 
     // result.explain(true)
@@ -412,8 +411,7 @@ class QueryTPCH(bootstrap: String,
         (($"l_extendedprice" * ($"l_discount" - 1) * -1) - $"ps_supplycost" * $"l_quantity")
           .as("amount"))
       .groupBy("nation", "o_year")
-      .agg(
-        doubleSum($"amount").as("sum_profit"))
+      .agg(doubleSum($"amount").as("sum_profit"))
     //  .orderBy($"nation", desc("o_year"))
 
     // result.explain(true)
@@ -436,8 +434,7 @@ class QueryTPCH(bootstrap: String,
       .join(c, $"o_custkey" === $"c_custkey")
       .join(n, $"c_nationkey" === $"n_nationkey")
       .groupBy("c_custkey", "c_name", "c_acctbal", "c_phone", "n_name", "c_address", "c_comment")
-      .agg(
-        revenue($"l_extendedprice", $"l_discount").as("revenue"))
+      .agg(revenue($"l_extendedprice", $"l_discount").as("revenue"))
     //  .orderBy(desc("revenue"))
 
     // result.explain(true)
@@ -530,8 +527,7 @@ class QueryTPCH(bootstrap: String,
       .agg(
         c_count($"o_orderkey").as("c_count"))
       .groupBy($"c_count")
-      .agg(
-        custdist(lit(1)).as("custdist"))
+      .agg(custdist(lit(1)).as("custdist"))
     //  .orderBy(desc("custdist"), desc("c_count"))
 
     // result.explain(true)
@@ -1009,7 +1005,7 @@ object QueryTPCH {
       args(4), args(5).toDouble, args(6), args(7), args(8).toInt, args(9),
       args(10).toBoolean, args(11).toInt, args(12), args(13), args(14),
       args(15), args(16).toDouble, args(17).toInt, args(18).toInt)
-    tpch.execQuery(args(1))
+    tpch.execQuery()
   }
 }
 

@@ -30,6 +30,7 @@ import org.apache.spark.sql.execution.streaming.StatefulOperatorStateInfo
 import org.apache.spark.sql.execution.streaming.state._
 import org.apache.spark.sql.types._
 
+
 case class NonIncMetaPerExpr(aggExpr: AggregateExpression,
                              bufOffset: Int,
                              rowOffset: Int,
@@ -50,6 +51,7 @@ class SlothAggMetaMap (
     repairMode: Boolean) {
 
   private var hashMap = HashMap.empty[UnsafeRow, AggMetaData]
+  // private var hashMap = new mutable.HashMap[UnsafeRow, AggMetaData]()
   private val metaStore = new GroupKeytoMetaStore(groupExpressions,
     stateInfo, storeConf, hadoopConf, watermarkForKey, repairMode)
   private val counterIndex = 0
@@ -61,6 +63,7 @@ class SlothAggMetaMap (
              hadoopConf: Configuration,
              repairMode: Boolean): Unit = {
     hashMap = HashMap.empty[UnsafeRow, AggMetaData]
+    // hashMap = new mutable.HashMap[UnsafeRow, AggMetaData]()
     metaStore.reInit(stateInfo, storeConf, hadoopConf, repairMode)
   }
 
@@ -193,7 +196,12 @@ class SlothAggMetaMap (
     private val keySchema = StructType(
       groupExpression.zipWithIndex.map{case (k, i) =>
       StructField(s"field$i", k.dataType, k.nullable)})
-
+    /*
+    private val keySchema = new StructType()
+    for ((k, i) <- groupExpression.zipWithIndex) {
+      keySchema.add(StructField(s"field$i", k.dataType, k.nullable))
+    }
+    */
     private val valSchema = new StructType()
       .add("counter", "int")
       .add("maxid", "long")

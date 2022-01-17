@@ -24,7 +24,8 @@ import scala.collection.mutable
 
 abstract class SlothRuntime {}
 
-case class SlothRuntimeOpId(var operatorId: Long, var queryRunId: UUID)
+// case class SlothRuntimeOpId(var operatorId: Long, var queryRunId: UUID)
+class SlothRuntimeOpId(var operatorId: Long, var queryRunId: UUID)
 
 object SlothRuntimeCache {
 
