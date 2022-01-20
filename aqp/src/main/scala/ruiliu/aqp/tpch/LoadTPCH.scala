@@ -28,7 +28,7 @@ class LoadTPCH (bootstrap: String,
                 checkpoint: String,
                 largeDataset: Boolean) {
   TPCHSchema.datadir = data_root_dir
-  TPCHSchema.checkpointLocation = checkpoint
+  TPCHSchema.checkpointPath = checkpoint
   TPCHSchema.largeDataset = largeDataset
 
   def loadOneTable(tableName: String,
@@ -51,7 +51,7 @@ class LoadTPCH (bootstrap: String,
       .format("kafka")
       .option("topic", topics)
       .option("kafka.bootstrap.servers", bootstrap)
-      .option("checkpointLocation", TPCHSchema.checkpointLocation + "/" + tableName.toLowerCase)
+      .option("checkpointLocation", TPCHSchema.checkpointPath + "/" + tableName.toLowerCase)
       .start()
 
     query.awaitTermination()

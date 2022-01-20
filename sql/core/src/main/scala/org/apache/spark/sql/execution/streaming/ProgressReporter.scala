@@ -17,9 +17,7 @@
 
 package org.apache.spark.sql.execution.streaming
 
-import com.sun.management.OperatingSystemMXBean
 import java.io.{FileWriter, IOException, PrintWriter}
-import java.lang.management.ManagementFactory
 import java.text.SimpleDateFormat
 import java.util.{Date, NoSuchElementException, UUID}
 import scala.collection.JavaConverters._
@@ -92,9 +90,6 @@ trait ProgressReporter extends Logging {
   private val cpuLoadArray: ArrayBuffer[(Int, Array[Double])] =
     new ArrayBuffer[(Int, Array[Double])]()
 
-  private val osBean = ManagementFactory.getPlatformMXBean(
-      classOf[OperatingSystemMXBean])
-
   private val currentDurationsMs = new mutable.HashMap[String, Long]()
 
   /** Flag that signals whether any error with input metrics have already been logged */
@@ -166,64 +161,6 @@ trait ProgressReporter extends Logging {
     logInfo(s"Streaming query made progress: $newProgress")
   }
 
-  private def getCPULoad(): Double = {
-    osBean.getSystemCpuLoad
-  }
-
-  private def writeCPULoads(): Unit = {
-    val execution_mode = sparkSession.conf.get(SQLConf.SLOTHDB_EXECUTION_MODE).getOrElse(-1)
-    if (execution_mode == SlothDBContext.INCAWARE_PATH ||
-      execution_mode == SlothDBContext.INCOBLIVIOUS) {
-
-      val dir = slothdbStatDir
-      val cpuFile = dir + "/cpu.stat"
-      val cpuWriter = new PrintWriter(new FileWriter(cpuFile, true))
-
-      val total_time = sparkSession.conf.get(SQLConf.SLOTHDB_TOTAL_TIME).getOrElse(600000.0)
-      val max_batch_step = cpuLoadArray.last._1.toDouble
-
-      val time_step = 100.0
-      val max_time_step = total_time / (max_batch_step * time_step)
-
-      var curBatchIdx = 0
-      var curCPUIdx = 0
-      var executed: Boolean = false
-      var overallIdx: Int = 0
-      for (i <- 0 until max_batch_step.toInt) {
-        if (!executed && i >= cpuLoadArray(curBatchIdx)._1) {
-          executed = true
-          curCPUIdx = 0
-        }
-
-        for (j <- 0 until max_time_step.toInt) {
-          if (executed) {
-            cpuWriter.print(s"${overallIdx}\t${cpuLoadArray(curBatchIdx)._2(curCPUIdx)}\n")
-            curCPUIdx += 1
-
-            if (curCPUIdx == cpuLoadArray(curBatchIdx)._2.length) {
-              curBatchIdx += 1
-              executed = false
-            }
-
-          } else {
-            val cpuLoad = getCPULoad()
-            cpuWriter.print(s"${overallIdx}\t${cpuLoad}\n")
-          }
-          overallIdx += 1
-        }
-      }
-
-      // Last batch
-      val cpuArray = cpuLoadArray.last._2
-      for (i <- 0 until cpuArray.size) {
-        cpuWriter.print(s"${overallIdx}\t${cpuArray(i)}\n")
-        overallIdx += 1
-      }
-
-      cpuWriter.close()
-    }
-  }
-
   protected def slothDBWriteStats(slothDBCostModel: SlothDBCostModel): Unit = {
     var statFile: String = null
     var modelFile: String = null
@@ -258,35 +195,9 @@ trait ProgressReporter extends Logging {
         val max_step =
           sparkSession.conf.get(SQLConf.SLOTHDB_MAX_STEP).getOrElse(100)
 
-        // if (execution_mode != SlothDBContext.SLOTHINCSTAT) {
         pw.print(f"${name}\t${constraint}\t${max_step}\t${inc_aware}" +
             f"\t${shuffleNum}\t${inc_percentage}\t${totalTimeSec}%.2f\t${lastTimeSec}%.2f" +
             f"\t${totalRows}\n")
-        // } else {
-        //   val batchNum = sparkSession.conf.get(SQLConf.SLOTHDB_BATCH_NUM).getOrElse(1)
-        //   val estimatedPair = slothDBCostModel.estimateLatencyAndResource(batchNum)
-        //   val estimatedCardinality = slothDBCostModel.estimateCardinality(batchNum)
-        //   val realPair = slothDBCostModel.groundTruthLatencyAndResource(totalRows,
-        //     totalScanRows, finalRows, finalScanRows, batchNum)
-        //   pw.print(s"${name}\t${constraint}\t${currentBatchId}\t${inc_aware}" +
-        //     s"\t${estimatedPair._1}\t${estimatedPair._2}\t${estimatedCardinality}" +
-        //     s"\t${realPair._1}\t${realPair._2}\t${totalRows}\n")
-
-        //   // Stats for PostgreSQL
-        //   val postgreStatFile = dir + "/postgre.stat"
-        //   val postgreWriter = new PrintWriter(new FileWriter(postgreStatFile, true))
-        //   val estimatedCardArray = slothDBCostModel.estimateCardArray(batchNum)
-        //   val realCardArray = rowsArray.toArray
-        //   estimatedCardArray.zipWithIndex.foreach(pair => {
-        //     val idx = pair._2
-        //     val estimatedCard = pair._1
-        //     val realCard = realCardArray(idx)
-        //     postgreWriter
-        //       .print(s"${name}\t${currentBatchId}\t${idx}\t" +
-        //         s"${estimatedCard.toLong}\t${realCard}\n")
-        //   })
-        //   postgreWriter.close()
-        // }
 
         pw.close()
 
@@ -295,8 +206,6 @@ trait ProgressReporter extends Logging {
         val modelPW = new PrintWriter(new FileWriter(modelFile, false))
         modelPW.print(getCostModelInfo(slothSummarizedMetrics))
         modelPW.close()
-
-        // writeCPULoads()
       }
     } catch {
       case e: NoSuchElementException =>
@@ -327,7 +236,6 @@ trait ProgressReporter extends Logging {
     currentTriggerEndTimestamp = triggerClock.getTimeMillis()
 
     val executionStats = extractExecutionStats(hasNewData)
-
     val processingTimeSec = getProcessTime(curBatchStep)
 
     val inputTimeSec = if (lastTriggerStartTimestamp >= 0) {
@@ -364,11 +272,8 @@ trait ProgressReporter extends Logging {
       sink = sinkProgress)
 
     // Print out SlothDB Progress to console
-
     if (hasNewData) {
-
       totalTimeSec += processingTimeSec
-
       val slothProgress = new SlothDBProgress(
         id = id,
         runId = runId,
@@ -382,7 +287,6 @@ trait ProgressReporter extends Logging {
         sink = sinkProgress)
 
       printf(slothProgress.toString + "\n")
-      // printf(slothExtractRowMetricsWithStructure() + "\n")
 
       slothSummarizeRowMetrics()
 
@@ -400,9 +304,7 @@ trait ProgressReporter extends Logging {
         totalRows = triple._1
         totalScanRows = triple._2
       }
-
       rowsArray.append(outputRowsPostgres(slothSummarizedMetrics))
-
     }
 
     if (hasNewData) {
@@ -416,31 +318,11 @@ trait ProgressReporter extends Logging {
         updateProgress(newProgress)
       }
     }
-
     currentStatus = currentStatus.copy(isTriggerActive = false)
   }
 
-  private def slothRowProgress(plan: SparkPlan, indent: String): String = {
-    var retString: String = ""
-    plan match {
-      case metricsTracker: SlothMetricsTracker =>
-        retString = indent + metricsTracker.getRowProgress()
-        plan.children.foreach(child => retString += slothRowProgress(child, indent + "\t"))
-        retString
-      case _ =>
-        if (plan.children.nonEmpty) slothRowProgress(plan.children(0), indent)
-        else ""
-    }
-  }
-
-  private def slothExtractRowMetricsWithStructure(): String = {
-    if (lastExecution == null) return ""
-    slothRowProgress(lastExecution.executedPlan, "")
-  }
-
   private def populateSummarizedRowMetrics(plan: SparkPlan,
-                                           summarizedMetrics: SlothSummarizedMetrics):
-  Unit = {
+                                           summarizedMetrics: SlothSummarizedMetrics): Unit = {
     plan match {
       case _: SlothMetricsTracker =>
         val childrenMetrics = plan.children.map(child => {
@@ -477,11 +359,9 @@ trait ProgressReporter extends Logging {
   }
 
   private def updateSummarizedRowMetrics(plan: SparkPlan,
-                                         summarizedMetrics: SlothSummarizedMetrics):
-  Unit = {
+                                         summarizedMetrics: SlothSummarizedMetrics): Unit = {
      plan match {
       case metricsTracker: SlothMetricsTracker =>
-
         summarizedMetrics.updateMetrics(metricsTracker)
         plan.children.zipWithIndex.foreach(pair => {
           val childPlan = pair._1
@@ -506,13 +386,12 @@ trait ProgressReporter extends Logging {
     if (lastExecution == null) return
 
     val rootPlan = lastExecution.executedPlan
-    if (currentBatchId == 0) {
-      slothSummarizedMetrics = new SlothSummarizedMetrics()
+    if (currentBatchId == 0 || slothSummarizedMetrics == null) {
+      slothSummarizedMetrics = SlothSummarizedMetrics()
       populateSummarizedRowMetrics(rootPlan, slothSummarizedMetrics)
     }
 
     updateSummarizedRowMetrics(rootPlan, slothSummarizedMetrics)
-
     print(getSummarizedMetrics(slothSummarizedMetrics, ""))
   }
 

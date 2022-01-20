@@ -36,7 +36,8 @@ object TPCHSchema {
   val largeCustomerTopics = "Customer-Large"
   val largeOrdersTopics = "Orders-Large"
 
-  var checkpointLocation = "hdfs://localhost:9000/tpch_checkpoint"
+  // var checkpointLocation = "hdfs://localhost:9000/tpch_checkpoint"
+  var checkpointPath = "file:///home/tpch-checkpoint"
   var staticTableLocation = "hdfs://localhost:9000/tpch_static"
 
   val supplierSchema = new StructType().add("s_suppkey", "long")
@@ -206,14 +207,18 @@ object TPCHSchema {
                        SF: Double,
                        SR: Double,
                        hdfsRoot: String,
+                       static_dir: String,
                        inputPartition: Int,
-                       largeDataset: Boolean): Unit = {
-    numMiniBatch = numBatch
-    scaleFactor = SF
+                       largeDataset: Boolean,
+                       checkpoint_path: String): Unit = {
+    this.numMiniBatch = numBatch
+    this.scaleFactor = SF
     this.sampleRate = SR
-    checkpointLocation = hdfsRoot + "/tpch_checkpoint"
-    staticTableLocation = hdfsRoot + "/tpch_static"
-    partitions = inputPartition
+    // checkpointLocation = hdfsRoot + "/tpch_checkpoint"
+    // staticTableLocation = hdfsRoot + "/tpch_static"
+    this.checkpointPath = checkpoint_path
+    this.staticTableLocation = static_dir
+    this.partitions = inputPartition
     this.largeDataset = largeDataset
     this.hdfsRoot = hdfsRoot
   }

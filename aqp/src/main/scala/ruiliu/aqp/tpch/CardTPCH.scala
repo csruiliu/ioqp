@@ -54,7 +54,7 @@ class CardTPCH (bootstrap: String,
   val iOLAP_TRAINING = 2
 
   DataUtils.bootstrap = bootstrap
-  TPCHSchema.setQueryMetaData(numBatch, SF, SR, hdfsRoot, inputPartitions, largeDataset)
+  // TPCHSchema.setQueryMetaData(numBatch, SF, SR, hdfsRoot, inputPartitions, largeDataset)
 
   private var query_name: String = null
 

@@ -106,6 +106,7 @@ object DataUtils {
     val q = query_result
       .writeStream
       .outputMode("append")
+      .option("checkpointLocation", TPCHSchema.checkpointPath + "/" + query_name)
       .format("console")
       .trigger(Trigger.ProcessingTime(trigger_itvl, TimeUnit.MILLISECONDS))
       .queryName(query_name)
@@ -122,7 +123,7 @@ object DataUtils {
       .outputMode("append")
       .format("csv")
       .option("path", path)
-      .option("checkpointLocation", TPCHSchema.checkpointLocation + "/" + query_name)
+      .option("checkpointLocation", TPCHSchema.checkpointPath + "/" + query_name)
       .trigger(Trigger.ProcessingTime(100, TimeUnit.MILLISECONDS))
       .queryName(query_name)
       .start()

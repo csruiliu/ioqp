@@ -161,7 +161,7 @@ case class SlothSummarizedMetrics() {
 }
 
 class SlothProgressMetrics (val shortName: String,
-                       val metricMap: ju.Map[String, JLong]) {
+                            val metricMap: ju.Map[String, JLong]) {
   /** The compact JSON representation of this progress. */
   def json: String = compact(render(jsonValue))
 
@@ -185,8 +185,7 @@ class SlothProgressMetrics (val shortName: String,
 trait SlothMetricsTracker extends SparkPlan { self: SparkPlan =>
 
   def getProgress(): SlothProgressMetrics = {
-    val extractedMetrics = metrics.map(
-      entry => entry._1 -> longMetric(entry._1).value)
+    val extractedMetrics = metrics.map(entry => entry._1 -> longMetric(entry._1).value)
 
     val javaMetrics: java.util.HashMap[String, java.lang.Long] =
       new java.util.HashMap(extractedMetrics.mapValues(long2Long).asJava)

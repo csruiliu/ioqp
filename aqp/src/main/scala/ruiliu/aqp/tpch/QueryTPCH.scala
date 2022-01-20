@@ -29,6 +29,7 @@ class QueryTPCH(bootstrap: String,
                 numBatch: Int,
                 shuffleNum: String,
                 statDIR: String,
+                staticDIR: String,
                 SF: Double,
                 hdfsRoot: String,
                 execution_mode: String,
@@ -42,7 +43,8 @@ class QueryTPCH(bootstrap: String,
                 sampleTime: String,
                 SR: Double,
                 trigger_interval: Int,
-                aggregation_interval: Int) {
+                aggregation_interval: Int,
+                checkpoint_path: String) {
 
   val iOLAP_Q11_src = "/q11_config.csv"
   val iOLAP_Q17_src = "/q17_config.csv"
@@ -61,8 +63,11 @@ class QueryTPCH(bootstrap: String,
   val iOLAP_TRAINING = 2
 
   DataUtils.bootstrap = bootstrap
-  TPCHSchema.setQueryMetaData(numBatch, SF, SR, hdfsRoot, inputPartitions, largeDataset)
-  printf("Sample Rate %f\n", SR)
+
+  TPCHSchema.setQueryMetaData(numBatch, SF, SR, hdfsRoot, staticDIR,
+    inputPartitions, largeDataset, checkpoint_path)
+  printf("Checkpoint Path: %s\n", TPCHSchema.checkpointPath)
+  printf("Sample Rate: %f\n", SR)
 
   private var query_name: String = null
 
@@ -87,10 +92,15 @@ class QueryTPCH(bootstrap: String,
     if (digit_constraint <= 1.0) sparkConf.set(SQLConf.SLOTHDB_LATENCY_CONSTRAINT.key, constraint)
     else sparkConf.set(SQLConf.SLOTHDB_RESOURCE_CONSTRAINT.key, constraint)
 
+    // set checkpoint location
+    // sparkConf.set(SQLConf.CHECKPOINT_LOCATION.key, TPCHSchema.checkpointPath + "/" + query_name)
+
     val spark = SparkSession.builder()
       .config(sparkConf)
       .appName("Executing Query " + query_name)
       .getOrCreate()
+
+    // spark.sparkContext.setCheckpointDir(TPCHSchema.checkpointPath + "/" + query_name)
 
     val query_name_prefix = query_name.split("_")(0)
 
@@ -992,19 +1002,19 @@ class QueryTPCH(bootstrap: String,
 object QueryTPCH {
   def main(args: Array[String]): Unit = {
 
-    if (args.length < 19) {
+    if (args.length < 21) {
       System.err.println("Usage: QueryTPCH" +
         "<bootstrap-servers> <query> <numBatch> <number-shuffle-partition> <statistics dir>" +
-        "<SF> <HDFS root> <execution mode> <num of input partitions> <performance constraint>" +
+        "<statistics dir> <SF> <HDFS root> <execution mode> <num of input partitions> <performance constraint>" +
         "<large dataset> <iOLAP Config> <inc_pct> <cost model bias> <max step> <sample time>" +
-        "<sample rate> <trigger interval> <aggregation interval>")
+        "<sample rate> <trigger interval> <aggregation interval> <checkpoint>")
       System.exit(1)
     }
 
     val tpch = new QueryTPCH(args(0), args(1), args(2).toInt, args(3),
-      args(4), args(5).toDouble, args(6), args(7), args(8).toInt, args(9),
-      args(10).toBoolean, args(11).toInt, args(12), args(13), args(14),
-      args(15), args(16).toDouble, args(17).toInt, args(18).toInt)
+      args(4), args(5), args(6).toDouble, args(7), args(8), args(9).toInt,
+      args(10), args(11).toBoolean, args(12).toInt, args(13), args(14), args(15),
+      args(16), args(17).toDouble, args(18).toInt, args(19).toInt, args(20))
     tpch.execQuery()
   }
 }
