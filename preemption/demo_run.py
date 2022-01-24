@@ -1,7 +1,6 @@
 import argparse
 from common.workload_builder import WorkloadBuilder
-from rotary.scheduler import Rotary
-from relaqs.scheduler import ReLAQS
+from schduler import Scheduler
 from common.constants import RuntimeConstants
 
 
@@ -11,7 +10,7 @@ def main():
                         help='indicate the number of cpu cores for processing')
     parser.add_argument('-w', '--workload_size', action='store', type=int, default=1,
                         help='indicate the size of aqp workload')
-    parser.add_argument('-s', '--schedule_slot', action='store', type=int, default=10,
+    parser.add_argument('-s', '--schedule_slot', action='store', type=int, default=100,
                         help='time period of each schedule slot [unit: second]')
     parser.add_argument('-p', '--preemption', action='store', type=str, default='rotary',
                         help='the preemption mechanism working on ')
@@ -35,9 +34,9 @@ def main():
         print(f"job: {job.name}, {job.deadline}, {job.accuracy_threshold}, {job.current_step}")
 
     if preemption_name == 'rotary':
-        sched_preemption = Rotary(aqp_workload, num_core, schedule_slot, RuntimeConstants)
+        sched_preemption = Scheduler(aqp_workload, num_core, schedule_slot, RuntimeConstants)
     else:
-        sched_preemption = ReLAQS(aqp_workload, num_core, schedule_slot)
+        sched_preemption = Scheduler(aqp_workload, num_core, schedule_slot)
 
     sched_preemption.run()
 

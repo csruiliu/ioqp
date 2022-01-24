@@ -84,3 +84,9 @@ class RuntimeConstants:
 
     # checkpoint path
     CHECKPOINT_PATH = 'file:///home/tpch-checkpoint'
+
+    # stdout path redirection
+    STDOUT_PATH = '/home/stdout'
+
+    # stdout path redirection
+    STDERR_PATH = '/home/stderr'
