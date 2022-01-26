@@ -20,6 +20,7 @@ package org.apache.spark.sql.execution.streaming
 import java.io.{FileWriter, IOException, PrintWriter}
 import java.text.SimpleDateFormat
 import java.util.{Date, NoSuchElementException, UUID}
+
 import scala.collection.JavaConverters._
 import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer

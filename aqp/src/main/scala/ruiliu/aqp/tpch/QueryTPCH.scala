@@ -88,8 +88,6 @@ class QueryTPCH(bootstrap: String,
       .set(SQLConf.SLOTHDB_MAX_STEP.key, maxStep)
       .set(SQLConf.SLOTHDB_SAMPLE_TIME.key, sampleTime)
 
-    printf("app id: %s\n", sparkConf.getAppId)
-
     val digit_constraint = constraint.toDouble
     if (digit_constraint <= 1.0) sparkConf.set(SQLConf.SLOTHDB_LATENCY_CONSTRAINT.key, constraint)
     else sparkConf.set(SQLConf.SLOTHDB_RESOURCE_CONSTRAINT.key, constraint)
@@ -102,6 +100,7 @@ class QueryTPCH(bootstrap: String,
       .appName("Executing Query " + query_name)
       .getOrCreate()
 
+    printf("APPID:%s\n", spark.sparkContext.applicationId)
     // spark.sparkContext.setCheckpointDir(TPCHSchema.checkpointPath + "/" + query_name)
     val query_name_prefix = query_name.split("_")(0)
 
