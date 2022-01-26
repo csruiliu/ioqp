@@ -24,6 +24,20 @@ import org.apache.spark.sql.types._
 
 // sum over double
 class DoubleSum extends UserDefinedAggregateFunction {
+  var startTime: Long = System.currentTimeMillis()
+  var currentTime: Long = startTime
+
+  var aggregationSchemaName: String = _
+  var aggregationInterval: Int = 0
+
+  def setAggregationInterval(inputInterval: Int): Unit = {
+    this.aggregationInterval = inputInterval
+  }
+
+  def setAggregationSchemaName(inputSchemaName: String): Unit = {
+    this.aggregationSchemaName = inputSchemaName
+  }
+
   override def inputSchema: StructType = StructType(StructField("double", DoubleType) :: Nil)
 
   override def bufferSchema: StructType = StructType(StructField("sum", DoubleType) :: Nil)
@@ -38,6 +52,15 @@ class DoubleSum extends UserDefinedAggregateFunction {
 
   override def update(buffer: MutableAggregationBuffer, input: Row): Unit = {
     buffer(0) = buffer.getDouble(0) + input.getDouble(0)
+
+    this.currentTime = System.currentTimeMillis()
+
+    if (this.aggregationInterval != 0 && this.currentTime - this.startTime > this.aggregationInterval) {
+      println("Aggregation|Sum|%s|%.3f|%d".format(
+        this.aggregationSchemaName, buffer.getDouble(0), this.currentTime)
+      )
+      this.startTime = System.currentTimeMillis()
+    }
   }
 
   override def delete(buffer: MutableAggregationBuffer, input: Row): Unit = {
@@ -55,9 +78,8 @@ class DoubleSum extends UserDefinedAggregateFunction {
 
 // Avg over double
 class DoubleAvg extends UserDefinedAggregateFunction {
-
-  var startTime = System.currentTimeMillis()
-  var currentTime = startTime
+  var startTime: Long = System.currentTimeMillis()
+  var currentTime: Long = startTime
 
   var aggregationSchemaName: String = _
   var aggregationInterval: Int = 0
@@ -92,7 +114,7 @@ class DoubleAvg extends UserDefinedAggregateFunction {
     this.currentTime = System.currentTimeMillis()
 
     if (this.aggregationInterval != 0 && this.currentTime - this.startTime > this.aggregationInterval) {
-      println("Avg Aggregation on %s: %.3f at %d".format(
+      println("Aggregation|Average|%s|%.3f|%d".format(
         this.aggregationSchemaName, buffer.getDouble(1)/buffer.getDouble(0), this.currentTime)
       )
       this.startTime = System.currentTimeMillis()
@@ -116,6 +138,20 @@ class DoubleAvg extends UserDefinedAggregateFunction {
 
 // Count
 class Count extends UserDefinedAggregateFunction {
+  var startTime: Long = System.currentTimeMillis()
+  var currentTime: Long = startTime
+
+  var aggregationSchemaName: String = _
+  var aggregationInterval: Int = 0
+
+  def setAggregationInterval(inputInterval: Int): Unit = {
+    this.aggregationInterval = inputInterval
+  }
+
+  def setAggregationSchemaName(inputSchemaName: String): Unit = {
+    this.aggregationSchemaName = inputSchemaName
+  }
+
   override def inputSchema: StructType = StructType(StructField("input", IntegerType) :: Nil)
 
   override def bufferSchema: StructType = StructType(StructField("count", IntegerType) :: Nil)
@@ -130,6 +166,15 @@ class Count extends UserDefinedAggregateFunction {
 
   override def update(buffer: MutableAggregationBuffer, input: Row): Unit = {
     buffer(0) = buffer.getInt(0) + 1
+
+    this.currentTime = System.currentTimeMillis()
+
+    if (this.aggregationInterval != 0 && this.currentTime - this.startTime > this.aggregationInterval) {
+      println("Aggregation|Count|%s|%d|%d".format(
+        this.aggregationSchemaName, buffer.getInt(0), this.currentTime)
+      )
+      this.startTime = System.currentTimeMillis()
+    }
   }
 
   override def delete(buffer: MutableAggregationBuffer, input: Row): Unit = {
@@ -178,7 +223,21 @@ class Count_not_null extends UserDefinedAggregateFunction {
 
 // sum(l_extendedprice * (1 - l_discount))
 class Sum_disc_price extends UserDefinedAggregateFunction {
-     // This is the input fields for your aggregate function.
+  var startTime: Long = System.currentTimeMillis()
+  var currentTime: Long = startTime
+
+  var aggregationSchemaName: String = _
+  var aggregationInterval: Int = 0
+
+  def setAggregationInterval(inputInterval: Int): Unit = {
+    this.aggregationInterval = inputInterval
+  }
+
+  def setAggregationSchemaName(inputSchemaName: String): Unit = {
+    this.aggregationSchemaName = inputSchemaName
+  }
+
+  // This is the input fields for your aggregate function.
   override def inputSchema: StructType = StructType(StructField("l_extendedprice", DoubleType) ::
     StructField("l_discount", DoubleType) :: Nil)
 
@@ -197,7 +256,16 @@ class Sum_disc_price extends UserDefinedAggregateFunction {
 
   // This is how to update your buffer schema given an input.
   override def update(buffer: MutableAggregationBuffer, input: Row): Unit = {
-      buffer(0) = buffer.getAs[Double](0) + input.getAs[Double](0) * (1 - input.getAs[Double](1))
+    buffer(0) = buffer.getAs[Double](0) + input.getAs[Double](0) * (1 - input.getAs[Double](1))
+
+    this.currentTime = System.currentTimeMillis()
+
+    if (this.aggregationInterval != 0 && this.currentTime - this.startTime > this.aggregationInterval) {
+      println("Aggregation|Count|%s|%.3f|%d".format(
+        this.aggregationSchemaName, buffer.getDouble(0), this.currentTime)
+      )
+      this.startTime = System.currentTimeMillis()
+    }
   }
 
   override def delete(buffer: MutableAggregationBuffer, input: Row): Unit = {
@@ -217,7 +285,21 @@ class Sum_disc_price extends UserDefinedAggregateFunction {
 
 // sum(l_extendedprice * (1 - l_discount)) * (tax + 1)
 class Sum_disc_price_with_tax extends UserDefinedAggregateFunction {
-     // This is the input fields for your aggregate function.
+  var startTime: Long = System.currentTimeMillis()
+  var currentTime: Long = startTime
+
+  var aggregationSchemaName: String = _
+  var aggregationInterval: Int = 0
+
+  def setAggregationInterval(inputInterval: Int): Unit = {
+    this.aggregationInterval = inputInterval
+  }
+
+  def setAggregationSchemaName(inputSchemaName: String): Unit = {
+    this.aggregationSchemaName = inputSchemaName
+  }
+
+  // This is the input fields for your aggregate function.
   override def inputSchema: StructType =
     StructType(StructField("l_extendedprice", DoubleType) ::
       StructField("l_discount", DoubleType) ::
@@ -238,9 +320,18 @@ class Sum_disc_price_with_tax extends UserDefinedAggregateFunction {
 
   // This is how to update your buffer schema given an input.
   override def update(buffer: MutableAggregationBuffer, input: Row): Unit = {
-      buffer(0) = buffer.getDouble(0) +
+    buffer(0) = buffer.getDouble(0) +
         input.getDouble(0) * (1 - input.getDouble(1)) *
         (1 + input.getDouble(2))
+
+    this.currentTime = System.currentTimeMillis()
+
+    if (this.aggregationInterval != 0 && this.currentTime - this.startTime > this.aggregationInterval) {
+      println("Aggregation|Count|%s|%.3f|%d".format(
+        this.aggregationSchemaName, buffer.getDouble(0), this.currentTime)
+      )
+      this.startTime = System.currentTimeMillis()
+    }
   }
 
   override def delete(buffer: MutableAggregationBuffer, input: Row): Unit = {

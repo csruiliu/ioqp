@@ -151,17 +151,25 @@ class QueryTPCH(bootstrap: String,
     val count_order = new Count
 
     // set aggregation interval for aggregate operations
+    sum_qty.setAggregationInterval(aggregation_interval)
+    sum_qty.setAggregationSchemaName("sum_qty")
+    sum_base_price.setAggregationInterval(aggregation_interval)
+    sum_base_price.setAggregationSchemaName("sum_base_price")
+    sum_disc_price.setAggregationInterval(aggregation_interval)
+    sum_disc_price.setAggregationSchemaName("sum_disc_price")
+    sum_charge.setAggregationInterval(aggregation_interval)
+    sum_charge.setAggregationSchemaName("sum_charge")
     avg_qty.setAggregationInterval(aggregation_interval)
     avg_qty.setAggregationSchemaName("avg_qty")
     avg_price.setAggregationInterval(aggregation_interval)
     avg_price.setAggregationSchemaName("avg_price")
     avg_disc.setAggregationInterval(aggregation_interval)
     avg_disc.setAggregationSchemaName("avg_disc")
+    count_order.setAggregationInterval(aggregation_interval)
+    count_order.setAggregationSchemaName("count_order")
 
     val l = DataUtils.loadStreamTable(spark, "lineitem", "l")
-
     val l_sampled = l.sample(false, SR, 42)
-
     val result = l_sampled.filter($"l_shipdate" <= "1998-09-01")
       .select($"l_returnflag", $"l_linestatus", $"l_quantity", $"l_extendedprice", $"l_discount", $"l_tax")
       .groupBy($"l_returnflag", $"l_linestatus")
@@ -236,6 +244,10 @@ class QueryTPCH(bootstrap: String,
 
     val sum_disc_price = new Sum_disc_price
 
+    //set agg interval and name
+    sum_disc_price.setAggregationInterval(aggregation_interval)
+    sum_disc_price.setAggregationSchemaName("revenue")
+
     val c = DataUtils.loadStreamTable(spark, "customer", "c")
       .filter($"c_mktsegment" === "BUILDING")
     val o = DataUtils.loadStreamTable(spark, "orders", "o")
@@ -286,6 +298,10 @@ class QueryTPCH(bootstrap: String,
 
     val sum_disc_price = new Sum_disc_price
 
+    //set agg interval and name
+    sum_disc_price.setAggregationInterval(aggregation_interval)
+    sum_disc_price.setAggregationSchemaName("revenue")
+
     val c = DataUtils.loadStreamTable(spark, "customer", "c")
     val o = DataUtils.loadStreamTable(spark, "orders", "o")
       .filter($"o_orderdate" >= "1994-01-01" and $"o_orderdate" < "1995-01-01")
@@ -317,6 +333,10 @@ class QueryTPCH(bootstrap: String,
     import spark.implicits._
 
     val doubleSum = new DoubleSum
+
+    //set agg interval and name
+    doubleSum.setAggregationInterval(aggregation_interval)
+    doubleSum.setAggregationSchemaName("revenue")
 
     val l = DataUtils.loadStreamTable(spark, "lineitem", "l")
       .filter(($"l_shipdate" between("1994-01-01", "1995-01-01"))
@@ -456,6 +476,10 @@ class QueryTPCH(bootstrap: String,
 
     val doubleSum = new DoubleSum
 
+    //set agg interval and name
+    doubleSum.setAggregationInterval(aggregation_interval)
+    doubleSum.setAggregationSchemaName("subquery_small_value")
+
     val ps = DataUtils.loadStreamTable(spark, "partsupp", "ps")
     val s = DataUtils.loadStreamTable(spark, "supplier", "s")
     val n = DataUtils.loadStreamTable(spark, "nation", "n")
@@ -471,6 +495,10 @@ class QueryTPCH(bootstrap: String,
     import spark.implicits._
 
     val doubleSum = new DoubleSum
+
+    // set agg interval and name
+    doubleSum.setAggregationInterval(aggregation_interval)
+    doubleSum.setAggregationSchemaName("value")
 
     val ps = DataUtils.loadStreamTable(spark, "partsupp", "ps")
     val s = DataUtils.loadStreamTable(spark, "supplier", "s")
@@ -603,6 +631,10 @@ class QueryTPCH(bootstrap: String,
 
     val supplier_cnt = new Count
 
+    // set agg interval and name
+    supplier_cnt.setAggregationInterval(aggregation_interval)
+    supplier_cnt.setAggregationSchemaName("supplier_cnt")
+
     val ps = DataUtils.loadStreamTable(spark, "partsupp", "ps")
 
     val p = DataUtils.loadStreamTable(spark, "part", "part")
@@ -711,6 +743,10 @@ class QueryTPCH(bootstrap: String,
     import spark.implicits._
 
     val sum_disc_price = new Sum_disc_price
+
+    // set agg interval and name
+    sum_disc_price.setAggregationInterval(aggregation_interval)
+    sum_disc_price.setAggregationSchemaName("revenue")
 
     val l = DataUtils.loadStreamTable(spark, "lineitem", "l")
       .filter(($"l_shipmode" isin("AIR", "AIR REG"))
