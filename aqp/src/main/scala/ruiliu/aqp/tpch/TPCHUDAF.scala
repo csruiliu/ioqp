@@ -56,7 +56,7 @@ class DoubleSum extends UserDefinedAggregateFunction {
     this.currentTime = System.currentTimeMillis()
 
     if (this.aggregationInterval != 0 && this.currentTime - this.startTime > this.aggregationInterval) {
-      println("Aggregation|Sum|%s|%.3f|%d".format(
+      println("Aggregation|%s|%.3f|%d".format(
         this.aggregationSchemaName, buffer.getDouble(0), this.currentTime)
       )
       this.startTime = System.currentTimeMillis()
@@ -114,7 +114,7 @@ class DoubleAvg extends UserDefinedAggregateFunction {
     this.currentTime = System.currentTimeMillis()
 
     if (this.aggregationInterval != 0 && this.currentTime - this.startTime > this.aggregationInterval) {
-      println("Aggregation|Average|%s|%.3f|%d".format(
+      println("Aggregation|%s|%.3f|%d".format(
         this.aggregationSchemaName, buffer.getDouble(1)/buffer.getDouble(0), this.currentTime)
       )
       this.startTime = System.currentTimeMillis()
@@ -170,7 +170,7 @@ class Count extends UserDefinedAggregateFunction {
     this.currentTime = System.currentTimeMillis()
 
     if (this.aggregationInterval != 0 && this.currentTime - this.startTime > this.aggregationInterval) {
-      println("Aggregation|Count|%s|%d|%d".format(
+      println("Aggregation|%s|%d|%d".format(
         this.aggregationSchemaName, buffer.getInt(0), this.currentTime)
       )
       this.startTime = System.currentTimeMillis()
@@ -261,7 +261,7 @@ class Sum_disc_price extends UserDefinedAggregateFunction {
     this.currentTime = System.currentTimeMillis()
 
     if (this.aggregationInterval != 0 && this.currentTime - this.startTime > this.aggregationInterval) {
-      println("Aggregation|Count|%s|%.3f|%d".format(
+      println("Aggregation|%s|%.3f|%d".format(
         this.aggregationSchemaName, buffer.getDouble(0), this.currentTime)
       )
       this.startTime = System.currentTimeMillis()
@@ -327,7 +327,7 @@ class Sum_disc_price_with_tax extends UserDefinedAggregateFunction {
     this.currentTime = System.currentTimeMillis()
 
     if (this.aggregationInterval != 0 && this.currentTime - this.startTime > this.aggregationInterval) {
-      println("Aggregation|Count|%s|%.3f|%d".format(
+      println("Aggregation|%s|%.3f|%d".format(
         this.aggregationSchemaName, buffer.getDouble(0), this.currentTime)
       )
       this.startTime = System.currentTimeMillis()

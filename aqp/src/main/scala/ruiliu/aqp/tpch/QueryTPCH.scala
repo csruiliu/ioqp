@@ -71,7 +71,7 @@ class QueryTPCH(bootstrap: String,
 
   private var query_name: String = null
 
-  val enable_iOLAP = if (iOLAPConf == iOLAP_ON) "true" else "false"
+  val enable_iOLAP: String = if (iOLAPConf == iOLAP_ON) "true" else "false"
 
   def execQuery(): Unit = {
     query_name = query.toLowerCase
