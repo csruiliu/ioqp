@@ -90,3 +90,28 @@ class RuntimeConstants:
 
     # stdout path redirection
     STDERR_PATH = '/home/stderr'
+
+    # saprk work path
+    SPARK_WORK_PATH = '/usr/local/spark/spark-2.4.0-bin-hadoop2.6/work'
+
+    # tpch-q1 agg schema
+    Q1_AGG_COL = ['sum_qty', 'sum_base_price', 'sum_disc_price', 'sum_charge',
+                  'avg_qty', 'avg_price', 'avg_disc', 'count_order']
+
+    # tpch-q3 agg schema
+    Q3_AGG_COL = ['revenue']
+
+    # tpch-q5 agg schema
+    Q5_AGG_COL = ['revenue']
+
+    # tpch-q6 agg schema
+    Q6_AGG_COL = ['revenue']
+
+    # tpch-q11 agg schema
+    Q11_AGG_COL = ['value']
+
+    # tpch-q16 agg schema
+    Q16_AGG_COL = ['supplier_cnt']
+
+    # tpch-q19 agg schema
+    Q19_AGG_COL = ['revenue']
