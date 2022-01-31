@@ -30,4 +30,3 @@ class WorkloadBuilder:
             workload.append(job)
 
         return workload
-

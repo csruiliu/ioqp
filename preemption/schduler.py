@@ -3,15 +3,59 @@ import os
 import subprocess
 import numpy as np
 from pathlib import Path
+from common.file_utils import (read_curstep_from_file,
+                               read_appid_from_file,
+                               read_aggresult_from_file)
 
 
 class Scheduler:
-    def __init__(self, workload, num_cores, slot, constants):
+    def __init__(self, workload, num_cores, slot, constants, estimator):
         self.workload = workload
         self.workload_size = len(workload)
         self.num_cores = num_cores
         self.schedule_slot = slot
         self.runtime_constants = constants
+        self.estimator = estimator
+
+        #######################################################
+        # prepare everything necessary
+        #######################################################
+
+        # self.job_runtime_dict = dict()
+        self.job_step_dict = dict()
+        self.job_agg_result_dict = dict()
+
+        for job_item in self.workload:
+            job_item_key = job_item.job_id
+            self.job_step_dict[job_item_key] = 0
+            self.job_agg_result_dict[job_item_key] = list()
+
+    @staticmethod
+    def delete_dir(dir_name):
+        if Path(dir_name).is_dir():
+            for f in Path(dir_name).iterdir():
+                if f.is_file():
+                    f.unlink()
+
+            Path(dir_name).rmdir()
+
+    def get_agg_schema(self, job_id):
+        if job_id.startswith('q1'):
+            return self.runtime_constants.Q1_AGG_COL
+        elif job_id.startswith('q3'):
+            return self.runtime_constants.Q3_AGG_COL
+        elif job_id.startswith('q5'):
+            return self.runtime_constants.Q5_AGG_COL
+        elif job_id.startswith('q6'):
+            return self.runtime_constants.Q6_AGG_COL
+        elif job_id.startswith('q11'):
+            return self.runtime_constants.Q11_AGG_COL
+        elif job_id.startswith('q16'):
+            return self.runtime_constants.Q16_AGG_COL
+        elif job_id.startswith('q19'):
+            return self.runtime_constants.Q19_AGG_COL
+        else:
+            ValueError('The query is not supported')
 
     def generate_job_cmd(self, res_unit, job_name):
         command = ('$SPARK_HOME/bin/spark-submit' +
@@ -45,21 +89,12 @@ class Scheduler:
 
         return command
 
-    @staticmethod
-    def delete_dir(dir_name):
-        if Path(dir_name).is_dir():
-            for f in Path(dir_name).iterdir():
-                if f.is_file():
-                    f.unlink()
-
-            Path(dir_name).rmdir()
-
     def create_job(self, job, resource_unit):
-        self.generate_job_cmd(resource_unit, job.name)
-        stdout_file = open(self.runtime_constants.STDOUT_PATH + '/' + job.name + '.stdout', "a+")
-        stderr_file = open(self.runtime_constants.STDERR_PATH + '/' + job.name + '.stderr', "a+")
+        self.generate_job_cmd(resource_unit, job.job_id)
+        stdout_file = open(self.runtime_constants.STDOUT_PATH + '/' + job.job_id + '.stdout', "a+")
+        stderr_file = open(self.runtime_constants.STDERR_PATH + '/' + job.job_id + '.stderr', "a+")
 
-        job_cmd = self.generate_job_cmd(resource_unit, job.name)
+        job_cmd = self.generate_job_cmd(resource_unit, job.job_id)
         subp = subprocess.Popen(job_cmd,
                                 bufsize=0,
                                 stdout=stdout_file,
@@ -95,6 +130,24 @@ class Scheduler:
             for sp, sp_out, sp_err in subprocess_list:
                 self.stop_job(sp, sp_out, sp_err)
 
+
+            for job in self.workload:
+                job_id = job.job_id
+                job_stdout_file = self.runtime_constants.STDOUT_PATH + job_id + '.stdout'
+                self.job_step_dict[job_id] = read_curstep_from_file(job_stdout_file)
+                app_id = read_appid_from_file(job_id + '.stdout')
+
+                app_stdout_file = self.runtime_constants.SPARK_WORK_PATH + '/' + app_id + '/0/stdout'
+                agg_schema_list = self.get_agg_schema(job_id)
+
+                for schema_name in agg_schema_list:
+                    agg_results_dict = read_aggresult_from_file(app_stdout_file, agg_schema_list)
+                    agg_results_dict.get(schema_name)
+                    
+
+                # self.job_runtime_dict[job_name] =
+
+
         # less resource than workload size
         else:
             resource_unit = 1
@@ -112,6 +165,11 @@ class Scheduler:
                 for sp, sp_out, sp_err in subprocess_list:
                     self.stop_job(sp, sp_out, sp_err)
 
+                for jidx in np.arange(self.num_cores):
+                    job = self.workload[tidx + jidx]
+                    job_name = job.job_id
+                    self.job_step_dict[job_name] = read_curstep_from_file(job_name + '.stdout')
+
             if trial_rest != 0:
                 for jidx in np.arange(trial_rest):
                     job = self.workload[trial_num * self.num_cores + jidx]
@@ -121,9 +179,17 @@ class Scheduler:
                 for sp, sp_out, sp_err in subprocess_list:
                     self.stop_job(sp, sp_out, sp_err)
 
+                for jidx in np.arange(trial_rest):
+                    job = self.workload[trial_num * self.num_cores + jidx]
+                    job_name = job.job_id
+                    self.job_step_dict[job_name] = read_curstep_from_file(job_name + '.stdout')
+
     def process_job(self):
-        pass
+        selected_jobs = self.estimator.predict()
 
     def run(self):
+        # process each job for one schedule slot
         self.process_job_trial()
 
+    def output(self):
+        pass

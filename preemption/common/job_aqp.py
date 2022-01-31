@@ -1,19 +1,19 @@
 
 
 class JobAQP:
-    def __init__(self, name, accuracy_threshold, deadline):
-        self._name = name
+    def __init__(self, job_id, accuracy_threshold, deadline):
+        self._job_id = job_id
         self._accuracy_threshold = accuracy_threshold
         self._deadline = deadline
         self._current_step = 0
 
     @property
-    def name(self):
-        return self._name
+    def job_id(self):
+        return self._job_id
 
-    @name.setter
-    def name(self, value):
-        self._name = value
+    @job_id.setter
+    def job_id(self, value):
+        self._job_id = value
 
     @property
     def accuracy_threshold(self):

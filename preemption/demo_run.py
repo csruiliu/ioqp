@@ -1,7 +1,9 @@
 import argparse
 from common.workload_builder import WorkloadBuilder
-from schduler import Scheduler
 from common.constants import RuntimeConstants
+from schduler import Scheduler
+from estimator.rotary_estimator import RotaryEstimator
+from estimator.relaqs_estimator import ReLAQSEstimator
 
 
 def main():
@@ -31,12 +33,12 @@ def main():
     aqp_workload = workload_builder.generate_workload_aqp()
 
     for job in aqp_workload:
-        print(f"job: {job.name}, {job.deadline}, {job.accuracy_threshold}, {job.current_step}")
+        print(f"job: {job.job_id}, {job.deadline}, {job.accuracy_threshold}, {job.current_step}")
 
     if preemption_name == 'rotary':
-        sched_preemption = Scheduler(aqp_workload, num_core, schedule_slot, RuntimeConstants)
+        sched_preemption = Scheduler(aqp_workload, num_core, schedule_slot, RuntimeConstants, RotaryEstimator)
     else:
-        sched_preemption = Scheduler(aqp_workload, num_core, schedule_slot)
+        sched_preemption = Scheduler(aqp_workload, num_core, schedule_slot, RuntimeConstants, ReLAQSEstimator)
 
     sched_preemption.run()
 
