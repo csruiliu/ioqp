@@ -1,3 +1,15 @@
+import json
+from pathlib import Path
+
+
+def delete_dir(dir_name):
+    if Path(dir_name).is_dir():
+        for f in Path(dir_name).iterdir():
+            if f.is_file():
+                f.unlink()
+
+        Path(dir_name).rmdir()
+
 
 def read_curstep_from_file(file_path):
     for line in reversed(open(file_path).readlines()):
@@ -9,11 +21,17 @@ def read_curstep_from_file(file_path):
 def read_appid_from_file(file_path):
     for line in open(file_path).readlines():
         if 'APPID' in line:
-            app_id = line.split(':')[1]
-            return app_id.strip()
+            application_id = line.split(':')[1]
+            return application_id.strip()
 
 
 def read_aggresult_from_file(file_path, target_schema_list):
+    """
+        get agg results from stdout file according to the target schema list
+        the results are stored in a dict
+        key: schema name
+        value: [current agg result/value, current time]
+    """
     agg_result_dict = dict()
     agg_indicator_list = [0] * len(target_schema_list)
 
@@ -24,9 +42,8 @@ def read_aggresult_from_file(file_path, target_schema_list):
         agg_tag = 'Aggregation|'
 
         if agg_tag in line:
-            agg_list = line.split('|')
+            agg_list = line.strip().split('|')
             agg_schema = agg_list[1]
-            print(agg_list[2])
             agg_result = float(agg_list[2])
             agg_current_time = int(agg_list[3])
 
@@ -40,16 +57,15 @@ def read_aggresult_from_file(file_path, target_schema_list):
                 return agg_result_dict
 
 
+def list_to_json_file():
+    json_str = '[{"results":[1,2,3], "runtime":[2,3,4]}]'
+    alist = json.loads(json_str)
+    print(alist[0]["results"])
+
+
+def main():
+    list_to_json_file()
+
+
 if __name__ == "__main__":
-    stdout_file = '/home/stdout/q1_1.stdout'
-
-    read_curstep_from_file(stdout_file)
-    app_id = read_appid_from_file(stdout_file)
-    print(app_id)
-
-    spark_work = '/usr/local/spark/spark-2.4.0-bin-hadoop2.6/work'
-
-    agg_result, agg_last_time = read_aggresult_from_file(spark_work + '/' + app_id + '/0/stdout', 'avg_qty')
-
-    print(agg_result)
-    print(agg_last_time)
+    main()
