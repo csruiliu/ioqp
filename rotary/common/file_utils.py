@@ -1,4 +1,5 @@
 import json
+import numpy as np
 from pathlib import Path
 
 
@@ -27,7 +28,7 @@ def read_appid_from_file(file_path):
 
 def read_aggresult_from_file(file_path, target_schema_list):
     """
-        get agg results from stdout file according to the target schema list
+        get latest agg results from stdout file according to the target schema list
         the results are stored in a dict
         key: schema name
         value: [current agg result/value, current time]
@@ -55,6 +56,72 @@ def read_aggresult_from_file(file_path, target_schema_list):
 
             if 0 not in agg_indicator_list:
                 return agg_result_dict
+
+
+def read_all_aggresults_from_file(file_path, target_schema_list):
+    """
+        get all agg results from stdout file according to the target schema list
+        the results are stored in a dict
+        key: schema name
+        value: [(agg result1, time1), (agg result2, time2),...,]
+    """
+    agg_result_dict = dict()
+    agg_result_dict_json = dict()
+
+    agg_start_time = np.inf
+
+    for schema in target_schema_list:
+        agg_result_dict[schema] = list()
+        agg_result_dict_json[schema] = dict()
+
+    for line in open(file_path).readlines():
+        agg_tag = 'Aggregation|'
+
+        if agg_tag in line:
+            agg_list = line.strip().split('|')
+            agg_schema = agg_list[1]
+            agg_result = float(agg_list[2])
+            agg_current_time = int(agg_list[3])
+
+            if agg_current_time < agg_start_time:
+                agg_start_time = agg_current_time
+
+            if agg_schema in target_schema_list:
+                agg_result_dict[agg_schema].append((agg_result, agg_current_time - agg_start_time))
+
+    for k, v in agg_result_dict.items():
+        agg_previous_time = v[0][1]
+        agg_slice_count = 1
+        agg_slice_sum: float = v[0][0]
+
+        agg_results_list = list()
+        agg_time_list = list()
+
+        for item in v[1:]:
+            agg_result = item[0]
+            agg_current_time = item[1]
+            if agg_previous_time < agg_current_time:
+                # agg_result_dict_clean[k].append(((agg_slice_sum / agg_slice_count), agg_previous_time))
+                agg_results_list.append(agg_slice_sum / agg_slice_count)
+                agg_time_list.append(agg_previous_time)
+                agg_slice_count = 1
+                agg_slice_sum = agg_result
+                agg_previous_time = agg_current_time
+            elif agg_previous_time == agg_current_time:
+                agg_slice_count += 1
+                agg_slice_sum += agg_result
+            else:
+                print("ignore the item due to the wrong time sequence")
+
+        agg_result_dict_json[k]['result'] = agg_results_list
+        agg_result_dict_json[k]['time'] = agg_time_list
+
+    return agg_result_dict_json
+
+
+def serialize_dict_to_json(query_name, input_dict):
+    with open("/home/rotary/knowledgebase/" + query_name + ".json", "w+") as outfile:
+        json.dump(input_dict, outfile)
 
 
 def list_to_json_file():
