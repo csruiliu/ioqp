@@ -3,6 +3,9 @@ class RuntimeConstants:
     # max memory for each executor
     MAX_MEMORY = '10G'
 
+    # number of worker in Spark
+    NUM_WORKER = 1
+
     # entry point for your application
     ENTRY_CLASS = 'ruiliu.aqp.tpch.QueryTPCH'
 

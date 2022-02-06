@@ -58,7 +58,7 @@ def read_aggresult_from_file(file_path, target_schema_list):
                 return agg_result_dict
 
 
-def read_all_aggresults_from_file(file_path, target_schema_list):
+def read_all_aggresults_from_file(file_path, target_schema_list, parameter_dict):
     """
         get all agg results from stdout file according to the target schema list
         the results are stored in a dict
@@ -67,6 +67,8 @@ def read_all_aggresults_from_file(file_path, target_schema_list):
     """
     agg_result_dict = dict()
     agg_result_dict_json = dict()
+
+    agg_interval = parameter_dict['agg_interval']
 
     agg_start_time = np.inf
 
@@ -100,7 +102,7 @@ def read_all_aggresults_from_file(file_path, target_schema_list):
         for item in v[1:]:
             agg_result = item[0]
             agg_current_time = item[1]
-            if agg_previous_time < agg_current_time:
+            if agg_current_time - agg_previous_time > (agg_interval // 2):
                 # agg_result_dict_clean[k].append(((agg_slice_sum / agg_slice_count), agg_previous_time))
                 agg_results_list.append(agg_slice_sum / agg_slice_count)
                 agg_time_list.append(agg_previous_time)
@@ -116,12 +118,15 @@ def read_all_aggresults_from_file(file_path, target_schema_list):
         agg_result_dict_json[k]['result'] = agg_results_list
         agg_result_dict_json[k]['time'] = agg_time_list
 
+        for para, value in parameter_dict.items():
+            agg_result_dict_json[para] = value
+
     return agg_result_dict_json
 
 
-def serialize_dict_to_json(query_name, input_dict):
+def serialize_to_json(query_name, input_dict_list):
     with open("/home/rotary/knowledgebase/" + query_name + ".json", "w+") as outfile:
-        json.dump(input_dict, outfile)
+        json.dump(input_dict_list, outfile)
 
 
 def list_to_json_file():

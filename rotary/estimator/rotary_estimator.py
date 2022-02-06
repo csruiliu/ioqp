@@ -1,146 +1,157 @@
 import numpy as np
 import json
-import operator
 
 
 class RotaryEstimator:
-    def __init__(self, topk=5, poly_deg=3):
-        # the list for storing the training information in the knowledgebase
-        self._knowledge_list = list()
+    def __init__(self, job_id, schema_list, schedule_slot, topk=5, poly_deg=3):
+        self.job_id = job_id
+        self.schema_list = schema_list
+        self.schedule_slot = schedule_slot
 
-        # top k for selecting neighbours
+        self.agg_results_dict = dict()
+        self.agg_runtime_dict = dict()
+        self.agg_progress_dict = dict()
+
+        for schema_name in schema_list:
+            self.agg_results_dict[schema_name] = list()
+            self.agg_runtime_dict[schema_name] = list()
+            self.agg_progress_dict[schema_name] = list()
+
+        self._epoch_time = 0
         self._top_k = topk
-
-        # the polynomial degree of the accuracy-epoch curve
         self._deg = poly_deg
+        self._knowledge_dict_archive = dict()
+        self._knowledge_dict_realtime_result = dict()
+        self._knowledge_dict_realtime_runtime = dict()
 
-        # the dict for all jobs data
-        # key: str(input_model_dict['id']) + '-' + input_model_dict['model']
-        # value is a dict with all necessary info: flag_list, acc_list, epoch_list
-        self._job_predict_dict = dict()
+    def input_agg_schema_results(self, input_dict):
+        for schema_name, schema_value in input_dict.items():
+            self.agg_results_dict[schema_name].append(schema_value[0])
+            self.agg_runtime_dict[schema_name].append(schema_value[1])
 
-    def compute_similarity(self, center_model, candidate_models):
+    def import_knowledge_archive(self, knowledge_archive_path, archive_file):
+        query_id = None
+        if archive_file.startswith("q1"):
+            query_id = "q1"
+        elif archive_file.startswith("q3"):
+            query_id = "q3"
+        elif archive_file.startswith("q5"):
+            query_id = "q5"
+        elif archive_file.startswith("q6"):
+            query_id = "q6"
+        elif archive_file.startswith("q11"):
+            query_id = "q11"
+        elif archive_file.startswith("q16"):
+            query_id = "q16"
+        elif archive_file.startswith('q19'):
+            query_id = "q19"
+        else:
+            ValueError('The archive file name should start with q1, q3, q5, q6, q11, q16, q19!')
+
+        self._knowledge_dict_archive[query_id] = list()
+
+        with open(knowledge_archive_path + "/" + archive_file) as ka:
+            archive_list = json.load(ka)
+            for archive_item in archive_list:
+                _archive_item_dict = dict()
+                for schema_name, agg_results in archive_item.items():
+                    _archive_item_dict[schema_name] = agg_results
+                self._knowledge_dict_archive[query_id].append(_archive_item_dict)
+
+        return self._knowledge_dict_archive
+
+    def import_knowledge_realtime(self, input_dict):
+        for schema_name, schema_value in input_dict.items():
+            self._knowledge_dict_realtime_result[schema_name].append(schema_value[0])
+            self._knowledge_dict_realtime_runtime[schema_name].append(schema_value[1])
+
+    def compute_archive_similarity(self, center_point, candidate_points, schema_name):
+        # TODO: need a sophisticated mechanism for similarity computation
         similarity_list = list()
+        topk_point_list = list()
 
-        for candidate in candidate_models:
-            ''' 
-                We only take the candidate model that has: 
-                1. same training dataset 
-                2. same learning rate 
-                3. same batch size
-                4. same optimizer
+        for candidate in candidate_points:
+            """ 
+                We only take the candidate archived dataset that has: 
+                1. same dataset (e.g., TPCH)
+                2. same schema name
+                3. same scale factor
+                4. same batch size
+                5. same number of worker
+                6. same aggregation interval
                 Otherwise, set the similarity as -1
-            '''
-            if (center_model['training_data'] == candidate['training_data'] and
-                    center_model['learn_rate'] == candidate['learn_rate'] and
-                    center_model['opt'] == candidate['opt'] and
-                    center_model['batch_size'] == candidate['batch_size']):
+            """
+            if (center_point['batch_size'] == candidate['batch_size'] and
+                    center_point['scale_factor'] == candidate['scale_factor'] and
+                    center_point['num_worker'] == candidate['num_worker'] and
+                    center_point['agg_interval'] == candidate['agg_interval']):
 
-                max_x = max([center_model['num_parameters'], candidate['num_parameters']])
-                diff_x = np.abs(center_model['num_parameters'] - candidate['num_parameters'])
-                parameter_similarity = 1 - diff_x / max_x
-                similarity_list.append(parameter_similarity)
+                topk_point_list.append(candidate[schema_name])
+
             else:
                 similarity_list.append(-1)
 
-        ''' get the top k models from mlbase according to the similarity '''
-        similarity_sorted_idx_list = sorted(range(len(similarity_list)),
-                                            key=lambda k: similarity_list[k],
-                                            reverse=True)[:self._top_k]
+        if len(topk_point_list) > self._top_k:
+            return np.random.shuffle(topk_point_list)[:self._top_k]
+        else:
+            return np.random.shuffle(topk_point_list)
 
-        topk_model_list = operator.itemgetter(*similarity_sorted_idx_list)(self._knowledge_list)
-
-        return topk_model_list
-
-    def import_knowledge_archive(self, knowledge_archive):
-        with open(knowledge_archive) as ka:
-            for knowledge_item in json.load(ka):
-                self._knowledge_list.append(knowledge_item)
-
-    def import_knowledge_realtime(self, job_key, accuracy, epoch):
-        job_predict_info = self._job_predict_dict[job_key]
-        job_predict_info['flag'].append(1)
-        job_predict_info['accuracy'].append(accuracy)
-        job_predict_info['epoch'].append(epoch)
-
-    def predict(self, input_model_dict, input_x, mode):
+    def predict_progress_next_epoch(self, job_parameters, schema_name):
         """
             :parameter
-            input_model_dict: the architecture and hyperparameters of the input model
+            schema_name: name of schema for prediction
             input_x: the x of a linear model for prediction, e.g., accuracy or epoch
             mode: predicting 'accuracy' or 'epoch'
 
             if predicting accuracy, input_x is $epoch, mode='accuracy'.
             if predicting epoch, input_x is $accuracy, mode='epoch'.
         """
-        job_key = str(input_model_dict['id']) + '-' + input_model_dict['model']
+        query_id = job_parameters['job_id'].split('_')[0]
 
-        if job_key in self._job_predict_dict:
-            # if the job_key exists, get the predict info
-            job_predict_info = self._job_predict_dict[job_key]
-            accuracy_list = job_predict_info['accuracy']
-            epoch_list = job_predict_info['epoch']
-        else:
-            # if this is a new model for prediction, compute and generate the predict info
-            job_predict_info = dict()
-            accuracy_list = list()
-            epoch_list = list()
-
-            neighbour_model_acc_list = self.compute_similarity(input_model_dict, self._knowledge_list)
-
-            for nb_model in neighbour_model_acc_list:
-                for aidx, acc in enumerate(nb_model['accuracy']):
-                    accuracy_list.append(acc)
-                    epoch_list.append(aidx)
-
-            flag_list = [0] * len(accuracy_list)
-
-            job_predict_info['flag'] = flag_list
-            job_predict_info['accuracy'] = accuracy_list
-            job_predict_info['epoch'] = epoch_list
-
-            self._job_predict_dict[job_key] = job_predict_info
-
-        # the list for historical and actual accuracy data, 1 is realtime accuracy, 0 is archive data
-        flag_list = job_predict_info['flag']
+        selected_archive_list = self.compute_archive_similarity(job_parameters,
+                                                                self._knowledge_dict_archive[query_id],
+                                                                schema_name)
 
         # init a new curve weight list for this prediction
         curve_weight_list = list()
+        # init a result list for this prediction
+        result_list = list()
+        # init an epoch list for this prediction
+        epoch_list = list()
 
-        actual_dp_num = flag_list.count(1)
-        base_dp_num = len(flag_list) - actual_dp_num
+        # count the archive data point
+        archive_dp_num = 0
 
-        actual_weight = 1 / (actual_dp_num + 1)
-        base_weight = actual_weight / base_dp_num
+        for archive_item in selected_archive_list:
+            result_list.extend(archive_item['result'])
+            epoch_list.extend(archive_item['time'])
+            archive_dp_num += len(archive_item['result'])
 
-        for flag in flag_list:
-            if flag:
-                curve_weight_list.append(actual_weight)
-            else:
-                curve_weight_list.append(base_weight)
+        result_list.extend(self._knowledge_dict_realtime_result[schema_name])
+        epoch_list.extend(self._knowledge_dict_realtime_runtime[schema_name])
 
-        if mode == 'accuracy':
-            coefs = np.polyfit(x=np.asarray(epoch_list),
-                               y=np.asarray(accuracy_list),
-                               deg=self._deg,
-                               w=curve_weight_list)
+        # count the realtime data point
+        realtime_dp_num = len(self._knowledge_dict_realtime_result[schema_name])
 
-            acc_estimation = np.polyval(coefs, input_x)
+        realtime_weight = 1 / (realtime_dp_num + 1)
+        archive_weight = realtime_weight / archive_dp_num
 
-            return acc_estimation
+        curve_weight_list.extend([archive_weight] * archive_dp_num)
+        curve_weight_list.extend([realtime_weight] * realtime_dp_num)
 
-        elif mode == 'epoch':
-            coefs = np.polyfit(x=np.asarray(accuracy_list),
-                               y=np.asarray(epoch_list),
-                               deg=self._deg,
-                               w=curve_weight_list)
+        coefs = np.polyfit(x=np.asarray(epoch_list),
+                           y=np.asarray(result_list),
+                           deg=self._deg,
+                           w=curve_weight_list)
 
-            epoch_estimation = np.polyval(coefs, input_x)
+        agg_estimate = np.polyval(coefs, self._epoch_time + self.schedule_slot)
 
-            return epoch_estimation
+        return agg_estimate
 
-        else:
-            raise ValueError('Predication ')
+    @property
+    def epoch_time(self):
+        return self._epoch_time
 
-    def get_knowledge_list(self):
-        return self._knowledge_list
+    @epoch_time.setter
+    def epoch_time(self, value):
+        self._epoch_time = value

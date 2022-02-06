@@ -9,7 +9,9 @@ from pathlib import Path
 from common.constants import RuntimeConstants
 from common.file_utils import (read_curstep_from_file,
                                read_appid_from_file,
-                               read_aggresult_from_file)
+                               read_aggresult_from_file,
+                               read_all_aggresults_from_file,
+                               serialize_to_json)
 
 from estimator.rotary_estimator import RotaryEstimator
 from estimator.relaqs_estimator import ReLAQSEstimator
@@ -57,7 +59,9 @@ class Engine:
             self.job_agg_result_dict[job_id] = list()
             # create an estimator for each job
             if self.scheduler == "rotary":
-                self.estimator_dict[job_id] = RotaryEstimator(job_id, self.get_agg_schema(job_id))
+                self.estimator_dict[job_id] = RotaryEstimator(job_id,
+                                                              self.get_agg_schema(job_id),
+                                                              self.schedule_round)
             elif self.scheduler == "relaqs":
                 self.estimator_dict[job_id] = ReLAQSEstimator(job_id,
                                                               self.get_agg_schema(job_id),
@@ -66,8 +70,6 @@ class Engine:
                                                               self.num_worker)
             else:
                 raise ValueError("the scheduler is not supported")
-
-
 
     @staticmethod
     def get_agg_schema(job_id):
@@ -153,14 +155,28 @@ class Engine:
         job_estimator = self.estimator_dict[job_id]
 
         job_overall_progress = 0
+
+        job_parameter_dict = dict()
+        job_parameter_dict['job_id'] = job_id
+        job_parameter_dict['batch_size'] = self.batch_size
+        job_parameter_dict['scale_factor'] = RuntimeConstants.SCALE_FACTOR
+        job_parameter_dict['num_worker'] = RuntimeConstants.NUM_WORKER
+        job_parameter_dict['agg_interval'] = RuntimeConstants.AGGREGATION_INTERVAL
+
         for schema_name in agg_schema_list:
             agg_results_dict = read_aggresult_from_file(app_stdout_file, agg_schema_list)
             agg_schema_result = agg_results_dict.get(schema_name)[0]
             agg_schema_current_time = agg_results_dict.get(schema_name)[1]
 
-            job_estimator.epoch_increment()
+            job_estimator.epoch_time = agg_schema_current_time
             job_estimator.input_agg_schema_results(agg_schema_result)
-            schema_progress_estimate = job_estimator.predict_progress_next_epoch(schema_name)
+
+            if self.scheduler == "rotary":
+                """estimator for rotary"""
+                schema_progress_estimate = job_estimator.predict_progress_next_epoch(job_parameter_dict, schema_name)
+            else:
+                """estimator for relaqs"""
+                schema_progress_estimate = job_estimator.predict_progress_next_epoch(schema_name)
 
             job_overall_progress += schema_progress_estimate
 
@@ -262,4 +278,25 @@ class Engine:
                 self.time_elapse()
             else:
                 self.time_elapse()
+
+    def test(self):
+        app_id = read_appid_from_file("/home/stdout/q1.stdout")
+        app_stdout_file = RuntimeConstants.SPARK_WORK_PATH + '/' + app_id + '/0/stdout'
+
+        para_dict = dict()
+        para_dict['batch_size'] = self.batch_size
+        para_dict['scale_factor'] = RuntimeConstants.SCALE_FACTOR
+        para_dict['num_core'] = 1
+        para_dict['agg_interval'] = RuntimeConstants.AGGREGATION_INTERVAL
+
+        agg_results_dict = read_all_aggresults_from_file(app_stdout_file, RuntimeConstants.Q1_AGG_COL, para_dict)
+
+        agg_results_dict_list = list()
+        agg_results_dict_list.append(agg_results_dict)
+
+        serialize_to_json("q1", agg_results_dict)
+
+        rotary_estimator = RotaryEstimator("q1", RuntimeConstants.Q1_AGG_COL, 5)
+
+
 

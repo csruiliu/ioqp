@@ -56,8 +56,8 @@ def main():
 
     sch_engine = Engine(aqp_workload_dict, num_core, num_worker, schedule_round, scheduler)
 
-    sch_engine.run()
-    # sch_engine.test()
+    # sch_engine.run()
+    sch_engine.test()
 
 
 if __name__ == "__main__":
