@@ -8,19 +8,16 @@ class JobAQP:
         self._deadline = deadline
 
         self._current_step = 0
-        self._active = False
-        self._complete_attain = None
-        self._complete_unattain = None
-
-    def check_arrival(self):
-        if self.arrival_time <= 0:
-            self.active = True
-        else:
-            self.active = False
+        self._arrived = False
+        self._activated = False
+        self._complete_attain = False
+        self._complete_unattain = False
 
     def move_forward(self, time_elapse):
-        if not self.active:
+        if not self.arrived:
             self.arrival_time -= time_elapse
+            if self.arrival_time <= 0:
+                self.arrived = True
 
     @property
     def job_id(self):
@@ -69,14 +66,24 @@ class JobAQP:
         self._current_step = value
 
     @property
-    def active(self):
-        return self._active
+    def arrived(self):
+        return self._arrived
 
-    @active.setter
-    def active(self, value):
+    @arrived.setter
+    def arrived(self, value):
         if not isinstance(value, bool):
             raise ValueError("the value can only be bool type")
-        self._active = value
+        self._arrived = value
+
+    @property
+    def activated(self):
+        return self._activated
+
+    @activated.setter
+    def activated(self, value):
+        if not isinstance(value, bool):
+            raise ValueError("the value can only be bool type")
+        self._activated = value
 
     @property
     def complete_attain(self):

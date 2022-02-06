@@ -6,9 +6,9 @@ from workload.workload_builder import WorkloadBuilder
 
 def arg_config():
     parser = argparse.ArgumentParser()
-    parser.add_argument("-c", "--num_core", action="store", type=int, default=4,
+    parser.add_argument("-c", "--num_core", action="store", type=int, default=20,
                         help="indicate the number of cpu cores for processing")
-    parser.add_argument("-w", "--workload_size", action="store", type=int, default=1,
+    parser.add_argument("-w", "--workload_size", action="store", type=int, default=20,
                         help="indicate the size of aqp workload")
     parser.add_argument("-n", "--num_worker", action="store", type=int, default=1,
                         help="indicate the number of worker for aqp")
@@ -35,8 +35,8 @@ def main():
     scheduler = args["scheduler"]
     arrival_ladma = args["arrival_lamda"]
 
-    # tpch_query_list = ["q1", "q3", "q5", "q6", "q11", "q16", "q19"]
-    tpch_query_list = ["q1"]
+    tpch_query_list = ["q1", "q3", "q5", "q6", "q11", "q16", "q19"]
+    # tpch_query_list = ["q1"]
     accuracy_list = [0.7, 0.75, 0.8, 0.85, 0.9, 0.95]
     deadline_list = [60, 120, 180, 240, 300]
 
@@ -50,14 +50,14 @@ def main():
               f"deadline={job.deadline}, "
               f"accuracy_threshold={job.accuracy_threshold}, "
               f"current_step={job.current_step}, "
-              f"active={job.active}, "
+              f"arrived={job.arrived}, "
               f"complete_unattain={job.complete_attain}, "
               f"complete_attain={job.complete_attain}")
 
     sch_engine = Engine(aqp_workload_dict, num_core, num_worker, schedule_round, scheduler)
 
-    # sch_engine.run()
-    sch_engine.test()
+    sch_engine.run()
+    # sch_engine.test()
 
 
 if __name__ == "__main__":

@@ -40,20 +40,16 @@ class Engine:
         # the list stores the jobs ranked by estimated progress and is refreshed every round
         self.priority_queue = list()
 
-        # the list stores that jobs haven't arrived
-        self.inactive_queue = list()
-
-        # the list stores the jobs that have arrived, sorted by their arrival time
+        # the list stores the jobs that have arrived but haven't completed, sorted by their arrival time
         self.active_queue = list()
 
         # the list stores the jobs that have been completed and attained the objective
-        self.complete_attain_queue = list()
+        self.complete_attain_set = set()
 
         # the list stores the jobs that have been completed and didn't attain the objective
-        self.complete_unattain_queue = list()
+        self.complete_unattain_set = set()
 
         for job_id, job_item in self.workload_dict.items():
-            self.inactive_queue.append(job_id)
             self.job_step_dict[job_id] = 0
             self.job_estimate_progress[job_id] = 0.0
             self.job_agg_result_dict[job_id] = list()
@@ -241,39 +237,50 @@ class Engine:
                 for sp, sp_out, sp_err in subprocess_list:
                     self.stop_job(sp, sp_out, sp_err)
 
-    def check_active_job(self):
+    def fake_process_job(self):
+        if self.num_core >= len(self.active_queue):
+            for job_id in self.active_queue:
+                job = self.workload_dict[job_id]
+                if np.random.random() > 0.1:
+                    job.complete_attain = True
+                    self.workload_dict[job_id] = job
+
+    def check_arrived_job(self):
         for job_id, job in self.workload_dict.items():
-            if job.active:
+            if job.arrived and not job.activated:
+                print(f"the job {job_id} arrives and is activated")
                 self.active_queue.append(job_id)
-                self.inactive_queue.remove(job_id)
+                job.activated = True
+                self.workload_dict[job_id] = job
 
     def check_complete_job(self):
         for job_id in self.active_queue:
             job = self.workload_dict[job_id]
 
             if job.complete_attain:
-                print('the job is completed and attained')
-                self.complete_attain_queue.append(job_id)
+                print(f"the job {job_id} is completed and attained")
+                self.complete_attain_set.add(job_id)
                 self.active_queue.remove(job_id)
             elif job.complete_unattain:
-                print('the job is completed but not attained')
-                self.complete_unattain_queue.append(job_id)
+                print(f"the job {job_id} is completed but not attained")
+                self.complete_unattain_set.add(job_id)
                 self.active_queue.remove(job_id)
             else:
-                print('the job stay in active')
+                print(f"the job {job_id} stay in active")
 
     def time_elapse(self):
-        for job in self.workload_dict:
+        for job_id, job in self.workload_dict.items():
             # time.sleep(self.schedule_round)
             job.move_forward(self.schedule_round)
-            job.check_arrival()
+
+            self.workload_dict[job_id] = job
 
     def run(self):
-        while len(self.complete_attain_queue) + len(self.complete_unattain_queue) != self.workload_size:
-            self.check_active_job()
+        while len(self.complete_attain_set) + len(self.complete_unattain_set) != self.workload_size:
+            self.check_arrived_job()
 
             if self.active_queue:
-                self.process_job()
+                self.fake_process_job()
                 self.check_complete_job()
                 self.time_elapse()
             else:
@@ -297,6 +304,3 @@ class Engine:
         serialize_to_json("q1", agg_results_dict)
 
         rotary_estimator = RotaryEstimator("q1", RuntimeConstants.Q1_AGG_COL, 5)
-
-
-
