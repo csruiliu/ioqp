@@ -18,11 +18,11 @@ from estimator.relaqs_estimator import ReLAQSEstimator
 
 
 class Engine:
-    def __init__(self, workload_dict, num_core, num_worker, schedule_round, scheduler):
+    def __init__(self, workload_dict, num_core, num_worker, schedule_slot, scheduler):
         self.workload_dict = workload_dict
         self.num_core = num_core
         self.num_worker = num_worker
-        self.schedule_round = schedule_round
+        self.schedule_slot = schedule_slot
         self.scheduler = scheduler
         self.batch_size = RuntimeConstants.MAX_STEP // RuntimeConstants.BATCH_NUM
         self.workload_size = len(workload_dict)
@@ -32,8 +32,15 @@ class Engine:
         # prepare everything necessary
         #######################################################
 
+        # the dict for counting the job steps (for checkpoint)
         self.job_step_dict = dict()
+
+        # the dict for counting the processing time for each job (excluding checkpoint overhead)
+        self.job_processing_time = dict()
+
+        # the dict for storing the aggregation results
         self.job_agg_result_dict = dict()
+
         # the dict to maintain estimated progress for next epoch for each job
         self.job_estimate_progress = dict()
 
@@ -51,17 +58,18 @@ class Engine:
 
         for job_id, job_item in self.workload_dict.items():
             self.job_step_dict[job_id] = 0
+
             self.job_estimate_progress[job_id] = 0.0
             self.job_agg_result_dict[job_id] = list()
             # create an estimator for each job
             if self.scheduler == "rotary":
                 self.estimator_dict[job_id] = RotaryEstimator(job_id,
                                                               self.get_agg_schema(job_id),
-                                                              self.schedule_round)
+                                                              self.schedule_slot)
             elif self.scheduler == "relaqs":
                 self.estimator_dict[job_id] = ReLAQSEstimator(job_id,
                                                               self.get_agg_schema(job_id),
-                                                              self.schedule_round,
+                                                              self.schedule_slot,
                                                               self.batch_size,
                                                               self.num_worker)
             else:
@@ -133,9 +141,9 @@ class Engine:
 
         return subp, stdout_file, stderr_file
 
-    def stop_job(self, job_process, stdout_file, stderr_file):
+    def run_job_slot(self, job_process, stdout_file, stderr_file):
         try:
-            job_process.communicate(timeout=self.schedule_round)
+            job_process.communicate(timeout=self.schedule_slot)
         except subprocess.TimeoutExpired:
             stdout_file.close()
             stderr_file.close()
@@ -168,17 +176,44 @@ class Engine:
             job_estimator.input_agg_schema_results(agg_schema_result)
 
             if self.scheduler == "rotary":
-                """estimator for rotary"""
+                # estimator for rotary
                 schema_progress_estimate = job_estimator.predict_progress_next_epoch(job_parameter_dict, schema_name)
             else:
-                """estimator for relaqs"""
+                # estimator for relaqs
                 schema_progress_estimate = job_estimator.predict_progress_next_epoch(schema_name)
 
             job_overall_progress += schema_progress_estimate
 
         return job_overall_progress / len(agg_schema_list)
 
+    def rank_job(self):
+        # clean the priority queue for next round
+        self.priority_queue.clear()
+
+        # rank the jobs in active queue according to the estimated
+        for job_id in self.active_queue:
+            job_stdout_file = RuntimeConstants.STDOUT_PATH + job_id + '.stdout'
+            self.job_step_dict[job_id] = read_curstep_from_file(job_stdout_file)
+            self.job_estimate_progress[job_id] = self.compute_progress_next_epoch(job_id)
+
+            for k, v in sorted(self.job_estimate_progress.items(), key=lambda x: x[1], reverse=True):
+                self.priority_queue.append(k)
+
+    def check_job_completeness(self):
+        for job_id in self.active_queue:
+            job = self.workload_dict[job_id]
+
+            if job.time_elapse >= job.deadline:
+                job.complete_unattain = True
+                print(f"the job {job_id} is completed but not attained")
+                self.complete_unattain_set.add(job_id)
+                self.active_queue.remove(job_id)
+            else:
+                print(f"the job {job_id} stay in active, has run {job.time_elapse} seconds")
+
     def process_job(self):
+        prerun_time_start = time.perf_counter()
+
         # if STDOUT_PATH or STDERR_PATH doesn't exist, create them then
         if not Path(RuntimeConstants.STDOUT_PATH).is_dir():
             Path(RuntimeConstants.STDOUT_PATH).mkdir()
@@ -210,17 +245,21 @@ class Engine:
                 subp, out_file, err_file = self.create_job(job, resource_unit=1)
                 subprocess_list.append((subp, out_file, err_file))
 
+            prerun_time_end = time.perf_counter()
+
             for sp, sp_out, sp_err in subprocess_list:
-                self.stop_job(sp, sp_out, sp_err)
+                # run the job for a scheduling slot
+                self.run_job_slot(sp, sp_out, sp_err)
 
-            self.priority_queue.clear()
-            for job_id in self.active_queue:
-                job_stdout_file = RuntimeConstants.STDOUT_PATH + job_id + '.stdout'
-                self.job_step_dict[job_id] = read_curstep_from_file(job_stdout_file)
-                self.job_estimate_progress[job_id] = self.compute_progress_next_epoch(job_id)
+            # compute the pre-run time
+            prerun_time = prerun_time_end - prerun_time_start
+            self.time_elapse(prerun_time + self.schedule_slot)
 
-                for k, v in sorted(self.job_estimate_progress.items(), key=lambda x: x[1], reverse=True):
-                    self.priority_queue.append(k)
+            # check the job completeness
+            self.check_job_completeness()
+
+            # rank the jobs for next scheduling round
+            self.rank_job()
 
         else:
             subprocess_list = list()
@@ -234,16 +273,21 @@ class Engine:
                 subp, out_file, err_file = self.create_job(job, resource_unit=1)
                 subprocess_list.append((subp, out_file, err_file))
 
-                for sp, sp_out, sp_err in subprocess_list:
-                    self.stop_job(sp, sp_out, sp_err)
+            prerun_time_end = time.perf_counter()
 
-    def fake_process_job(self):
-        if self.num_core >= len(self.active_queue):
-            for job_id in self.active_queue:
-                job = self.workload_dict[job_id]
-                if np.random.random() > 0.1:
-                    job.complete_attain = True
-                    self.workload_dict[job_id] = job
+            for sp, sp_out, sp_err in subprocess_list:
+                # run the job for a scheduling slot
+                self.run_job_slot(sp, sp_out, sp_err)
+
+            # compute the pre-run time
+            prerun_time = prerun_time_end - prerun_time_start
+            self.time_elapse(prerun_time + self.schedule_slot)
+
+            # check the job completeness
+            self.check_job_completeness()
+
+            # rank the jobs for next scheduling round
+            self.rank_job()
 
     def check_arrived_job(self):
         for job_id, job in self.workload_dict.items():
@@ -253,26 +297,10 @@ class Engine:
                 job.activated = True
                 self.workload_dict[job_id] = job
 
-    def check_complete_job(self):
-        for job_id in self.active_queue:
-            job = self.workload_dict[job_id]
-
-            if job.complete_attain:
-                print(f"the job {job_id} is completed and attained")
-                self.complete_attain_set.add(job_id)
-                self.active_queue.remove(job_id)
-            elif job.complete_unattain:
-                print(f"the job {job_id} is completed but not attained")
-                self.complete_unattain_set.add(job_id)
-                self.active_queue.remove(job_id)
-            else:
-                print(f"the job {job_id} stay in active")
-
-    def time_elapse(self):
+    def time_elapse(self, time_period):
+        # the time unit is second
         for job_id, job in self.workload_dict.items():
-            # time.sleep(self.schedule_round)
-            job.move_forward(self.schedule_round)
-
+            job.move_forward(time_period)
             self.workload_dict[job_id] = job
 
     def run(self):
@@ -280,11 +308,42 @@ class Engine:
             self.check_arrived_job()
 
             if self.active_queue:
-                self.fake_process_job()
-                self.check_complete_job()
-                self.time_elapse()
+                # overall_process_time = self.fake_process_job()
+                # print(f"time elapse: {overall_process_time}")
+                # self.time_elapse(overall_process_time)
+                # self.fake_check_complete_job()
+                self.process_job()
             else:
-                self.time_elapse()
+                self.time_elapse(1)
+
+    def fake_process_job(self):
+        if self.num_core >= len(self.active_queue):
+            for job_id in self.active_queue:
+                job = self.workload_dict[job_id]
+                if np.random.random() > 0.5:
+                    job.complete_attain = True
+                    self.workload_dict[job_id] = job
+                else:
+                    if job.time_elapse >= job.deadline:
+                        job.complete_unattain = True
+                        self.workload_dict[job_id] = job
+
+        return np.random.randint(1, 10)
+
+    def fake_check_complete_job(self):
+        for job_id in self.active_queue:
+            job = self.workload_dict[job_id]
+
+            if job.complete_attain:
+                print(f"the job {job_id} is completed and attained, runtime: {job.time_elapse} seconds")
+                self.complete_attain_set.add(job_id)
+                self.active_queue.remove(job_id)
+            elif job.complete_unattain:
+                print(f"the job {job_id} is completed but not attained, runtime: {job.time_elapse} seconds")
+                self.complete_unattain_set.add(job_id)
+                self.active_queue.remove(job_id)
+            else:
+                print(f"the job {job_id} stay in active, has run {job.time_elapse} seconds")
 
     def test(self):
         app_id = read_appid_from_file("/home/stdout/q1.stdout")
