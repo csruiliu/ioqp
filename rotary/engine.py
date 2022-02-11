@@ -6,6 +6,11 @@ import subprocess
 import numpy as np
 from pathlib import Path
 
+from estimator.rotary_estimator import RotaryEstimator
+from estimator.relaqs_estimator import ReLAQSEstimator
+from estimator.envelop_bounder import EnvelopBounder
+from workload.job_aqp import JobAQP
+from common.loggers import get_logger_instance
 from common.constants import RuntimeConstants
 from common.file_utils import (read_curstep_from_file,
                                read_appid_from_file,
@@ -13,38 +18,72 @@ from common.file_utils import (read_curstep_from_file,
                                read_all_aggresults_from_file,
                                serialize_to_json)
 
-from estimator.rotary_estimator import RotaryEstimator
-from estimator.relaqs_estimator import ReLAQSEstimator
-
 
 class Engine:
-    def __init__(self, workload_dict, num_core, num_worker, schedule_slot, scheduler):
+    def __init__(self, workload_dict, num_core, num_worker, schedule_epoch, scheduler):
         self.workload_dict = workload_dict
         self.num_core = num_core
         self.num_worker = num_worker
-        self.schedule_slot = schedule_slot
+        self.schedule_epoch = schedule_epoch
         self.scheduler = scheduler
         self.batch_size = RuntimeConstants.MAX_STEP // RuntimeConstants.BATCH_NUM
         self.workload_size = len(workload_dict)
-        self.estimator_dict = dict()
+
+        # create a logger
+        self.logger = get_logger_instance()
 
         #######################################################
         # prepare everything necessary
         #######################################################
 
-        # the dict for counting the job steps (for checkpoint)
+        self.global_epoch_count = 0
+
+        """
+        The dict for estimator of each job 
+        key: job_id 
+        value: estimator instance for each job   
+        """
+        self.job_estimator_dict = dict()
+
+        """
+        The dict for envelop bounder for each schema of each job
+        key: job_id 
+        value: a dict to store the envelop bounder instance for a schema name. 
+               This key of this dict is schema name, the value is envelop bounder instance   
+        """
+        self.job_envelop_dict = dict()
+
+        """
+        The dict for counting the job steps (current step)
+        key: job_id
+        value: the count of current steps 
+        """
         self.job_step_dict = dict()
 
-        # the dict for counting the processing time for each job (excluding checkpoint overhead)
-        self.job_processing_time = dict()
-
-        # the dict for storing the aggregation results
+        """
+        The dict for storing the aggregation results
+        key: job_id
+        value: a dict to store the each schema results for the running epoch (when the job is selected to run)
+               With in this subdict, the key is schema_name, and value is a list to store agg results over epochs 
+        """
         self.job_agg_result_dict = dict()
 
-        # the dict to maintain estimated progress for next epoch for each job
+        """
+        The dict for storing the aggregation time (which is associate with job_agg_result_dict)
+        key: job_id
+        value: a dict to store the each schema processing time for the running epoch (when the job is selected to run)
+               With in this subdict, the key is schema_name, and value is a list to store time over epochs 
+        """
+        self.job_agg_time_dict = dict()
+
+        """
+        The dict to maintain estimated progress for next epoch for each job
+        key: job_id
+        value: the estimated progress for next epoch
+        """
         self.job_estimate_progress = dict()
 
-        # the list stores the jobs ranked by estimated progress and is refreshed every round
+        # the list stores the jobs ranked by estimated progress and is refreshed every epoch
         self.priority_queue = list()
 
         # the list stores the jobs that have arrived but haven't completed, sorted by their arrival time
@@ -58,20 +97,28 @@ class Engine:
 
         for job_id, job_item in self.workload_dict.items():
             self.job_step_dict[job_id] = 0
-
             self.job_estimate_progress[job_id] = 0.0
-            self.job_agg_result_dict[job_id] = list()
+            self.job_agg_result_dict[job_id] = dict()
+            self.job_agg_time_dict[job_id] = dict()
+            self.job_envelop_dict[job_id] = dict()
+
+            # init lists for all schemas for each job
+            for schema_name in self.get_agg_schema(job_id):
+                self.job_agg_result_dict[job_id][schema_name] = list()
+                self.job_agg_time_dict[job_id][schema_name] = list()
+                self.job_envelop_dict[job_id][schema_name] = EnvelopBounder(seq_length=4)
+
             # create an estimator for each job
             if self.scheduler == "rotary":
-                self.estimator_dict[job_id] = RotaryEstimator(job_id,
-                                                              self.get_agg_schema(job_id),
-                                                              self.schedule_slot)
+                self.job_estimator_dict[job_id] = RotaryEstimator(job_id,
+                                                                  self.get_agg_schema(job_id),
+                                                                  self.schedule_epoch)
             elif self.scheduler == "relaqs":
-                self.estimator_dict[job_id] = ReLAQSEstimator(job_id,
-                                                              self.get_agg_schema(job_id),
-                                                              self.schedule_slot,
-                                                              self.batch_size,
-                                                              self.num_worker)
+                self.job_estimator_dict[job_id] = ReLAQSEstimator(job_id,
+                                                                  self.get_agg_schema(job_id),
+                                                                  self.schedule_epoch,
+                                                                  self.batch_size,
+                                                                  self.num_worker)
             else:
                 raise ValueError("the scheduler is not supported")
 
@@ -92,7 +139,7 @@ class Engine:
         elif job_id.startswith('q19'):
             return RuntimeConstants.Q19_AGG_COL
         else:
-            ValueError('The query is not supported')
+            raise ValueError('The query is not supported')
 
     @staticmethod
     def generate_job_cmd(res_unit, job_name):
@@ -129,8 +176,10 @@ class Engine:
 
     def create_job(self, job, resource_unit):
         self.generate_job_cmd(resource_unit, job.job_id)
-        stdout_file = open(RuntimeConstants.STDOUT_PATH + '/' + job.job_id + '.stdout', "a+")
-        stderr_file = open(RuntimeConstants.STDERR_PATH + '/' + job.job_id + '.stderr', "a+")
+
+        job_output_id = job.job_id + "_" + str(self.global_epoch_count)
+        stdout_file = open(RuntimeConstants.STDOUT_PATH + "/" + job_output_id + ".stdout", "w+")
+        stderr_file = open(RuntimeConstants.STDERR_PATH + '/' + job_output_id + '.stderr', "w+")
 
         job_cmd = self.generate_job_cmd(resource_unit, job.job_id)
         subp = subprocess.Popen(job_cmd,
@@ -141,9 +190,9 @@ class Engine:
 
         return subp, stdout_file, stderr_file
 
-    def run_job_slot(self, job_process, stdout_file, stderr_file):
+    def run_job_epoch(self, job_process, stdout_file, stderr_file):
         try:
-            job_process.communicate(timeout=self.schedule_slot)
+            job_process.communicate(timeout=self.schedule_epoch)
         except subprocess.TimeoutExpired:
             stdout_file.close()
             stderr_file.close()
@@ -156,7 +205,7 @@ class Engine:
         app_stdout_file = RuntimeConstants.SPARK_WORK_PATH + '/' + app_id + '/0/stdout'
         agg_schema_list = self.get_agg_schema(job_id)
 
-        job_estimator = self.estimator_dict[job_id]
+        job_estimator = self.job_estimator_dict[job_id]
 
         job_overall_progress = 0
 
@@ -186,13 +235,14 @@ class Engine:
 
         return job_overall_progress / len(agg_schema_list)
 
-    def rank_job(self):
+    def rank_job_next_epoch(self):
         # clean the priority queue for next round
         self.priority_queue.clear()
 
-        # rank the jobs in active queue according to the estimated
+        # rank the jobs in active queue according to the estimated progress
         for job_id in self.active_queue:
-            job_stdout_file = RuntimeConstants.STDOUT_PATH + job_id + '.stdout'
+            job_output_id = job_id + "_" + str(self.global_epoch_count)
+            job_stdout_file = RuntimeConstants.STDOUT_PATH + job_output_id + '.stdout'
             self.job_step_dict[job_id] = read_curstep_from_file(job_stdout_file)
             self.job_estimate_progress[job_id] = self.compute_progress_next_epoch(job_id)
 
@@ -201,17 +251,55 @@ class Engine:
 
     def check_job_completeness(self):
         for job_id in self.active_queue:
-            job = self.workload_dict[job_id]
+            job: JobAQP = self.workload_dict[job_id]
 
-            if job.time_elapse >= job.deadline:
+            # calculate the average estimated accuracy/progress
+            schema_estimate_agg_sum = 0
+            agg_schema_list = self.get_agg_schema(job_id)
+            for schema_name in agg_schema_list:
+                envelop_func: EnvelopBounder = self.job_envelop_dict[job_id][schema_name]
+                job_estimated_accuracy = envelop_func.get_estimated_accuracy()
+                schema_estimate_agg_sum += job_estimated_accuracy
+            job_average_estimated_accuracy = schema_estimate_agg_sum / len(agg_schema_list)
+
+            if job.accuracy_threshold < job_average_estimated_accuracy:
+                job.complete_attain = True
+                self.logger.info(f"the job {job_id} is completed and attained")
+                self.complete_attain_set.add(job_id)
+                self.active_queue.remove(job_id)
+            elif job.time_elapse >= job.deadline:
                 job.complete_unattain = True
-                print(f"the job {job_id} is completed but not attained")
+                self.logger.info(f"the job {job_id} is completed but not attained")
                 self.complete_unattain_set.add(job_id)
                 self.active_queue.remove(job_id)
             else:
-                print(f"the job {job_id} stay in active, has run {job.time_elapse} seconds")
+                self.logger.info(f"the job {job_id} stay in active, has run {job.time_elapse} seconds")
+
+    def collect_results_epoch(self):
+        # clean the priority queue for next round
+        self.priority_queue.clear()
+
+        for job_id in self.active_queue:
+            output_file = RuntimeConstants.STDOUT_PATH + "/" + job_id + "_" + str(self.global_epoch_count) + ".stdout"
+            output_path = Path(output_file)
+            if output_path.is_file():
+                agg_schema_list = self.get_agg_schema(job_id)
+                current_agg_results_dict = read_aggresult_from_file(output_file, agg_schema_list)
+
+                # extract and store the agg result and time
+                self.job_step_dict[job_id] = read_curstep_from_file(output_file)
+                for schema_name in agg_schema_list:
+                    # store agg result
+                    self.job_agg_result_dict[job_id][schema_name].append(current_agg_results_dict[0])
+                    # store agg time
+                    self.job_agg_time_dict[job_id][schema_name].append(current_agg_results_dict[1])
+                    # update envelop function
+                    schema_envelop_function: EnvelopBounder = self.job_envelop_dict[job_id][schema_name]
+                    schema_envelop_function.input_agg_result(current_agg_results_dict[0])
+                    self.job_envelop_dict[job_id][schema_name] = schema_envelop_function
 
     def process_job(self):
+        # start counting the preparation time
         prerun_time_start = time.perf_counter()
 
         # if STDOUT_PATH or STDERR_PATH doesn't exist, create them then
@@ -220,11 +308,14 @@ class Engine:
         if not Path(RuntimeConstants.STDERR_PATH).is_dir():
             Path(RuntimeConstants.STDERR_PATH).mkdir()
 
+        # create a copy of active queue for resource allocation
         active_queue_deep_copy = copy.deepcopy(self.active_queue)
 
+        # more resources than active jobs
         if self.num_core >= len(self.active_queue):
             extra_cores = self.num_core - len(self.active_queue)
             subprocess_list = list()
+            # check if the job in the priority queue, if so provide 2 cores otherwise 1
             if self.priority_queue:
                 if len(self.priority_queue) > extra_cores:
                     for jidx in np.arange(extra_cores):
@@ -245,54 +336,46 @@ class Engine:
                 subp, out_file, err_file = self.create_job(job, resource_unit=1)
                 subprocess_list.append((subp, out_file, err_file))
 
-            prerun_time_end = time.perf_counter()
-
-            for sp, sp_out, sp_err in subprocess_list:
-                # run the job for a scheduling slot
-                self.run_job_slot(sp, sp_out, sp_err)
-
-            # compute the pre-run time
-            prerun_time = prerun_time_end - prerun_time_start
-            self.time_elapse(prerun_time + self.schedule_slot)
-
-            # check the job completeness
-            self.check_job_completeness()
-
-            # rank the jobs for next scheduling round
-            self.rank_job()
-
+        # less resources than active jobs
         else:
             subprocess_list = list()
             for jidx in np.arange(self.num_core):
                 job_id = self.active_queue[jidx]
                 job = self.workload_dict[job_id]
 
+                # move the job_id to the end for fairness
                 self.active_queue.remove(job_id)
                 self.active_queue.append(job_id)
 
                 subp, out_file, err_file = self.create_job(job, resource_unit=1)
                 subprocess_list.append((subp, out_file, err_file))
 
-            prerun_time_end = time.perf_counter()
+        # end counting the preparation time
+        prerun_time_end = time.perf_counter()
 
-            for sp, sp_out, sp_err in subprocess_list:
-                # run the job for a scheduling slot
-                self.run_job_slot(sp, sp_out, sp_err)
+        # run the job for an epoch
+        for sp, sp_out, sp_err in subprocess_list:
+            self.run_job_epoch(sp, sp_out, sp_err)
 
-            # compute the pre-run time
-            prerun_time = prerun_time_end - prerun_time_start
-            self.time_elapse(prerun_time + self.schedule_slot)
+        # compute the pre-run time
+        prerun_time = prerun_time_end - prerun_time_start
 
-            # check the job completeness
-            self.check_job_completeness()
+        # make the time elapse for prerun_time + schedule_epoch to avoid checkpoint time
+        self.time_elapse(prerun_time + self.schedule_epoch)
 
-            # rank the jobs for next scheduling round
-            self.rank_job()
+        # collect current
+        self.collect_results_epoch()
+
+        # check the job completeness
+        self.check_job_completeness()
+
+        # rank the jobs for next scheduling epoch
+        self.rank_job_next_epoch()
 
     def check_arrived_job(self):
         for job_id, job in self.workload_dict.items():
             if job.arrived and not job.activated:
-                print(f"the job {job_id} arrives and is activated")
+                self.logger.info(f"the job {job_id} arrives and is activated")
                 self.active_queue.append(job_id)
                 job.activated = True
                 self.workload_dict[job_id] = job
@@ -316,6 +399,8 @@ class Engine:
             else:
                 self.time_elapse(1)
 
+            self.global_epoch_count += 1
+
     def fake_process_job(self):
         if self.num_core >= len(self.active_queue):
             for job_id in self.active_queue:
@@ -335,15 +420,15 @@ class Engine:
             job = self.workload_dict[job_id]
 
             if job.complete_attain:
-                print(f"the job {job_id} is completed and attained, runtime: {job.time_elapse} seconds")
+                self.logger.info(f"the job {job_id} is completed and attained, runtime: {job.time_elapse} seconds")
                 self.complete_attain_set.add(job_id)
                 self.active_queue.remove(job_id)
             elif job.complete_unattain:
-                print(f"the job {job_id} is completed but not attained, runtime: {job.time_elapse} seconds")
+                self.logger.info(f"the job {job_id} is completed but not attained, runtime: {job.time_elapse} seconds")
                 self.complete_unattain_set.add(job_id)
                 self.active_queue.remove(job_id)
             else:
-                print(f"the job {job_id} stay in active, has run {job.time_elapse} seconds")
+                self.logger.info(f"the job {job_id} stay in active, has run {job.time_elapse} seconds")
 
     def test(self):
         app_id = read_appid_from_file("/home/stdout/q1.stdout")

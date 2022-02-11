@@ -9,7 +9,7 @@ class EnvelopBounder:
 
         self.agg_list = list()
 
-    def input_agg_results(self, agg_result):
+    def input_agg_result(self, agg_result):
         if len(self.agg_list) > self._seq_length:
             self.agg_list.pop(0)
             self.agg_list.append(agg_result)
