@@ -58,27 +58,38 @@ def read_aggresult_from_file(file_path, target_schema_list):
                 return agg_result_dict
 
 
-def read_all_aggresults_from_file(file_path, target_schema_list, parameter_dict):
+def serialize_stdout_to_knowledge(input_file_path,
+                                  output_file_path,
+                                  target_schema_list,
+                                  parameter_dict):
     """
-        get all agg results from stdout file according to the target schema list
-        the results are stored in a dict
-        key: schema name
-        value: [(agg result1, time1), (agg result2, time2),...,]
+    Serialize the stdout to knowledgebase file
+    Get all agg results from stdout file according to the target schema list
     """
-    agg_result_dict = dict()
-    agg_result_dict_json = dict()
+    agg_knowledge_dict = dict()
 
-    agg_interval = parameter_dict['agg_interval']
+    query_id = parameter_dict["query_id"]
+    agg_knowledge_dict["query_id"] = query_id
+    agg_knowledge_dict["batch_size"] = parameter_dict["batch_size"]
+    agg_knowledge_dict["scale_factor"] = parameter_dict["scale_factor"]
+    agg_knowledge_dict["num_worker"] = parameter_dict["num_worker"]
+    agg_interval = parameter_dict["agg_interval"]
+    agg_knowledge_dict["agg_interval"] = agg_interval
 
     agg_start_time = np.inf
 
-    for schema in target_schema_list:
-        agg_result_dict[schema] = list()
-        agg_result_dict_json[schema] = dict()
+    agg_result_dict = dict()
+    agg_time_dict = dict()
+    for schema_name in target_schema_list:
+        agg_result_dict[schema_name] = list()
+        agg_time_dict[schema_name] = list()
 
-    for line in open(file_path).readlines():
-        agg_tag = 'Aggregation|'
+    input_file = Path(input_file_path)
+    if not input_file.is_file():
+        raise ValueError("stdout file doesn't exist")
 
+    agg_tag = 'Aggregation|'
+    for line in open(input_file_path).readlines():
         if agg_tag in line:
             agg_list = line.strip().split('|')
             agg_schema = agg_list[1]
@@ -88,24 +99,23 @@ def read_all_aggresults_from_file(file_path, target_schema_list, parameter_dict)
             if agg_current_time < agg_start_time:
                 agg_start_time = agg_current_time
 
-            if agg_schema in target_schema_list:
-                agg_result_dict[agg_schema].append((agg_result, agg_current_time - agg_start_time))
+            agg_result_dict[agg_schema].append(agg_result)
+            agg_time_dict[agg_schema].append(agg_current_time - agg_start_time)
 
-    for k, v in agg_result_dict.items():
-        agg_previous_time = v[0][1]
+    # start to clean the raw results
+    for schema_name in target_schema_list:
+        schema_agg_result_list = list()
+        schema_agg_time_list = list()
+
+        agg_slice_sum = agg_result_dict[schema_name][0]
+        agg_previous_time = agg_time_dict[schema_name][0]
         agg_slice_count = 1
-        agg_slice_sum: float = v[0][0]
 
-        agg_results_list = list()
-        agg_time_list = list()
-
-        for item in v[1:]:
-            agg_result = item[0]
-            agg_current_time = item[1]
+        for tidx, agg_current_time in enumerate(agg_time_dict[schema_name][1:]):
+            agg_result = agg_result_dict[schema_name][tidx]
             if agg_current_time - agg_previous_time > (agg_interval // 2):
-                # agg_result_dict_clean[k].append(((agg_slice_sum / agg_slice_count), agg_previous_time))
-                agg_results_list.append(agg_slice_sum / agg_slice_count)
-                agg_time_list.append(agg_previous_time)
+                schema_agg_result_list.append(agg_slice_sum / agg_slice_count)
+                schema_agg_time_list.append(agg_previous_time)
                 agg_slice_count = 1
                 agg_slice_sum = agg_result
                 agg_previous_time = agg_current_time
@@ -115,18 +125,15 @@ def read_all_aggresults_from_file(file_path, target_schema_list, parameter_dict)
             else:
                 print("ignore the item due to the wrong time sequence")
 
-        agg_result_dict_json[k]['result'] = agg_results_list
-        agg_result_dict_json[k]['time'] = agg_time_list
+        agg_knowledge_dict[schema_name] = dict()
+        agg_knowledge_dict[schema_name]["result"] = schema_agg_result_list
+        agg_knowledge_dict[schema_name]["time"] = schema_agg_time_list
 
-        for para, value in parameter_dict.items():
-            agg_result_dict_json[para] = value
+    # check the existing files
+    path_list = Path(output_file_path).glob(query_id + "*.json")
 
-    return agg_result_dict_json
-
-
-def serialize_to_json(query_name, input_dict_list):
-    with open("/home/rotary/knowledgebase/" + query_name + ".json", "w+") as outfile:
-        json.dump(input_dict_list, outfile)
+    with open(output_file_path + "/" + query_id + "-" + str(len(list(path_list)) + 1) + ".json", "w+") as outfile:
+        json.dump(agg_knowledge_dict, outfile)
 
 
 def list_to_json_file():

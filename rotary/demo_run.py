@@ -37,8 +37,8 @@ def main():
 
     tpch_query_list = ["q1", "q3", "q5", "q6", "q11", "q16", "q19"]
     accuracy_list = [0.7, 0.75, 0.8, 0.85, 0.9, 0.95]
-    deadline_list = [60, 120, 180, 240, 300]
-    # deadline_list = [6, 12, 18, 24, 30]
+    # deadline_list = [60, 120, 180, 240, 300]
+    deadline_list = [6, 12, 18, 24, 30]
 
     workload_builder = WorkloadBuilder(workload_size, tpch_query_list, accuracy_list, deadline_list)
 
@@ -53,11 +53,11 @@ def main():
               f"arrived={job.arrived}, "
               f"complete_unattain={job.complete_attain}, "
               f"complete_attain={job.complete_attain}")
-
+    
     sch_engine = Engine(aqp_workload_dict, num_core, num_worker, schedule_round, scheduler)
 
-    sch_engine.run()
-    # sch_engine.test()
+    # sch_engine.run()
+    sch_engine.test()
 
 
 if __name__ == "__main__":

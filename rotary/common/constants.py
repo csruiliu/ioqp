@@ -1,4 +1,12 @@
 
+class RotaryConstants:
+    # knowledgebase path
+    KNOWLEDGEBASE_PATH = '/home/rotary/knowledgebase'
+
+    # query list
+    QUERY_LIST = ['q1', 'q3', 'q5', 'q6', 'q11', 'q16', 'q19']
+
+
 class RuntimeConstants:
     # max memory for each executor
     MAX_MEMORY = '10G'
@@ -83,7 +91,7 @@ class RuntimeConstants:
     TRIGGER_INTERVAL = 100
 
     # aggregation interval (milliseconds)
-    AGGREGATION_INTERVAL = 50
+    AGGREGATION_INTERVAL = 100
 
     # checkpoint path
     CHECKPOINT_PATH = 'file:///home/tpch-checkpoint'

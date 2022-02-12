@@ -1,5 +1,6 @@
-import numpy as np
 import json
+import numpy as np
+from pathlib import Path
 
 
 class RotaryEstimator:
@@ -20,7 +21,15 @@ class RotaryEstimator:
         self._epoch_time = 0
         self._top_k = topk
         self._deg = poly_deg
+
+        """
+        The dict for storing archived knowledge files
+        key: query_id
+        value: a list of archived knowledge for each query id. Each archived knowledge is a dict. 
+               Each dict has parameters and agg results and time
+        """
         self._knowledge_dict_archive = dict()
+
         self._knowledge_dict_realtime_result = dict()
         self._knowledge_dict_realtime_runtime = dict()
 
@@ -29,36 +38,18 @@ class RotaryEstimator:
             self.agg_results_dict[schema_name].append(schema_value[0])
             self.agg_runtime_dict[schema_name].append(schema_value[1])
 
-    def import_knowledge_archive(self, knowledge_archive_path, archive_file):
-        query_id = None
-        if archive_file.startswith("q1"):
-            query_id = "q1"
-        elif archive_file.startswith("q3"):
-            query_id = "q3"
-        elif archive_file.startswith("q5"):
-            query_id = "q5"
-        elif archive_file.startswith("q6"):
-            query_id = "q6"
-        elif archive_file.startswith("q11"):
-            query_id = "q11"
-        elif archive_file.startswith("q16"):
-            query_id = "q16"
-        elif archive_file.startswith('q19'):
-            query_id = "q19"
-        else:
-            ValueError('The archive file name should start with q1, q3, q5, q6, q11, q16, q19!')
+    def import_knowledge_archive(self, knowledgebase_path, query_list):
+        kb_path = Path(knowledgebase_path)
+        if not kb_path.is_dir():
+            raise ValueError("The knowledgebase path doesn't exist")
 
-        self._knowledge_dict_archive[query_id] = list()
-
-        with open(knowledge_archive_path + "/" + archive_file) as ka:
-            archive_list = json.load(ka)
-            for archive_item in archive_list:
-                _archive_item_dict = dict()
-                for schema_name, agg_results in archive_item.items():
-                    _archive_item_dict[schema_name] = agg_results
-                self._knowledge_dict_archive[query_id].append(_archive_item_dict)
-
-        return self._knowledge_dict_archive
+        for query_id in query_list:
+            path_list = kb_path.glob(query_id + "*.json")
+            self._knowledge_dict_archive[query_id] = list()
+            for kb_file in path_list:
+                with open(kb_file) as ka:
+                    kb_archive_dict = json.load(ka)
+                    self._knowledge_dict_archive[query_id].append(kb_archive_dict)
 
     def import_knowledge_realtime(self, input_dict):
         for schema_name, schema_value in input_dict.items():

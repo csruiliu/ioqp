@@ -11,12 +11,11 @@ from estimator.relaqs_estimator import ReLAQSEstimator
 from estimator.envelop_bounder import EnvelopBounder
 from workload.job_aqp import JobAQP
 from common.loggers import get_logger_instance
-from common.constants import RuntimeConstants
+from common.constants import RuntimeConstants, RotaryConstants
 from common.file_utils import (read_curstep_from_file,
                                read_appid_from_file,
                                read_aggresult_from_file,
-                               read_all_aggresults_from_file,
-                               serialize_to_json)
+                               serialize_stdout_to_knowledge)
 
 
 class Engine:
@@ -110,9 +109,10 @@ class Engine:
 
             # create an estimator for each job
             if self.scheduler == "rotary":
-                self.job_estimator_dict[job_id] = RotaryEstimator(job_id,
-                                                                  self.get_agg_schema(job_id),
-                                                                  self.schedule_epoch)
+                rotary_estimator = RotaryEstimator(job_id, self.get_agg_schema(job_id), self.schedule_epoch)
+                rotary_estimator.import_knowledge_archive(RotaryConstants.KNOWLEDGEBASE_PATH,
+                                                          RotaryConstants.QUERY_LIST)
+                self.job_estimator_dict[job_id] = rotary_estimator
             elif self.scheduler == "relaqs":
                 self.job_estimator_dict[job_id] = ReLAQSEstimator(job_id,
                                                                   self.get_agg_schema(job_id),
@@ -177,7 +177,7 @@ class Engine:
     def create_job(self, job, resource_unit):
         self.generate_job_cmd(resource_unit, job.job_id)
 
-        job_output_id = job.job_id + "_" + str(self.global_epoch_count)
+        job_output_id = job.job_id + "-" + str(self.global_epoch_count)
         stdout_file = open(RuntimeConstants.STDOUT_PATH + "/" + job_output_id + ".stdout", "w+")
         stderr_file = open(RuntimeConstants.STDERR_PATH + '/' + job_output_id + '.stderr', "w+")
 
@@ -241,7 +241,7 @@ class Engine:
 
         # rank the jobs in active queue according to the estimated progress
         for job_id in self.active_queue:
-            job_output_id = job_id + "_" + str(self.global_epoch_count)
+            job_output_id = job_id + "-" + str(self.global_epoch_count)
             job_stdout_file = RuntimeConstants.STDOUT_PATH + job_output_id + '.stdout'
             self.job_step_dict[job_id] = read_curstep_from_file(job_stdout_file)
             self.job_estimate_progress[job_id] = self.compute_progress_next_epoch(job_id)
@@ -280,7 +280,7 @@ class Engine:
         self.priority_queue.clear()
 
         for job_id in self.active_queue:
-            output_file = RuntimeConstants.STDOUT_PATH + "/" + job_id + "_" + str(self.global_epoch_count) + ".stdout"
+            output_file = RuntimeConstants.STDOUT_PATH + "/" + job_id + "-" + str(self.global_epoch_count) + ".stdout"
             output_path = Path(output_file)
             if output_path.is_file():
                 agg_schema_list = self.get_agg_schema(job_id)
@@ -434,17 +434,20 @@ class Engine:
         app_id = read_appid_from_file("/home/stdout/q1.stdout")
         app_stdout_file = RuntimeConstants.SPARK_WORK_PATH + '/' + app_id + '/0/stdout'
 
-        para_dict = dict()
-        para_dict['batch_size'] = self.batch_size
-        para_dict['scale_factor'] = RuntimeConstants.SCALE_FACTOR
-        para_dict['num_core'] = 1
-        para_dict['agg_interval'] = RuntimeConstants.AGGREGATION_INTERVAL
+        parameter_dict = dict()
+        parameter_dict["query_id"] = "q1"
+        parameter_dict["batch_size"] = self.batch_size
+        parameter_dict["scale_factor"] = RuntimeConstants.SCALE_FACTOR
+        parameter_dict["agg_interval"] = RuntimeConstants.AGGREGATION_INTERVAL
+        parameter_dict["num_worker"] = RuntimeConstants.NUM_WORKER
 
-        agg_results_dict = read_all_aggresults_from_file(app_stdout_file, RuntimeConstants.Q1_AGG_COL, para_dict)
-
-        agg_results_dict_list = list()
-        agg_results_dict_list.append(agg_results_dict)
-
-        serialize_to_json("q1", agg_results_dict)
-
+        """
+        serialize_stdout_to_knowledge(app_stdout_file,
+                                      RotaryConstants.KNOWLEDGEBASE_PATH,
+                                      RuntimeConstants.Q1_AGG_COL,
+                                      parameter_dict)
         rotary_estimator = RotaryEstimator("q1", RuntimeConstants.Q1_AGG_COL, 5)
+        """
+
+        for k, v in self.job_estimator_dict.items():
+            print(v._knowledge_dict_archive)
