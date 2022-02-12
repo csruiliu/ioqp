@@ -135,16 +135,3 @@ def serialize_stdout_to_knowledge(input_file_path,
     with open(output_file_path + "/" + query_id + "-" + str(len(list(path_list)) + 1) + ".json", "w+") as outfile:
         json.dump(agg_knowledge_dict, outfile)
 
-
-def list_to_json_file():
-    json_str = '[{"results":[1,2,3], "runtime":[2,3,4]}]'
-    alist = json.loads(json_str)
-    print(alist[0]["results"])
-
-
-def main():
-    list_to_json_file()
-
-
-if __name__ == "__main__":
-    main()

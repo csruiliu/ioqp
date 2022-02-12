@@ -436,18 +436,17 @@ class Engine:
 
         parameter_dict = dict()
         parameter_dict["query_id"] = "q1"
-        parameter_dict["batch_size"] = self.batch_size
         parameter_dict["scale_factor"] = RuntimeConstants.SCALE_FACTOR
         parameter_dict["agg_interval"] = RuntimeConstants.AGGREGATION_INTERVAL
+        parameter_dict["batch_size"] = self.batch_size
         parameter_dict["num_worker"] = RuntimeConstants.NUM_WORKER
 
-        """
         serialize_stdout_to_knowledge(app_stdout_file,
                                       RotaryConstants.KNOWLEDGEBASE_PATH,
                                       RuntimeConstants.Q1_AGG_COL,
                                       parameter_dict)
-        rotary_estimator = RotaryEstimator("q1", RuntimeConstants.Q1_AGG_COL, 5)
-        """
 
-        for k, v in self.job_estimator_dict.items():
-            print(v._knowledge_dict_archive)
+        # rotary_estimator = RotaryEstimator("q1", RuntimeConstants.Q1_AGG_COL, 5)
+
+        # for k, v in self.job_estimator_dict.items():
+        #     print(v._knowledge_dict_archive)
