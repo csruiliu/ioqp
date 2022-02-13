@@ -236,7 +236,8 @@ class QueryTPCH(bootstrap: String,
         $"p_partkey", $"p_mfgr", $"s_address", $"s_phone", $"s_comment")
       // .limit(100)
 
-    DataUtils.writeToSink(result, query_name)
+    // DataUtils.writeToSink(result, query_name)
+    DataUtils.writeToSink(result, query_name, trigger_interval)
   }
 
   def execQ3(spark: SparkSession): Unit = {
@@ -266,13 +267,18 @@ class QueryTPCH(bootstrap: String,
 
     // result.explain(false)
 
-    DataUtils.writeToSink(result, query_name)
+    // DataUtils.writeToSink(result, query_name)
+    DataUtils.writeToSink(result, query_name, trigger_interval)
   }
 
   def execQ4(spark: SparkSession): Unit = {
     import spark.implicits._
 
     val order_count = new Count
+
+    //set agg interval and name
+    order_count.setAggregationInterval(aggregation_interval)
+    order_count.setAggregationSchemaName("order_count")
 
     val o = DataUtils.loadStreamTable(spark, "orders", "o")
       .filter($"o_orderdate" >= "1993-07-01"
@@ -290,7 +296,8 @@ class QueryTPCH(bootstrap: String,
 
     // result.explain(false)
 
-    DataUtils.writeToSink(result, query_name)
+    // DataUtils.writeToSink(result, query_name)
+    DataUtils.writeToSink(result, query_name, trigger_interval)
   }
 
   def execQ5(spark: SparkSession): Unit = {
@@ -326,7 +333,8 @@ class QueryTPCH(bootstrap: String,
 
     // result.explain(true)
 
-    DataUtils.writeToSink(result, query_name)
+    // DataUtils.writeToSink(result, query_name)
+    DataUtils.writeToSink(result, query_name, trigger_interval)
   }
 
   def execQ6(spark: SparkSession): Unit = {
@@ -347,13 +355,18 @@ class QueryTPCH(bootstrap: String,
     )
 
     // result.explain(true)
-    DataUtils.writeToSink(result, query_name)
+    // DataUtils.writeToSink(result, query_name)
+    DataUtils.writeToSink(result, query_name, trigger_interval)
   }
 
   def execQ7(spark: SparkSession): Unit = {
     import spark.implicits._
 
     val sum_disc_price = new Sum_disc_price
+
+    //set agg interval and name
+    sum_disc_price.setAggregationInterval(aggregation_interval)
+    sum_disc_price.setAggregationSchemaName("revenue")
 
     val l = DataUtils.loadStreamTable(spark, "lineitem", "l")
       .filter($"l_shipdate" between("1995-01-01", "1996-12-31"))
@@ -379,13 +392,18 @@ class QueryTPCH(bootstrap: String,
     //  .orderBy("supp_nation", "cust_nation", "l_year")
 
     // result.explain(true)
-    DataUtils.writeToSink(result, query_name)
+    // DataUtils.writeToSink(result, query_name)
+    DataUtils.writeToSink(result, query_name, trigger_interval)
   }
 
   def execQ8(spark: SparkSession): Unit = {
     import spark.implicits._
 
     val udaf_q8 = new UDAF_Q8
+
+    //set agg interval and name
+    udaf_q8.setAggregationInterval(aggregation_interval)
+    udaf_q8.setAggregationSchemaName("mkt_share")
 
     val p = DataUtils.loadStreamTable(spark, "part", "p")
       .filter($"p_type" === "ECONOMY ANODIZED STEEL")
@@ -415,13 +433,18 @@ class QueryTPCH(bootstrap: String,
     //  .orderBy($"o_year")
 
     // result.explain(true)
-    DataUtils.writeToSink(result, query_name)
+    // DataUtils.writeToSink(result, query_name)
+    DataUtils.writeToSink(result, query_name, trigger_interval)
   }
 
   def execQ9(spark: SparkSession): Unit = {
     import spark.implicits._
 
     val doubleSum = new DoubleSum
+
+    //set agg interval and name
+    doubleSum.setAggregationInterval(aggregation_interval)
+    doubleSum.setAggregationSchemaName("sum_profit")
 
     val p = DataUtils.loadStreamTable(spark, "part", "p")
       .filter($"p_name" like("%green%"))
@@ -445,13 +468,18 @@ class QueryTPCH(bootstrap: String,
     //  .orderBy($"nation", desc("o_year"))
 
     // result.explain(true)
-    DataUtils.writeToSink(result, query_name)
+    // DataUtils.writeToSink(result, query_name)
+    DataUtils.writeToSink(result, query_name, trigger_interval)
   }
 
   def execQ10(spark: SparkSession): Unit = {
     import spark.implicits._
 
     val revenue = new Sum_disc_price
+
+    //set agg interval and name
+    revenue.setAggregationInterval(aggregation_interval)
+    revenue.setAggregationSchemaName("revenue")
 
     val c = DataUtils.loadStreamTable(spark, "customer", "c")
     val o = DataUtils.loadStreamTable(spark, "orders", "o")
@@ -468,7 +496,8 @@ class QueryTPCH(bootstrap: String,
     //  .orderBy(desc("revenue"))
 
     // result.explain(true)
-    DataUtils.writeToSink(result, query_name)
+    // DataUtils.writeToSink(result, query_name)
+    DataUtils.writeToSink(result, query_name, trigger_interval)
   }
 
   def execQ11_subquery(spark: SparkSession): DataFrame = {
@@ -521,7 +550,8 @@ class QueryTPCH(bootstrap: String,
 
       // .orderBy(desc("value"))
       // result.explain()
-      DataUtils.writeToSink(result, query_name)
+      // DataUtils.writeToSink(result, query_name)
+      DataUtils.writeToSink(result, query_name, trigger_interval)
     }
   }
 
@@ -530,6 +560,12 @@ class QueryTPCH(bootstrap: String,
 
     val udaf_q12_low = new UDAF_Q12_LOW
     val udaf_q12_high = new UDAF_Q12_HIGH
+
+    // set agg interval and name
+    udaf_q12_low.setAggregationInterval(aggregation_interval)
+    udaf_q12_low.setAggregationSchemaName("low_line_count")
+    udaf_q12_high.setAggregationInterval(aggregation_interval)
+    udaf_q12_high.setAggregationSchemaName("high_line_count")
 
     val o = DataUtils.loadStreamTable(spark, "orders", "o")
     val l = DataUtils.loadStreamTable(spark, "lineitem", "l")
@@ -547,7 +583,8 @@ class QueryTPCH(bootstrap: String,
 
     // result.explain(true)
 
-    DataUtils.writeToSink(result, query_name)
+    // DataUtils.writeToSink(result, query_name)
+    DataUtils.writeToSink(result, query_name, trigger_interval)
   }
 
   def execQ13(spark: SparkSession): Unit = {
@@ -555,6 +592,12 @@ class QueryTPCH(bootstrap: String,
 
     val c_count = new Count_not_null
     val custdist = new Count
+
+    // set agg interval and name
+    c_count.setAggregationInterval(aggregation_interval)
+    c_count.setAggregationSchemaName("c_count")
+    custdist.setAggregationInterval(aggregation_interval)
+    custdist.setAggregationSchemaName("custdist")
 
     val c = DataUtils.loadStreamTable(spark, "customer", "c")
     val o = DataUtils.loadStreamTable(spark, "orders", "o")
@@ -570,15 +613,22 @@ class QueryTPCH(bootstrap: String,
 
     // result.explain(true)
 
-    DataUtils.writeToSink(result, query_name)
+    // DataUtils.writeToSink(result, query_name)
+    DataUtils.writeToSink(result, query_name, trigger_interval)
   }
 
   def execQ14(spark: SparkSession): Unit = {
     import spark.implicits._
 
     val sum_disc_price = new Sum_disc_price
-
     val udaf_q14 = new UDAF_Q14
+
+    // set agg interval and name
+    sum_disc_price.setAggregationInterval(aggregation_interval)
+    sum_disc_price.setAggregationSchemaName("promo_revenue")
+    udaf_q14.setAggregationInterval(aggregation_interval)
+    udaf_q14.setAggregationSchemaName("uadf_q14")
+
     val l = DataUtils.loadStreamTable(spark, "lineitem", "l")
       .filter($"l_shipdate" between("1995-09-01", "1995-10-01"))
     val p = DataUtils.loadStreamTable(spark, "part", "p")
@@ -589,13 +639,18 @@ class QueryTPCH(bootstrap: String,
         sum_disc_price($"l_extendedprice", $"l_discount")) * 100).as("promo_revenue"))
 
     // result.explain(true)
-    DataUtils.writeToSink(result, query_name)
+    // DataUtils.writeToSink(result, query_name)
+    DataUtils.writeToSink(result, query_name, trigger_interval)
   }
 
   def execQ15_subquery(spark: SparkSession): DataFrame = {
     import  spark.implicits._
 
     val sum_disc_price = new Sum_disc_price
+
+    // set agg interval and name
+    sum_disc_price.setAggregationInterval(aggregation_interval)
+    sum_disc_price.setAggregationSchemaName("total_revenue")
 
     val l = DataUtils.loadStreamTable(spark, "lineitem", "l")
       .filter($"l_shipdate" between("1996-01-01", "1996-04-01"))
@@ -623,7 +678,8 @@ class QueryTPCH(bootstrap: String,
     // .orderBy("s_suppkey")
 
     // result.explain(true)
-    DataUtils.writeToSink(result, query_name)
+    // DataUtils.writeToSink(result, query_name)
+    DataUtils.writeToSink(result, query_name, trigger_interval)
   }
 
   def execQ16(spark: SparkSession): Unit = {
@@ -655,7 +711,8 @@ class QueryTPCH(bootstrap: String,
     //  .orderBy(desc("supplier_cnt"), $"p_brand", $"p_type", $"p_size")
 
     // result.explain(true)
-    DataUtils.writeToSink(result, query_name)
+    // DataUtils.writeToSink(result, query_name)
+    DataUtils.writeToSink(result, query_name, trigger_interval)
   }
 
   def execQ17(spark: SparkSession): Unit = {
@@ -663,6 +720,12 @@ class QueryTPCH(bootstrap: String,
 
     val doubleAvg = new DoubleAvg
     val doubleSum = new DoubleSum
+
+    // set agg interval and name
+    doubleAvg.setAggregationInterval(aggregation_interval)
+    doubleAvg.setAggregationSchemaName("avg_quantity")
+    doubleSum.setAggregationInterval(aggregation_interval)
+    doubleSum.setAggregationSchemaName("avg_yearly")
 
     val l = DataUtils.loadStreamTable(spark, "lineitem", "l")
     val p = DataUtils.loadStreamTable(spark, "part", "p")
@@ -691,8 +754,8 @@ class QueryTPCH(bootstrap: String,
             .join(p, $"l_partkey" === $"p_partkey")
             .agg((doubleSum($"l_extendedprice") / 7.0).as("avg_yearly"))
 
-      DataUtils.writeToSink(result, query_name)
-
+      // DataUtils.writeToSink(result, query_name)
+      DataUtils.writeToSink(result, query_name, trigger_interval)
     }
   }
 
@@ -701,6 +764,12 @@ class QueryTPCH(bootstrap: String,
 
     val doubleSum1 = new DoubleSum
     val doubleSum2 = new DoubleSum
+
+    // set agg interval and name
+    doubleSum1.setAggregationInterval(aggregation_interval)
+    doubleSum1.setAggregationSchemaName("avg_quantity")
+    doubleSum2.setAggregationInterval(aggregation_interval)
+    doubleSum2.setAggregationSchemaName("avg_yearly")
 
     val c = DataUtils.loadStreamTable(spark, "customer", "c")
     val o = DataUtils.loadStreamTable(spark, "orders", "o")
@@ -735,7 +804,8 @@ class QueryTPCH(bootstrap: String,
       //  .orderBy(desc("o_totalprice"), $"o_orderdate")
 
       // result.explain(true)
-      DataUtils.writeToSink(result, query_name)
+      // DataUtils.writeToSink(result, query_name)
+      DataUtils.writeToSink(result, query_name, trigger_interval)
     }
   }
 
@@ -773,13 +843,18 @@ class QueryTPCH(bootstrap: String,
 
     // result.explain(true)
 
-    DataUtils.writeToSink(result, query_name)
+    // DataUtils.writeToSink(result, query_name)
+    DataUtils.writeToSink(result, query_name, trigger_interval)
   }
 
   def execQ20(spark: SparkSession): Unit = {
     import spark.implicits._
 
     val doubleSum = new DoubleSum
+
+    // set agg interval and name
+    doubleSum.setAggregationInterval(aggregation_interval)
+    doubleSum.setAggregationSchemaName("agg_l_sum")
 
     val agg_l = DataUtils.loadStreamTable(spark, "lineitem", "l")
       .filter($"l_shipdate" between("1994-01-01", "1994-12-31"))
@@ -819,7 +894,8 @@ class QueryTPCH(bootstrap: String,
         // } else {
         // }
 
-      DataUtils.writeToSink(result, query_name)
+      // DataUtils.writeToSink(result, query_name)
+      DataUtils.writeToSink(result, query_name, trigger_interval)
     }
   }
 
@@ -827,6 +903,10 @@ class QueryTPCH(bootstrap: String,
     import spark.implicits._
 
     val count = new Count
+
+    // set agg interval and name
+    count.setAggregationInterval(aggregation_interval)
+    count.setAggregationSchemaName("numwait")
 
     val s = DataUtils.loadStreamTable(spark, "supplier", "s")
     val l1 = DataUtils.loadStreamTable(spark, "lineitem", "l1")
@@ -859,7 +939,8 @@ class QueryTPCH(bootstrap: String,
 
     // result.explain(true)
 
-    DataUtils.writeToSink(result, query_name)
+    // DataUtils.writeToSink(result, query_name)
+    DataUtils.writeToSink(result, query_name, trigger_interval)
   }
 
   def execQ22(spark: SparkSession): Unit = {
@@ -868,6 +949,14 @@ class QueryTPCH(bootstrap: String,
     val doubleAvg = new DoubleAvg
     val numcust = new Count
     val doubleSum = new DoubleSum
+
+    // set agg interval and name
+    doubleAvg.setAggregationInterval(aggregation_interval)
+    doubleAvg.setAggregationSchemaName("avg_acctbal")
+    numcust.setAggregationInterval(aggregation_interval)
+    numcust.setAggregationSchemaName("numcust")
+    doubleSum.setAggregationInterval(aggregation_interval)
+    doubleSum.setAggregationSchemaName("totalacctbal")
 
     val c = DataUtils.loadStreamTable(spark, "customer", "c")
       .filter(substring($"c_phone", 1, 2)
@@ -907,7 +996,8 @@ class QueryTPCH(bootstrap: String,
 
        // .orderBy($"cntrycode")
        // result.explain(true)
-      DataUtils.writeToSink(result, query_name)
+      // DataUtils.writeToSink(result, query_name)
+      DataUtils.writeToSink(result, query_name, trigger_interval)
     }
   }
 

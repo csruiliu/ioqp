@@ -192,6 +192,19 @@ class Count extends UserDefinedAggregateFunction {
 
 // Count not null
 class Count_not_null extends UserDefinedAggregateFunction {
+  var startTime: Long = System.currentTimeMillis()
+  var currentTime: Long = startTime
+
+  var aggregationSchemaName: String = _
+  var aggregationInterval: Int = 0
+
+  def setAggregationInterval(inputInterval: Int): Unit = {
+    this.aggregationInterval = inputInterval
+  }
+  def setAggregationSchemaName(inputSchemaName: String): Unit = {
+    this.aggregationSchemaName = inputSchemaName
+  }
+
   override def inputSchema: StructType = StructType(StructField("input", LongType) :: Nil)
 
   override def bufferSchema: StructType = StructType(StructField("count", LongType) :: Nil)
@@ -205,7 +218,18 @@ class Count_not_null extends UserDefinedAggregateFunction {
   }
 
   override def update(buffer: MutableAggregationBuffer, input: Row): Unit = {
-    if (!input.isNullAt(0)) buffer(0) = buffer.getLong(0) + 1
+    if (!input.isNullAt(0)) {
+      buffer(0) = buffer.getLong(0) + 1
+
+      this.currentTime = System.currentTimeMillis()
+
+      if (this.aggregationInterval != 0 && this.currentTime - this.startTime > this.aggregationInterval) {
+        println("Aggregation|%s|%d|%d".format(
+          this.aggregationSchemaName, buffer.getLong(0), this.currentTime)
+        )
+        this.startTime = System.currentTimeMillis()
+      }
+    }
   }
 
   override def delete(buffer: MutableAggregationBuffer, input: Row): Unit = {
@@ -352,7 +376,20 @@ class Sum_disc_price_with_tax extends UserDefinedAggregateFunction {
 }
 
 class UDAF_Q8 extends UserDefinedAggregateFunction {
-    // This is the input fields for your aggregate function.
+  var startTime: Long = System.currentTimeMillis()
+  var currentTime: Long = startTime
+
+  var aggregationSchemaName: String = _
+  var aggregationInterval: Int = 0
+
+  def setAggregationInterval(inputInterval: Int): Unit = {
+    this.aggregationInterval = inputInterval
+  }
+
+  def setAggregationSchemaName(inputSchemaName: String): Unit = {
+    this.aggregationSchemaName = inputSchemaName
+  }
+  // This is the input fields for your aggregate function.
   override def inputSchema: org.apache.spark.sql.types.StructType =
     StructType(StructField("n2_name", StringType) ::
       StructField("volume", DoubleType) :: Nil)
@@ -383,6 +420,23 @@ class UDAF_Q8 extends UserDefinedAggregateFunction {
       buffer(0) = buffer.getAs[Double](0) + volume
     }
     buffer(1) = buffer.getAs[Double](1) + volume
+
+    this.currentTime = System.currentTimeMillis()
+
+    if (this.aggregationInterval != 0 && this.currentTime - this.startTime > this.aggregationInterval) {
+      if (name == "BRAZIL") {
+        println("Aggregation|%s|%.3f|%d".format(
+          this.aggregationSchemaName, buffer.getAs[Double](1), this.currentTime)
+        )
+      }
+      else {
+        println("Aggregation|%s|%.3f|%d".format(
+          this.aggregationSchemaName, buffer.getAs[Double](0), this.currentTime)
+        )
+      }
+      this.startTime = System.currentTimeMillis()
+    }
+
   }
 
   // This is how to merge two objects with the bufferSchema type.
@@ -398,7 +452,21 @@ class UDAF_Q8 extends UserDefinedAggregateFunction {
 }
 
 class UDAF_Q12_HIGH extends UserDefinedAggregateFunction {
-    // This is the input fields for your aggregate function.
+  var startTime: Long = System.currentTimeMillis()
+  var currentTime: Long = startTime
+
+  var aggregationSchemaName: String = _
+  var aggregationInterval: Int = 0
+
+  def setAggregationInterval(inputInterval: Int): Unit = {
+    this.aggregationInterval = inputInterval
+  }
+
+  def setAggregationSchemaName(inputSchemaName: String): Unit = {
+    this.aggregationSchemaName = inputSchemaName
+  }
+
+  // This is the input fields for your aggregate function.
   override def inputSchema: StructType = StructType(StructField("o_orderpriority", StringType) :: Nil)
 
   // This is the internal fields you keep for computing your aggregate.
@@ -420,6 +488,15 @@ class UDAF_Q12_HIGH extends UserDefinedAggregateFunction {
 
     if (priority == "1-URGENT" || priority == "2-HIGH") {
       buffer(0) = buffer.getAs[Long](0) + 1
+
+      this.currentTime = System.currentTimeMillis()
+
+      if (this.aggregationInterval != 0 && this.currentTime - this.startTime > this.aggregationInterval) {
+        println("Aggregation|%s|%d|%d".format(
+          this.aggregationSchemaName, buffer.getAs[Long](0), this.currentTime)
+        )
+        this.startTime = System.currentTimeMillis()
+      }
     }
   }
 
@@ -435,7 +512,20 @@ class UDAF_Q12_HIGH extends UserDefinedAggregateFunction {
 }
 
 class UDAF_Q12_LOW extends UserDefinedAggregateFunction {
-    // This is the input fields for your aggregate function.
+  var startTime: Long = System.currentTimeMillis()
+  var currentTime: Long = startTime
+
+  var aggregationSchemaName: String = _
+  var aggregationInterval: Int = 0
+
+  def setAggregationInterval(inputInterval: Int): Unit = {
+    this.aggregationInterval = inputInterval
+  }
+  def setAggregationSchemaName(inputSchemaName: String): Unit = {
+    this.aggregationSchemaName = inputSchemaName
+  }
+
+  // This is the input fields for your aggregate function.
   override def inputSchema: StructType = StructType(StructField("o_orderpriority", StringType) :: Nil)
 
   // This is the internal fields you keep for computing your aggregate.
@@ -457,6 +547,15 @@ class UDAF_Q12_LOW extends UserDefinedAggregateFunction {
 
     if (priority != "1-URGENT" && priority != "2-HIGH") {
       buffer(0) = buffer.getAs[Long](0) + 1
+
+      this.currentTime = System.currentTimeMillis()
+
+      if (this.aggregationInterval != 0 && this.currentTime - this.startTime > this.aggregationInterval) {
+        println("Aggregation|%s|%d|%d".format(
+          this.aggregationSchemaName, buffer.getAs[Long](0), this.currentTime)
+        )
+        this.startTime = System.currentTimeMillis()
+      }
     }
   }
 
@@ -472,7 +571,20 @@ class UDAF_Q12_LOW extends UserDefinedAggregateFunction {
 }
 
 class UDAF_Q14 extends UserDefinedAggregateFunction {
-    // This is the input fields for your aggregate function.
+  var startTime: Long = System.currentTimeMillis()
+  var currentTime: Long = startTime
+
+  var aggregationSchemaName: String = _
+  var aggregationInterval: Int = 0
+
+  def setAggregationInterval(inputInterval: Int): Unit = {
+    this.aggregationInterval = inputInterval
+  }
+  def setAggregationSchemaName(inputSchemaName: String): Unit = {
+    this.aggregationSchemaName = inputSchemaName
+  }
+
+  // This is the input fields for your aggregate function.
   override def inputSchema: org.apache.spark.sql.types.StructType =
     StructType(StructField("p_type", StringType) ::
       StructField("l_extendedprice", DoubleType) ::
@@ -499,6 +611,15 @@ class UDAF_Q14 extends UserDefinedAggregateFunction {
 
     if (p_type.startsWith("PROMO")) {
       buffer(0) = buffer.getAs[Double](0) + input.getAs[Double](1) * (1 - input.getAs[Double](2))
+
+      this.currentTime = System.currentTimeMillis()
+
+      if (this.aggregationInterval != 0 && this.currentTime - this.startTime > this.aggregationInterval) {
+        println("Aggregation|%s|%.3f|%d".format(
+          this.aggregationSchemaName, buffer.getAs[Double](0), this.currentTime)
+        )
+        this.startTime = System.currentTimeMillis()
+      }
     }
   }
 
