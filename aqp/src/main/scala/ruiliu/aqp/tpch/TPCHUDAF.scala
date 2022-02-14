@@ -54,7 +54,6 @@ class DoubleSum extends UserDefinedAggregateFunction {
     buffer(0) = buffer.getDouble(0) + input.getDouble(0)
 
     this.currentTime = System.currentTimeMillis()
-
     if (this.aggregationInterval != 0 && this.currentTime - this.startTime > this.aggregationInterval) {
       println("Aggregation|%s|%.3f|%d".format(
         this.aggregationSchemaName, buffer.getDouble(0), this.currentTime)
@@ -75,6 +74,121 @@ class DoubleSum extends UserDefinedAggregateFunction {
     buffer.getDouble(0)
   }
 }
+
+
+// max over double
+class DoubleMax extends UserDefinedAggregateFunction {
+  var startTime: Long = System.currentTimeMillis()
+  var currentTime: Long = startTime
+
+  var aggregationSchemaName: String = _
+  var aggregationInterval: Int = 0
+
+  def setAggregationInterval(inputInterval: Int): Unit = {
+    this.aggregationInterval = inputInterval
+  }
+
+  def setAggregationSchemaName(inputSchemaName: String): Unit = {
+    this.aggregationSchemaName = inputSchemaName
+  }
+
+  override def inputSchema: StructType = StructType(StructField("input", DoubleType) :: Nil)
+
+  override def bufferSchema: StructType = StructType(StructField("max", DoubleType) :: Nil)
+
+  override def dataType: DataType = DoubleType
+
+  //Returns true iff this function is deterministic, i.e. given the same input,
+  override def deterministic: Boolean = true
+
+  override def initialize(buffer: MutableAggregationBuffer): Unit = {
+    buffer(0) = 0.0
+  }
+
+  override def update(buffer: MutableAggregationBuffer, input: Row): Unit = {
+    if (buffer.getDouble(0) < input.getDouble(0)) {
+      buffer(0) = input.getDouble(0)
+    }
+
+    this.currentTime = System.currentTimeMillis()
+    if (this.aggregationInterval != 0 && this.currentTime - this.startTime > this.aggregationInterval) {
+      println("Aggregation|%s|%.3f|%d".format(
+        this.aggregationSchemaName, buffer.getDouble(0), this.currentTime)
+      )
+      this.startTime = System.currentTimeMillis()
+    }
+  }
+
+  override def merge(buffer1: MutableAggregationBuffer, buffer2: Row): Unit = {
+    if (buffer1.getDouble(0) < buffer2.getDouble(0)) {
+      buffer1(0) = buffer2.getDouble(0)
+    }
+  }
+
+  override def evaluate(buffer: Row): Any = {
+    buffer.getDouble(0)
+  }
+}
+
+
+// min over double
+class DoubleMin extends UserDefinedAggregateFunction {
+  var startTime: Long = System.currentTimeMillis()
+  var currentTime: Long = startTime
+
+  var aggregationSchemaName: String = _
+  var aggregationInterval: Int = 0
+
+  def setAggregationInterval(inputInterval: Int): Unit = {
+    this.aggregationInterval = inputInterval
+  }
+
+  def setAggregationSchemaName(inputSchemaName: String): Unit = {
+    this.aggregationSchemaName = inputSchemaName
+  }
+
+  override def inputSchema: StructType = StructType(StructField("input", DoubleType) :: Nil)
+
+  override def bufferSchema: StructType = StructType(StructField("min", DoubleType) :: Nil)
+
+  override def dataType: DataType = DoubleType
+
+  //Returns true iff this function is deterministic, i.e. given the same input,
+  override def deterministic: Boolean = true
+
+  override def initialize(buffer: MutableAggregationBuffer): Unit = {
+    buffer(0) = 0.0
+  }
+
+  override def update(buffer: MutableAggregationBuffer, input: Row): Unit = {
+    if (buffer.getDouble(0) == 0.0) {
+      buffer(0) = input.getDouble(0)
+    }
+
+    if (buffer.getDouble(0) > input.getDouble(0)) {
+      buffer(0) = input.getDouble(0)
+    }
+
+    this.currentTime = System.currentTimeMillis()
+    if (this.aggregationInterval != 0 && this.currentTime - this.startTime > this.aggregationInterval) {
+      println("Aggregation|%s|%.3f|%d".format(
+        this.aggregationSchemaName, buffer.getDouble(0), this.currentTime)
+      )
+      this.startTime = System.currentTimeMillis()
+    }
+  }
+
+  override def merge(buffer1: MutableAggregationBuffer, buffer2: Row): Unit = {
+    if (buffer1.getDouble(0) > buffer2.getDouble(0)) {
+      buffer1(0) = buffer2.getDouble(0)
+    }
+  }
+
+  override def evaluate(buffer: Row): Any = {
+    buffer.getDouble(0)
+  }
+}
+
 
 // Avg over double
 class DoubleAvg extends UserDefinedAggregateFunction {
@@ -112,7 +226,6 @@ class DoubleAvg extends UserDefinedAggregateFunction {
     buffer(1) = buffer.getDouble(1) + input.getDouble(0)
 
     this.currentTime = System.currentTimeMillis()
-
     if (this.aggregationInterval != 0 && this.currentTime - this.startTime > this.aggregationInterval) {
       println("Aggregation|%s|%.3f|%d".format(
         this.aggregationSchemaName, buffer.getDouble(1)/buffer.getDouble(0), this.currentTime)
@@ -168,7 +281,6 @@ class Count extends UserDefinedAggregateFunction {
     buffer(0) = buffer.getInt(0) + 1
 
     this.currentTime = System.currentTimeMillis()
-
     if (this.aggregationInterval != 0 && this.currentTime - this.startTime > this.aggregationInterval) {
       println("Aggregation|%s|%d|%d".format(
         this.aggregationSchemaName, buffer.getInt(0), this.currentTime)
@@ -220,15 +332,13 @@ class Count_not_null extends UserDefinedAggregateFunction {
   override def update(buffer: MutableAggregationBuffer, input: Row): Unit = {
     if (!input.isNullAt(0)) {
       buffer(0) = buffer.getLong(0) + 1
-
-      this.currentTime = System.currentTimeMillis()
-
-      if (this.aggregationInterval != 0 && this.currentTime - this.startTime > this.aggregationInterval) {
-        println("Aggregation|%s|%d|%d".format(
-          this.aggregationSchemaName, buffer.getLong(0), this.currentTime)
-        )
-        this.startTime = System.currentTimeMillis()
-      }
+    }
+    this.currentTime = System.currentTimeMillis()
+    if (this.aggregationInterval != 0 && this.currentTime - this.startTime > this.aggregationInterval) {
+      println("Aggregation|%s|%d|%d".format(
+        this.aggregationSchemaName, buffer.getLong(0), this.currentTime)
+      )
+      this.startTime = System.currentTimeMillis()
     }
   }
 
@@ -262,8 +372,9 @@ class Sum_disc_price extends UserDefinedAggregateFunction {
   }
 
   // This is the input fields for your aggregate function.
-  override def inputSchema: StructType = StructType(StructField("l_extendedprice", DoubleType) ::
-    StructField("l_discount", DoubleType) :: Nil)
+  override def inputSchema: StructType = StructType(
+    StructField("l_extendedprice", DoubleType) :: StructField("l_discount", DoubleType) :: Nil
+  )
 
   // This is the internal fields you keep for computing your aggregate.
   override def bufferSchema: StructType = StructType(StructField("sum_disc_price", DoubleType) :: Nil)
@@ -283,7 +394,6 @@ class Sum_disc_price extends UserDefinedAggregateFunction {
     buffer(0) = buffer.getAs[Double](0) + input.getAs[Double](0) * (1 - input.getAs[Double](1))
 
     this.currentTime = System.currentTimeMillis()
-
     if (this.aggregationInterval != 0 && this.currentTime - this.startTime > this.aggregationInterval) {
       println("Aggregation|%s|%.3f|%d".format(
         this.aggregationSchemaName, buffer.getDouble(0), this.currentTime)
@@ -349,7 +459,6 @@ class Sum_disc_price_with_tax extends UserDefinedAggregateFunction {
         (1 + input.getDouble(2))
 
     this.currentTime = System.currentTimeMillis()
-
     if (this.aggregationInterval != 0 && this.currentTime - this.startTime > this.aggregationInterval) {
       println("Aggregation|%s|%.3f|%d".format(
         this.aggregationSchemaName, buffer.getDouble(0), this.currentTime)
@@ -422,21 +531,12 @@ class UDAF_Q8 extends UserDefinedAggregateFunction {
     buffer(1) = buffer.getAs[Double](1) + volume
 
     this.currentTime = System.currentTimeMillis()
-
     if (this.aggregationInterval != 0 && this.currentTime - this.startTime > this.aggregationInterval) {
-      if (name == "BRAZIL") {
-        println("Aggregation|%s|%.3f|%d".format(
-          this.aggregationSchemaName, buffer.getAs[Double](1), this.currentTime)
-        )
-      }
-      else {
-        println("Aggregation|%s|%.3f|%d".format(
-          this.aggregationSchemaName, buffer.getAs[Double](0), this.currentTime)
-        )
-      }
+      println("Aggregation|%s|%.3f|%d".format(
+        this.aggregationSchemaName, buffer.getDouble(0) / buffer.getDouble(1), this.currentTime)
+      )
       this.startTime = System.currentTimeMillis()
     }
-
   }
 
   // This is how to merge two objects with the bufferSchema type.
@@ -488,16 +588,16 @@ class UDAF_Q12_HIGH extends UserDefinedAggregateFunction {
 
     if (priority == "1-URGENT" || priority == "2-HIGH") {
       buffer(0) = buffer.getAs[Long](0) + 1
-
-      this.currentTime = System.currentTimeMillis()
-
-      if (this.aggregationInterval != 0 && this.currentTime - this.startTime > this.aggregationInterval) {
-        println("Aggregation|%s|%d|%d".format(
-          this.aggregationSchemaName, buffer.getAs[Long](0), this.currentTime)
-        )
-        this.startTime = System.currentTimeMillis()
-      }
     }
+
+    this.currentTime = System.currentTimeMillis()
+    if (this.aggregationInterval != 0 && this.currentTime - this.startTime > this.aggregationInterval) {
+      println("Aggregation|%s|%d|%d".format(
+        this.aggregationSchemaName, buffer.getLong(0), this.currentTime)
+      )
+      this.startTime = System.currentTimeMillis()
+    }
+
   }
 
   // This is how to merge two objects with the bufferSchema type.
@@ -547,15 +647,13 @@ class UDAF_Q12_LOW extends UserDefinedAggregateFunction {
 
     if (priority != "1-URGENT" && priority != "2-HIGH") {
       buffer(0) = buffer.getAs[Long](0) + 1
-
-      this.currentTime = System.currentTimeMillis()
-
-      if (this.aggregationInterval != 0 && this.currentTime - this.startTime > this.aggregationInterval) {
-        println("Aggregation|%s|%d|%d".format(
-          this.aggregationSchemaName, buffer.getAs[Long](0), this.currentTime)
-        )
-        this.startTime = System.currentTimeMillis()
-      }
+    }
+    this.currentTime = System.currentTimeMillis()
+    if (this.aggregationInterval != 0 && this.currentTime - this.startTime > this.aggregationInterval) {
+      println("Aggregation|%s|%d|%d".format(
+        this.aggregationSchemaName, buffer.getLong(0), this.currentTime)
+      )
+      this.startTime = System.currentTimeMillis()
     }
   }
 
@@ -611,15 +709,14 @@ class UDAF_Q14 extends UserDefinedAggregateFunction {
 
     if (p_type.startsWith("PROMO")) {
       buffer(0) = buffer.getAs[Double](0) + input.getAs[Double](1) * (1 - input.getAs[Double](2))
+    }
 
-      this.currentTime = System.currentTimeMillis()
-
-      if (this.aggregationInterval != 0 && this.currentTime - this.startTime > this.aggregationInterval) {
-        println("Aggregation|%s|%.3f|%d".format(
-          this.aggregationSchemaName, buffer.getAs[Double](0), this.currentTime)
-        )
-        this.startTime = System.currentTimeMillis()
-      }
+    this.currentTime = System.currentTimeMillis()
+    if (this.aggregationInterval != 0 && this.currentTime - this.startTime > this.aggregationInterval) {
+      println("Aggregation|%s|%.3f|%d".format(
+        this.aggregationSchemaName, buffer.getDouble(0), this.currentTime)
+      )
+      this.startTime = System.currentTimeMillis()
     }
   }
 
