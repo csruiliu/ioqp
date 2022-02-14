@@ -11,7 +11,7 @@ from estimator.relaqs_estimator import ReLAQSEstimator
 from estimator.envelop_bounder import EnvelopBounder
 from workload.job_aqp import JobAQP
 from common.loggers import get_logger_instance
-from common.constants import RuntimeConstants, RotaryConstants
+from common.constants import RuntimeConstants, RotaryConstants, TPCHConstants
 from common.file_utils import (read_curstep_from_file,
                                read_appid_from_file,
                                read_aggresult_from_file,
@@ -125,19 +125,49 @@ class Engine:
     @staticmethod
     def get_agg_schema(job_id):
         if job_id.startswith('q1'):
-            return RuntimeConstants.Q1_AGG_COL
+            return TPCHConstants.Q1_AGG_COL
+        elif job_id.startswith('q2'):
+            return TPCHConstants.Q2_AGG_COL
         elif job_id.startswith('q3'):
-            return RuntimeConstants.Q3_AGG_COL
+            return TPCHConstants.Q3_AGG_COL
+        elif job_id.startswith('q4'):
+            return TPCHConstants.Q4_AGG_COL
         elif job_id.startswith('q5'):
-            return RuntimeConstants.Q5_AGG_COL
+            return TPCHConstants.Q5_AGG_COL
         elif job_id.startswith('q6'):
-            return RuntimeConstants.Q6_AGG_COL
+            return TPCHConstants.Q6_AGG_COL
+        elif job_id.startswith('q7'):
+            return TPCHConstants.Q7_AGG_COL
+        elif job_id.startswith('q8'):
+            return TPCHConstants.Q8_AGG_COL
+        elif job_id.startswith('q9'):
+            return TPCHConstants.Q9_AGG_COL
+        elif job_id.startswith('q10'):
+            return TPCHConstants.Q10_AGG_COL
         elif job_id.startswith('q11'):
-            return RuntimeConstants.Q11_AGG_COL
+            return TPCHConstants.Q11_AGG_COL
+        elif job_id.startswith('q12'):
+            return TPCHConstants.Q12_AGG_COL
+        elif job_id.startswith('q13'):
+            return TPCHConstants.Q13_AGG_COL
+        elif job_id.startswith('q14'):
+            return TPCHConstants.Q14_AGG_COL
+        elif job_id.startswith('q15'):
+            return TPCHConstants.Q15_AGG_COL
         elif job_id.startswith('q16'):
-            return RuntimeConstants.Q16_AGG_COL
+            return TPCHConstants.Q16_AGG_COL
+        elif job_id.startswith('q17'):
+            return TPCHConstants.Q17_AGG_COL
+        elif job_id.startswith('q18'):
+            return TPCHConstants.Q18_AGG_COL
         elif job_id.startswith('q19'):
-            return RuntimeConstants.Q19_AGG_COL
+            return TPCHConstants.Q19_AGG_COL
+        elif job_id.startswith('q20'):
+            return TPCHConstants.Q20_AGG_COL
+        elif job_id.startswith('q21'):
+            return TPCHConstants.Q21_AGG_COL
+        elif job_id.startswith('q22'):
+            return TPCHConstants.Q22_AGG_COL
         else:
             raise ValueError('The query is not supported')
 
@@ -443,7 +473,7 @@ class Engine:
 
         serialize_stdout_to_knowledge(app_stdout_file,
                                       RotaryConstants.KNOWLEDGEBASE_PATH,
-                                      RuntimeConstants.Q1_AGG_COL,
+                                      TPCHConstants.Q1_AGG_COL,
                                       parameter_dict)
 
         # rotary_estimator = RotaryEstimator("q1", RuntimeConstants.Q1_AGG_COL, 5)

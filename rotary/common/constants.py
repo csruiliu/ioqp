@@ -6,6 +6,79 @@ class RotaryConstants:
     # query list
     QUERY_LIST = ['q1', 'q3', 'q5', 'q6', 'q11', 'q16', 'q19']
 
+    # full query list
+    QUERY_LIST_FULL = ["q1", "q2", "q3", "q4", "q5", "q6", "q7", "q8" "q9", "q10", "q11", "q12",
+                       "q13", "q14", "q15", "q16", "q17", "q18", "q19", "q20", "q21", "q22"]
+
+
+class TPCHConstants:
+    # tpch-q1 agg schema
+    Q1_AGG_COL = ['sum_qty', 'sum_base_price', 'sum_disc_price', 'sum_charge',
+                  'avg_qty', 'avg_price', 'avg_disc', 'count_order']
+
+    # tpch-q2 agg schema
+    Q2_AGG_COL = ['min_supplycost']
+
+    # tpch-q3 agg schema
+    Q3_AGG_COL = ['revenue']
+
+    # tpch-q4 agg schema
+    Q4_AGG_COL = ['order_count']
+
+    # tpch-q5 agg schema
+    Q5_AGG_COL = ['revenue']
+
+    # tpch-q6 agg schema
+    Q6_AGG_COL = ['revenue']
+
+    # tpch-q7 agg schema
+    Q7_AGG_COL = ['revenue']
+
+    # tpch-q8 agg schema
+    Q8_AGG_COL = ['mkt_share']
+
+    # tpch-q9 agg schema
+    Q9_AGG_COL = ['sum_profit']
+
+    # tpch-q10 agg schema
+    Q10_AGG_COL = ['revenue']
+
+    # tpch-q11 agg schema
+    Q11_AGG_COL = ['value']
+
+    # tpch-q12 agg schema
+    Q12_AGG_COL = ['low_line_count', 'high_line_count']
+
+    # tpch-q13 agg schema
+    Q13_AGG_COL = ['c_count', 'custdist']
+
+    # tpch-q14 agg schema
+    Q14_AGG_COL = ['sum_disc_price', 'uadf_q14']
+
+    # tpch-q15 agg schema
+    Q15_AGG_COL = ['total_revenue']
+
+    # tpch-q16 agg schema
+    Q16_AGG_COL = ['supplier_cnt']
+
+    # tpch-q17 agg schema
+    Q17_AGG_COL = ['avg_quantity', 'avg_yearly']
+
+    # tpch-q18 agg schema
+    Q18_AGG_COL = ['avg_quantity', 'avg_yearly']
+
+    # tpch-q19 agg schema
+    Q19_AGG_COL = ['revenue']
+
+    # tpch-q20 agg schema
+    Q20_AGG_COL = ['agg_l_sum']
+
+    # tpch-q21 agg schema
+    Q21_AGG_COL = ['numwait']
+
+    # tpch-q22 agg schema
+    Q22_AGG_COL = ['avg_acctbal', 'numcust', 'totalacctbal']
+
 
 class RuntimeConstants:
     # max memory for each executor
@@ -104,25 +177,3 @@ class RuntimeConstants:
 
     # saprk work path
     SPARK_WORK_PATH = '/usr/local/spark/spark-2.4.0-bin-hadoop2.6/work'
-
-    # tpch-q1 agg schema
-    Q1_AGG_COL = ['sum_qty', 'sum_base_price', 'sum_disc_price', 'sum_charge',
-                  'avg_qty', 'avg_price', 'avg_disc', 'count_order']
-
-    # tpch-q3 agg schema
-    Q3_AGG_COL = ['revenue']
-
-    # tpch-q5 agg schema
-    Q5_AGG_COL = ['revenue']
-
-    # tpch-q6 agg schema
-    Q6_AGG_COL = ['revenue']
-
-    # tpch-q11 agg schema
-    Q11_AGG_COL = ['value']
-
-    # tpch-q16 agg schema
-    Q16_AGG_COL = ['supplier_cnt']
-
-    # tpch-q19 agg schema
-    Q19_AGG_COL = ['revenue']

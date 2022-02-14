@@ -20,17 +20,27 @@ class WorkloadBuilder:
         else:
             raise TypeError('the deadline candidates should be a list')
 
-    def generate_workload_aqp(self, arrival_lamda):
+    def generate_workload_aqp(self, arrival_lamda, random_seed):
         workload = dict()
 
+        np.random.seed(random_seed)
         arrival_time_list = np.random.poisson(arrival_lamda, size=self.workload_size)
 
-        for i in np.arange(1, self.workload_size+1):
-            job_id = np.random.choice(self.job_list, 1)[0] + '_' + str(i)
+        np.random.seed(random_seed)
+        accuracy_threshold_list = np.random.choice(self.accuracy_list, self.workload_size)
+
+        np.random.seed(random_seed)
+        deadline_list = np.random.choice(self.deadline_list, self.workload_size)
+
+        np.random.seed(random_seed)
+        job_id_list = np.random.choice(self.job_list, self.workload_size)
+
+        for i in np.arange(0, self.workload_size):
+            job_id = job_id_list[i] + '_' + str(i)
             job = JobAQP(job_id,
-                         arrival_time_list[i-1],
-                         np.random.choice(self.accuracy_list, 1)[0],
-                         np.random.choice(self.deadline_list, 1)[0])
+                         arrival_time_list[i],
+                         accuracy_threshold_list[i],
+                         deadline_list[i])
 
             workload[job_id] = job
 
