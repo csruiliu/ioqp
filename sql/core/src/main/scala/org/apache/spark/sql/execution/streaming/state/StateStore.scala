@@ -217,7 +217,9 @@ object StateStoreProvider {
       Utils.classForName("org.apache.spark.sql.execution.streaming.state.SlothDBStateStoreProvider")
     }
     else if (SlothDBContext.enable_slothdb_nockpt) {
-      Utils.classForName("org.apache.spark.sql.execution.streaming.state.SlothDBNoCKPTStateStoreProvider")
+      Utils.classForName(
+        "org.apache.spark.sql.execution.streaming.state.SlothDBNoCKPTStateStoreProvider"
+      )
     }
     else {
       Utils.classForName(providerClassName)
