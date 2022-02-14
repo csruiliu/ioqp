@@ -470,8 +470,6 @@ class QueryTPCH(bootstrap: String,
     import spark.implicits._
 
     val doubleSum = new DoubleSum
-    doubleSum.setAggregationInterval(aggregation_interval)
-    doubleSum.setAggregationSchemaName("subquery_small_value")
 
     val ps = DataUtils.loadStreamTable(spark, "partsupp", "ps")
     val s = DataUtils.loadStreamTable(spark, "supplier", "s")
