@@ -215,7 +215,13 @@ object StateStoreProvider {
   def create(providerClassName: String): StateStoreProvider = {
     val providerClass = if (SlothDBContext.enable_slothdb) {
       Utils.classForName("org.apache.spark.sql.execution.streaming.state.SlothDBStateStoreProvider")
-    } else Utils.classForName(providerClassName)
+    }
+    else if (SlothDBContext.enable_slothdb_nockpt) {
+      Utils.classForName("org.apache.spark.sql.execution.streaming.state.SlothDBNoCKPTStateStoreProvider")
+    }
+    else {
+      Utils.classForName(providerClassName)
+    }
     providerClass.newInstance().asInstanceOf[StateStoreProvider]
   }
 

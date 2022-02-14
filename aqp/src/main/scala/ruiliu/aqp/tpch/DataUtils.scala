@@ -115,6 +115,18 @@ object DataUtils {
     q.awaitTermination()
   }
 
+  def writeToSinkNoCKPT(query_result: DataFrame, query_name: String, trigger_itvl: Int): Unit = {
+    val q = query_result
+      .writeStream
+      .outputMode("append")
+      .format("console")
+      .trigger(Trigger.ProcessingTime(trigger_itvl, TimeUnit.MILLISECONDS))
+      .queryName(query_name)
+      .start()
+
+    q.awaitTermination()
+  }
+
   def writeToFile(query_result: DataFrame,
                   query_name: String,
                   path: String): Unit = {

@@ -22,6 +22,7 @@ import org.apache.spark.SparkConf
 import org.apache.spark.sql.{DataFrame, SparkSession}
 import org.apache.spark.sql.functions._
 import org.apache.spark.sql.internal.SQLConf
+import org.apache.spark.sql.SlothDBContext
 
 //noinspection ScalaStyle
 class QueryTPCH(bootstrap: String,
@@ -66,6 +67,12 @@ class QueryTPCH(bootstrap: String,
 
   TPCHSchema.setQueryMetaData(numBatch, SF, SR, hdfsRoot, staticDIR,
     inputPartitions, largeDataset, checkpoint_path)
+
+  if (checkpoint_path == "none") {
+    SlothDBContext.enable_slothdb = false
+    SlothDBContext.enable_slothdb_nockpt = true
+  }
+
   printf("Checkpoint Path: %s\n", TPCHSchema.checkpointPath)
   printf("Sample Rate: %f\n", SR)
   printf("Aggregation Interval: %d\n", aggregation_interval)
@@ -185,7 +192,12 @@ class QueryTPCH(bootstrap: String,
         count_order(lit(1L)).as("count_order")
       )
 
-    DataUtils.writeToSink(result, query_name, trigger_interval)
+    if (TPCHSchema.checkpointPath == "none") {
+      DataUtils.writeToSinkNoCKPT(result, query_name, trigger_interval)
+    }
+    else {
+      DataUtils.writeToSink(result, query_name, trigger_interval)
+    }
   }
 
   def execQ2_subquery(spark: SparkSession): DataFrame = {
@@ -234,8 +246,12 @@ class QueryTPCH(bootstrap: String,
       .select($"s_acctbal", $"s_name", $"n_name", $"p_partkey", $"p_mfgr", $"s_address", $"s_phone", $"s_comment")
       .limit(100)
 
-    // DataUtils.writeToSink(result, query_name)
-    DataUtils.writeToSink(result, query_name, trigger_interval)
+    if (TPCHSchema.checkpointPath == "none") {
+      DataUtils.writeToSinkNoCKPT(result, query_name, trigger_interval)
+    }
+    else {
+      DataUtils.writeToSink(result, query_name, trigger_interval)
+    }
   }
 
   def execQ3(spark: SparkSession): Unit = {
@@ -259,8 +275,12 @@ class QueryTPCH(bootstrap: String,
       .select("l_orderkey", "revenue", "o_orderdate", "o_shippriority")
       .limit(10)
 
-    // DataUtils.writeToSink(result, query_name)
-    DataUtils.writeToSink(result, query_name, trigger_interval)
+    if (TPCHSchema.checkpointPath == "none") {
+      DataUtils.writeToSinkNoCKPT(result, query_name, trigger_interval)
+    }
+    else {
+      DataUtils.writeToSink(result, query_name, trigger_interval)
+    }
   }
 
   def execQ4(spark: SparkSession): Unit = {
@@ -281,8 +301,12 @@ class QueryTPCH(bootstrap: String,
       .groupBy("o_orderpriority")
       .agg(order_count(lit(1)).alias("order_count"))
 
-    // DataUtils.writeToSink(result, query_name)
-    DataUtils.writeToSink(result, query_name, trigger_interval)
+    if (TPCHSchema.checkpointPath == "none") {
+      DataUtils.writeToSinkNoCKPT(result, query_name, trigger_interval)
+    }
+    else {
+      DataUtils.writeToSink(result, query_name, trigger_interval)
+    }
   }
 
   def execQ5(spark: SparkSession): Unit = {
@@ -314,8 +338,12 @@ class QueryTPCH(bootstrap: String,
       .agg(sum_disc_price($"l_extendedprice", $"l_discount" ).alias("revenue"))
       .orderBy(desc("revenue"))
 
-    // DataUtils.writeToSink(result, query_name)
-    DataUtils.writeToSink(result, query_name, trigger_interval)
+    if (TPCHSchema.checkpointPath == "none") {
+      DataUtils.writeToSinkNoCKPT(result, query_name, trigger_interval)
+    }
+    else {
+      DataUtils.writeToSink(result, query_name, trigger_interval)
+    }
   }
 
   def execQ6(spark: SparkSession): Unit = {
@@ -331,8 +359,12 @@ class QueryTPCH(bootstrap: String,
 
     val result = l.agg(doubleSum($"l_extendedprice" * $"l_discount").alias("revenue"))
 
-    // DataUtils.writeToSink(result, query_name)
-    DataUtils.writeToSink(result, query_name, trigger_interval)
+    if (TPCHSchema.checkpointPath == "none") {
+      DataUtils.writeToSinkNoCKPT(result, query_name, trigger_interval)
+    }
+    else {
+      DataUtils.writeToSink(result, query_name, trigger_interval)
+    }
   }
 
   def execQ7(spark: SparkSession): Unit = {
@@ -366,8 +398,12 @@ class QueryTPCH(bootstrap: String,
       .agg(sum_disc_price($"l_extendedprice", $"l_discount").as("revenue"))
       .orderBy("supp_nation", "cust_nation", "l_year")
 
-    // DataUtils.writeToSink(result, query_name)
-    DataUtils.writeToSink(result, query_name, trigger_interval)
+    if (TPCHSchema.checkpointPath == "none") {
+      DataUtils.writeToSinkNoCKPT(result, query_name, trigger_interval)
+    }
+    else {
+      DataUtils.writeToSink(result, query_name, trigger_interval)
+    }
   }
 
   def execQ8(spark: SparkSession): Unit = {
@@ -405,8 +441,12 @@ class QueryTPCH(bootstrap: String,
       .agg(udaf_q8($"n2_name", $"volume").as("mkt_share"))
       .orderBy($"o_year")
 
-    // DataUtils.writeToSink(result, query_name)
-    DataUtils.writeToSink(result, query_name, trigger_interval)
+    if (TPCHSchema.checkpointPath == "none") {
+      DataUtils.writeToSinkNoCKPT(result, query_name, trigger_interval)
+    }
+    else {
+      DataUtils.writeToSink(result, query_name, trigger_interval)
+    }
   }
 
   def execQ9(spark: SparkSession): Unit = {
@@ -437,8 +477,12 @@ class QueryTPCH(bootstrap: String,
       .agg(doubleSum($"amount").as("sum_profit"))
       .orderBy($"nation", desc("o_year"))
 
-    // DataUtils.writeToSink(result, query_name)
-    DataUtils.writeToSink(result, query_name, trigger_interval)
+    if (TPCHSchema.checkpointPath == "none") {
+      DataUtils.writeToSinkNoCKPT(result, query_name, trigger_interval)
+    }
+    else {
+      DataUtils.writeToSink(result, query_name, trigger_interval)
+    }
   }
 
   def execQ10(spark: SparkSession): Unit = {
@@ -462,8 +506,12 @@ class QueryTPCH(bootstrap: String,
       .agg(revenue($"l_extendedprice", $"l_discount").as("revenue"))
       .orderBy(desc("revenue"))
 
-    // DataUtils.writeToSink(result, query_name)
-    DataUtils.writeToSink(result, query_name, trigger_interval)
+    if (TPCHSchema.checkpointPath == "none") {
+      DataUtils.writeToSinkNoCKPT(result, query_name, trigger_interval)
+    }
+    else {
+      DataUtils.writeToSink(result, query_name, trigger_interval)
+    }
   }
 
   def execQ11_subquery(spark: SparkSession): DataFrame = {
@@ -508,8 +556,12 @@ class QueryTPCH(bootstrap: String,
           .select($"ps_partkey", $"value")
           .orderBy(desc("value"))
 
-      // DataUtils.writeToSink(result, query_name)
-      DataUtils.writeToSink(result, query_name, trigger_interval)
+      if (TPCHSchema.checkpointPath == "none") {
+        DataUtils.writeToSinkNoCKPT(result, query_name, trigger_interval)
+      }
+      else {
+        DataUtils.writeToSink(result, query_name, trigger_interval)
+      }
     }
   }
 
@@ -538,8 +590,12 @@ class QueryTPCH(bootstrap: String,
       )
       .orderBy($"l_shipmode")
 
-    // DataUtils.writeToSink(result, query_name)
-    DataUtils.writeToSink(result, query_name, trigger_interval)
+    if (TPCHSchema.checkpointPath == "none") {
+      DataUtils.writeToSinkNoCKPT(result, query_name, trigger_interval)
+    }
+    else {
+      DataUtils.writeToSink(result, query_name, trigger_interval)
+    }
   }
 
   def execQ13(spark: SparkSession): Unit = {
@@ -563,8 +619,12 @@ class QueryTPCH(bootstrap: String,
       .agg(custdist(lit(1)).as("custdist"))
       .orderBy(desc("custdist"), desc("c_count"))
 
-    // DataUtils.writeToSink(result, query_name)
-    DataUtils.writeToSink(result, query_name, trigger_interval)
+    if (TPCHSchema.checkpointPath == "none") {
+      DataUtils.writeToSinkNoCKPT(result, query_name, trigger_interval)
+    }
+    else {
+      DataUtils.writeToSink(result, query_name, trigger_interval)
+    }
   }
 
   def execQ14(spark: SparkSession): Unit = {
@@ -587,8 +647,12 @@ class QueryTPCH(bootstrap: String,
         sum_disc_price($"l_extendedprice", $"l_discount")) * 100).as("promo_revenue")
       )
 
-    // DataUtils.writeToSink(result, query_name)
-    DataUtils.writeToSink(result, query_name, trigger_interval)
+    if (TPCHSchema.checkpointPath == "none") {
+      DataUtils.writeToSinkNoCKPT(result, query_name, trigger_interval)
+    }
+    else {
+      DataUtils.writeToSink(result, query_name, trigger_interval)
+    }
   }
 
   def execQ15_subquery(spark: SparkSession): DataFrame = {
@@ -619,8 +683,12 @@ class QueryTPCH(bootstrap: String,
       .select("s_suppkey", "s_name", "s_address", "s_phone", "total_revenue")
       .orderBy("s_suppkey")
 
-    // DataUtils.writeToSink(result, query_name)
-    DataUtils.writeToSink(result, query_name, trigger_interval)
+    if (TPCHSchema.checkpointPath == "none") {
+      DataUtils.writeToSinkNoCKPT(result, query_name, trigger_interval)
+    }
+    else {
+      DataUtils.writeToSink(result, query_name, trigger_interval)
+    }
   }
 
   def execQ16(spark: SparkSession): Unit = {
@@ -649,8 +717,12 @@ class QueryTPCH(bootstrap: String,
       .agg(supplier_cnt($"ps_suppkey").as("supplier_cnt"))
       .orderBy(desc("supplier_cnt"), $"p_brand", $"p_type", $"p_size")
 
-    // DataUtils.writeToSink(result, query_name)
-    DataUtils.writeToSink(result, query_name, trigger_interval)
+    if (TPCHSchema.checkpointPath == "none") {
+      DataUtils.writeToSinkNoCKPT(result, query_name, trigger_interval)
+    }
+    else {
+      DataUtils.writeToSink(result, query_name, trigger_interval)
+    }
   }
 
   def execQ17(spark: SparkSession): Unit = {
@@ -690,8 +762,12 @@ class QueryTPCH(bootstrap: String,
             .join(p, $"l_partkey" === $"p_partkey")
             .agg((doubleSum($"l_extendedprice") / 7.0).as("avg_yearly"))
 
-      // DataUtils.writeToSink(result, query_name)
-      DataUtils.writeToSink(result, query_name, trigger_interval)
+      if (TPCHSchema.checkpointPath == "none") {
+        DataUtils.writeToSinkNoCKPT(result, query_name, trigger_interval)
+      }
+      else {
+        DataUtils.writeToSink(result, query_name, trigger_interval)
+      }
     }
   }
 
@@ -724,8 +800,12 @@ class QueryTPCH(bootstrap: String,
             .groupBy("c_name", "c_custkey", "o_orderkey", "o_orderdate", "o_totalprice")
             .agg(doubleSum2($"l_quantity"))
 
-      // DataUtils.writeToSink(result, query_name)
-      DataUtils.writeToSink(result, query_name, trigger_interval)
+      if (TPCHSchema.checkpointPath == "none") {
+        DataUtils.writeToSinkNoCKPT(result, query_name, trigger_interval)
+      }
+      else {
+        DataUtils.writeToSink(result, query_name, trigger_interval)
+      }
     }
   }
 
@@ -759,8 +839,12 @@ class QueryTPCH(bootstrap: String,
       )
       .agg(sum_disc_price($"l_extendedprice", $"l_discount").as("revenue"))
 
-    // DataUtils.writeToSink(result, query_name)
-    DataUtils.writeToSink(result, query_name, trigger_interval)
+    if (TPCHSchema.checkpointPath == "none") {
+      DataUtils.writeToSinkNoCKPT(result, query_name, trigger_interval)
+    }
+    else {
+      DataUtils.writeToSink(result, query_name, trigger_interval)
+    }
   }
 
   def execQ20(spark: SparkSession): Unit = {
@@ -800,8 +884,12 @@ class QueryTPCH(bootstrap: String,
             .join(n, $"s_nationkey" === $"n_nationkey")
             .select($"s_name", $"s_address")
 
-      // DataUtils.writeToSink(result, query_name)
-      DataUtils.writeToSink(result, query_name, trigger_interval)
+      if (TPCHSchema.checkpointPath == "none") {
+        DataUtils.writeToSinkNoCKPT(result, query_name, trigger_interval)
+      }
+      else {
+        DataUtils.writeToSink(result, query_name, trigger_interval)
+      }
     }
   }
 
@@ -841,8 +929,12 @@ class QueryTPCH(bootstrap: String,
       .agg(count(lit(1)).as("numwait"))
       .orderBy(desc("numwait"), $"s_name")
 
-    // DataUtils.writeToSink(result, query_name)
-    DataUtils.writeToSink(result, query_name, trigger_interval)
+    if (TPCHSchema.checkpointPath == "none") {
+      DataUtils.writeToSinkNoCKPT(result, query_name, trigger_interval)
+    }
+    else {
+      DataUtils.writeToSink(result, query_name, trigger_interval)
+    }
   }
 
   def execQ22(spark: SparkSession): Unit = {
@@ -881,8 +973,12 @@ class QueryTPCH(bootstrap: String,
           .agg(numcust(lit(1)).as("numcust"), doubleSum($"c_acctbal").as("totalacctbal"))
           .orderBy($"cntrycode")
 
-      // DataUtils.writeToSink(result, query_name)
-      DataUtils.writeToSink(result, query_name, trigger_interval)
+      if (TPCHSchema.checkpointPath == "none") {
+        DataUtils.writeToSinkNoCKPT(result, query_name, trigger_interval)
+      }
+      else {
+        DataUtils.writeToSink(result, query_name, trigger_interval)
+      }
     }
   }
 
