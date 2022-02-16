@@ -191,6 +191,7 @@ class QueryTPCH(bootstrap: String,
         avg_disc($"l_discount").as("avg_disc"),
         count_order(lit(1L)).as("count_order")
       )
+      //.orderBy($"l_returnflag", $"l_linestatus")
 
     if (TPCHSchema.checkpointPath == "none") {
       DataUtils.writeToSinkNoCKPT(result, query_name, trigger_interval)
@@ -244,7 +245,7 @@ class QueryTPCH(bootstrap: String,
     val result = subquery1
       .join(subquery2, ($"p_partkey" ===  $"min_partkey") and ($"ps_supplycost" === $"min_supplycost"))
       .select($"s_acctbal", $"s_name", $"n_name", $"p_partkey", $"p_mfgr", $"s_address", $"s_phone", $"s_comment")
-      .limit(100)
+      //.limit(100)
 
     if (TPCHSchema.checkpointPath == "none") {
       DataUtils.writeToSinkNoCKPT(result, query_name, trigger_interval)
@@ -272,8 +273,9 @@ class QueryTPCH(bootstrap: String,
       .join(l, $"o_orderkey" === $"l_orderkey")
       .groupBy("l_orderkey", "o_orderdate", "o_shippriority")
       .agg(sum_disc_price($"l_extendedprice", $"l_discount").alias("revenue"))
+      //.orderBy(desc("revenue"), $"o_orderdate")
       .select("l_orderkey", "revenue", "o_orderdate", "o_shippriority")
-      .limit(10)
+      //.limit(10)
 
     if (TPCHSchema.checkpointPath == "none") {
       DataUtils.writeToSinkNoCKPT(result, query_name, trigger_interval)
@@ -300,6 +302,7 @@ class QueryTPCH(bootstrap: String,
     val result = o.join(l, $"o_orderkey" === $"l_orderkey", "left_semi")
       .groupBy("o_orderpriority")
       .agg(order_count(lit(1)).alias("order_count"))
+      //.orderBy("o_orderpriority")
 
     if (TPCHSchema.checkpointPath == "none") {
       DataUtils.writeToSinkNoCKPT(result, query_name, trigger_interval)
@@ -336,7 +339,7 @@ class QueryTPCH(bootstrap: String,
       query_a.join(query_b, $"s_nationkey" === $"c_nationkey" and $"s_suppkey" === $"l_suppkey")
       .groupBy("n_name")
       .agg(sum_disc_price($"l_extendedprice", $"l_discount" ).alias("revenue"))
-      .orderBy(desc("revenue"))
+      //.orderBy(desc("revenue"))
 
     if (TPCHSchema.checkpointPath == "none") {
       DataUtils.writeToSinkNoCKPT(result, query_name, trigger_interval)
@@ -396,7 +399,7 @@ class QueryTPCH(bootstrap: String,
         $"l_extendedprice", $"l_discount")
       .groupBy("supp_nation", "cust_nation", "l_year")
       .agg(sum_disc_price($"l_extendedprice", $"l_discount").as("revenue"))
-      .orderBy("supp_nation", "cust_nation", "l_year")
+      //.orderBy("supp_nation", "cust_nation", "l_year")
 
     if (TPCHSchema.checkpointPath == "none") {
       DataUtils.writeToSinkNoCKPT(result, query_name, trigger_interval)
@@ -439,7 +442,7 @@ class QueryTPCH(bootstrap: String,
         ($"l_extendedprice" * ($"l_discount" - 1) * -1).as("volume"), $"n2_name")
       .groupBy($"o_year")
       .agg(udaf_q8($"n2_name", $"volume").as("mkt_share"))
-      .orderBy($"o_year")
+      //.orderBy($"o_year")
 
     if (TPCHSchema.checkpointPath == "none") {
       DataUtils.writeToSinkNoCKPT(result, query_name, trigger_interval)
@@ -475,7 +478,7 @@ class QueryTPCH(bootstrap: String,
           .as("amount"))
       .groupBy("nation", "o_year")
       .agg(doubleSum($"amount").as("sum_profit"))
-      .orderBy($"nation", desc("o_year"))
+      //.orderBy($"nation", desc("o_year"))
 
     if (TPCHSchema.checkpointPath == "none") {
       DataUtils.writeToSinkNoCKPT(result, query_name, trigger_interval)
@@ -504,7 +507,7 @@ class QueryTPCH(bootstrap: String,
       .join(n, $"c_nationkey" === $"n_nationkey")
       .groupBy("c_custkey", "c_name", "c_acctbal", "c_phone", "n_name", "c_address", "c_comment")
       .agg(revenue($"l_extendedprice", $"l_discount").as("revenue"))
-      .orderBy(desc("revenue"))
+      //.orderBy(desc("revenue"))
 
     if (TPCHSchema.checkpointPath == "none") {
       DataUtils.writeToSinkNoCKPT(result, query_name, trigger_interval)
@@ -554,7 +557,7 @@ class QueryTPCH(bootstrap: String,
             doubleSum($"ps_supplycost" * $"ps_availqty").as("value"))
           .join(subquery, $"value" > $"small_value", "cross")
           .select($"ps_partkey", $"value")
-          .orderBy(desc("value"))
+          //.orderBy(desc("value"))
 
       if (TPCHSchema.checkpointPath == "none") {
         DataUtils.writeToSinkNoCKPT(result, query_name, trigger_interval)
@@ -588,7 +591,7 @@ class QueryTPCH(bootstrap: String,
           udaf_q12_high($"o_orderpriority").as("high_line_count"),
           udaf_q12_low($"o_orderpriority").as("low_line_count")
       )
-      .orderBy($"l_shipmode")
+      //.orderBy($"l_shipmode")
 
     if (TPCHSchema.checkpointPath == "none") {
       DataUtils.writeToSinkNoCKPT(result, query_name, trigger_interval)
@@ -617,7 +620,7 @@ class QueryTPCH(bootstrap: String,
       .agg(c_count($"o_orderkey").as("c_count"))
       .groupBy($"c_count")
       .agg(custdist(lit(1)).as("custdist"))
-      .orderBy(desc("custdist"), desc("c_count"))
+      //.orderBy(desc("custdist"), desc("c_count"))
 
     if (TPCHSchema.checkpointPath == "none") {
       DataUtils.writeToSinkNoCKPT(result, query_name, trigger_interval)
@@ -677,11 +680,10 @@ class QueryTPCH(bootstrap: String,
     val revenue = execQ15_subquery(spark)
     val max_revenue = execQ15_subquery(spark).agg(max($"total_revenue").as("max_revenue"))
 
-    val result =
-    s.join(revenue, $"s_suppkey" === $"supplier_no")
+    val result = s.join(revenue, $"s_suppkey" === $"supplier_no")
       .join(max_revenue, $"total_revenue" >= $"max_revenue", "cross")
       .select("s_suppkey", "s_name", "s_address", "s_phone", "total_revenue")
-      .orderBy("s_suppkey")
+      //.orderBy("s_suppkey")
 
     if (TPCHSchema.checkpointPath == "none") {
       DataUtils.writeToSinkNoCKPT(result, query_name, trigger_interval)
@@ -715,7 +717,7 @@ class QueryTPCH(bootstrap: String,
       //.dropDuplicates()
       .groupBy($"p_brand", $"p_type", $"p_size")
       .agg(supplier_cnt($"ps_suppkey").as("supplier_cnt"))
-      .orderBy(desc("supplier_cnt"), $"p_brand", $"p_type", $"p_size")
+      //.orderBy(desc("supplier_cnt"), $"p_brand", $"p_type", $"p_size")
 
     if (TPCHSchema.checkpointPath == "none") {
       DataUtils.writeToSinkNoCKPT(result, query_name, trigger_interval)
@@ -757,10 +759,9 @@ class QueryTPCH(bootstrap: String,
 
     } else {
       val result =
-        l.join(agg_l, $"l_partkey" === $"agg_l_partkey"
-            and $"l_quantity" < $"avg_quantity")
-            .join(p, $"l_partkey" === $"p_partkey")
-            .agg((doubleSum($"l_extendedprice") / 7.0).as("avg_yearly"))
+        l.join(agg_l, $"l_partkey" === $"agg_l_partkey" and $"l_quantity" < $"avg_quantity")
+          .join(p, $"l_partkey" === $"p_partkey")
+          .agg((doubleSum($"l_extendedprice") / 7.0).as("avg_yearly"))
 
       if (TPCHSchema.checkpointPath == "none") {
         DataUtils.writeToSinkNoCKPT(result, query_name, trigger_interval)
@@ -825,18 +826,15 @@ class QueryTPCH(bootstrap: String,
       and ((($"p_brand" === "Brand#12") and
       ($"p_container" isin("SM CASE", "SM BOX", "SM PACK", "SM PKG")) and
       ($"l_quantity" >= 1 and $"l_quantity" <= 11) and
-      ($"p_size" between(1, 5))
-       )
-       or (($"p_brand" === "Brand#23") and
+      ($"p_size" between(1, 5)))
+      or (($"p_brand" === "Brand#23") and
       ($"p_container" isin("MED BAG", "MED BOX", "MED PKG", "MED PACK")) and
       ($"l_quantity" >= 10 and $"l_quantity" <= 20) and
-      ($"p_size" between(1, 10))
-       )
-       or (($"p_brand" === "Brand#34") and
+      ($"p_size" between(1, 10)))
+      or (($"p_brand" === "Brand#34") and
       ($"p_container" isin("LG CASE", "LG BOX", "LG PACK", "LG PKG")) and
       ($"l_quantity" >= 20 and $"l_quantity" <= 30) and
-      ($"p_size" between(1, 15))))
-      )
+      ($"p_size" between(1, 15)))))
       .agg(sum_disc_price($"l_extendedprice", $"l_discount").as("revenue"))
 
     if (TPCHSchema.checkpointPath == "none") {
@@ -881,8 +879,8 @@ class QueryTPCH(bootstrap: String,
     } else {
       val result =
         s.join(subquery, $"s_suppkey" === $"ps_suppkey", "left_semi")
-            .join(n, $"s_nationkey" === $"n_nationkey")
-            .select($"s_name", $"s_address")
+          .join(n, $"s_nationkey" === $"n_nationkey")
+          .select($"s_name", $"s_address")
 
       if (TPCHSchema.checkpointPath == "none") {
         DataUtils.writeToSinkNoCKPT(result, query_name, trigger_interval)
@@ -913,12 +911,11 @@ class QueryTPCH(bootstrap: String,
       .join(n, $"s_nationkey" === $"n_nationkey")
 
     val l2 = DataUtils.loadStreamTable(spark, "lineitem", "l2")
-      .select($"l_orderkey".as("l2_orderkey"),
-      $"l_suppkey".as("l2_suppkey"))
+      .select($"l_orderkey".as("l2_orderkey"), $"l_suppkey".as("l2_suppkey"))
+
     val l3 = DataUtils.loadStreamTable(spark, "lineitem", "l3")
       .filter($"l_receiptdate" > $"l_commitdate")
-      .select($"l_orderkey".as("l3_orderkey"),
-      $"l_suppkey".as("l3_suppkey"))
+      .select($"l_orderkey".as("l3_orderkey"), $"l_suppkey".as("l3_suppkey"))
 
     val result = init_result
       .join(l2, ($"l_orderkey" === $"l2_orderkey")
@@ -927,7 +924,7 @@ class QueryTPCH(bootstrap: String,
         and ($"l_suppkey" =!= $"l3_suppkey"), "left_anti")
       .groupBy("s_name")
       .agg(count(lit(1)).as("numwait"))
-      .orderBy(desc("numwait"), $"s_name")
+      //.orderBy(desc("numwait"), $"s_name")
 
     if (TPCHSchema.checkpointPath == "none") {
       DataUtils.writeToSinkNoCKPT(result, query_name, trigger_interval)
@@ -971,7 +968,7 @@ class QueryTPCH(bootstrap: String,
           .select(substring($"c_phone", 1, 2).as("cntrycode"), $"c_acctbal")
           .groupBy($"cntrycode")
           .agg(numcust(lit(1)).as("numcust"), doubleSum($"c_acctbal").as("totalacctbal"))
-          .orderBy($"cntrycode")
+          //.orderBy($"cntrycode")
 
       if (TPCHSchema.checkpointPath == "none") {
         DataUtils.writeToSinkNoCKPT(result, query_name, trigger_interval)
