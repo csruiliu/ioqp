@@ -69,8 +69,10 @@ class QueryTPCH(bootstrap: String,
     inputPartitions, largeDataset, checkpoint_path)
 
   if (checkpoint_path == "none") {
-    SlothDBContext.enable_slothdb = false
-    SlothDBContext.enable_slothdb_nockpt = true
+    SlothDBContext.enable_checkpoint = false
+  }
+  else {
+    SlothDBContext.enable_checkpoint = true
   }
 
   printf("Checkpoint Path: %s\n", TPCHSchema.checkpointPath)

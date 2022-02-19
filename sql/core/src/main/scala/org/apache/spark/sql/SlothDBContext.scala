@@ -19,7 +19,7 @@ package org.apache.spark.sql
 
 object SlothDBContext {
   var enable_slothdb = true
-  var enable_slothdb_nockpt = false
+  var enable_checkpoint = true
   var execution_mode = -1
 
   val INCAWARE_PATH = 0
