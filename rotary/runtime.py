@@ -18,7 +18,7 @@ from common.file_utils import (read_curstep_from_file,
                                serialize_stdout_to_knowledge)
 
 
-class Engine:
+class Runtime:
     def __init__(self, workload_dict, num_core, num_worker, schedule_epoch, scheduler):
         self.workload_dict = workload_dict
         self.num_core = num_core
