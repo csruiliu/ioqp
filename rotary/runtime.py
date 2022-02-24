@@ -82,6 +82,17 @@ class Runtime:
         """
         self.job_estimate_progress = dict()
 
+        """
+        The list to store the job_id according to the rank of accuracy (least first)
+        """
+        workload_dict_rank = sorted(self.workload_dict.values(), key=lambda x: x.accuracy_threshold)
+        self.job_accuracy_rank = [x.job_id for x in workload_dict_rank]
+
+        """
+        The dict to store the job_id with time left according to deadline
+        """
+        self.job_time_left = dict()
+
         # the list stores the jobs ranked by estimated progress and is refreshed every epoch
         self.priority_queue = list()
 
@@ -100,6 +111,8 @@ class Runtime:
             self.job_agg_result_dict[job_id] = dict()
             self.job_agg_time_dict[job_id] = dict()
             self.job_envelop_dict[job_id] = dict()
+
+            self.job_time_left[job_id] = job_item["deadline"]
 
             # init lists for all schemas for each job
             for schema_name in self.get_agg_schema(job_id):
@@ -257,9 +270,11 @@ class Runtime:
             if self.scheduler == "rotary":
                 # estimator for rotary
                 schema_progress_estimate = job_estimator.predict_progress_next_epoch(job_parameter_dict, schema_name)
-            else:
+            elif self.scheduler == "relaqs":
                 # estimator for relaqs
                 schema_progress_estimate = job_estimator.predict_progress_next_epoch(schema_name)
+            else:
+                raise ValueError("The scheduler is not supported")
 
             job_overall_progress += schema_progress_estimate
 
@@ -269,15 +284,36 @@ class Runtime:
         # clean the priority queue for next round
         self.priority_queue.clear()
 
-        # rank the jobs in active queue according to the estimated progress
-        for job_id in self.active_queue:
-            job_output_id = job_id + "-" + str(self.global_epoch_count)
-            job_stdout_file = RuntimeConstants.STDOUT_PATH + job_output_id + '.stdout'
-            self.job_step_dict[job_id] = read_curstep_from_file(job_stdout_file)
-            self.job_estimate_progress[job_id] = self.compute_progress_next_epoch(job_id)
+        if self.scheduler == "rotary" or self.scheduler == "relaqs":
+            # compute the estimated progress of jobs in the active queue
+            for job_id in self.active_queue:
+                job_output_id = job_id + "-" + str(self.global_epoch_count)
+                job_stdout_file = RuntimeConstants.STDOUT_PATH + job_output_id + '.stdout'
+                self.job_step_dict[job_id] = read_curstep_from_file(job_stdout_file)
+                self.job_estimate_progress[job_id] = self.compute_progress_next_epoch(job_id)
 
             for k, v in sorted(self.job_estimate_progress.items(), key=lambda x: x[1], reverse=True):
                 self.priority_queue.append(k)
+
+        elif self.scheduler == "laf":
+            job_mask_id_list = [0] * self.workload_size
+            for job_in in self.active_queue:
+                job_mask_id_list[self.job_accuracy_rank.index(job_in)] = 1
+
+            for job_mask, job_idx in enumerate(job_mask_id_list):
+                if job_mask == 1:
+                    self.priority_queue.append(self.job_accuracy_rank[job_idx])
+
+        elif self.scheduler == "edf":
+            for job_id in self.active_queue:
+                job = self.workload_dict[job_id]
+                job_time_left = job.deadline - job.time_elapse
+                self.job_time_left[job_id] = job_time_left
+
+            for k, v in sorted(self.job_time_left.items(), key=lambda x: x[1]):
+                self.priority_queue.append(k)
+        else:
+            raise ValueError("The scheduler is not supported")
 
     def check_job_completeness(self):
         for job_id in self.active_queue:

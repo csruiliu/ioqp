@@ -1,6 +1,6 @@
 import argparse
 
-from scheduler.rotary import Rotary
+from runtime import Runtime
 from workload.workload_builder import WorkloadBuilder
 
 
@@ -56,10 +56,10 @@ def main():
               f"complete_unattain={job.complete_attain}, "
               f"complete_attain={job.complete_attain}")
 
-    sch_engine = Rotary(aqp_workload_dict, num_core, num_worker, schedule_round, scheduler)
+    sch_engine = Runtime(aqp_workload_dict, num_core, num_worker, schedule_round, scheduler)
 
     # sch_engine.run()
-    sch_engine.test()
+    # sch_engine.test()
 
 
 if __name__ == "__main__":
