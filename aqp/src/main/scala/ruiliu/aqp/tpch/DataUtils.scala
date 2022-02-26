@@ -46,6 +46,7 @@ object DataUtils {
       .option("subscribe", topics)
       .option("startingOffsets", "earliest")
       .option("maxOffsetsPerTrigger", offsetPerTrigger)
+      .option("failOnDataLoss", "false")
       .load()
       .select(from_avro(col("value"), avroSchema).as(alias))
       .selectExpr(alias + ".*")
