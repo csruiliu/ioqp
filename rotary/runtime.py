@@ -312,6 +312,11 @@ class Runtime:
 
             for k, v in sorted(self.job_time_left.items(), key=lambda x: x[1]):
                 self.priority_queue.append(k)
+
+        elif self.scheduler == "roundrobin":
+            for job_id in self.active_queue:
+                self.priority_queue.append(job_id)
+
         else:
             raise ValueError("The scheduler is not supported")
 

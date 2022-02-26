@@ -15,7 +15,7 @@ def arg_config():
     parser.add_argument("-r", "--schedule_round", action="store", type=int, default=1,
                         help="time period of each schedule slot [unit: second]")
     parser.add_argument("-s", "--scheduler", action="store", type=str, default="rotary",
-                        choices=["rotary", "relaqs", "laf", "edf"], help="the scheduler mechanism")
+                        choices=["rotary", "relaqs", "laf", "edf", "roundrobin"], help="the scheduler mechanism")
     parser.add_argument("-l", "--arrival_lambda", action="store", type=int, default=4,
                         help="""the parameter used to generate arrival time. 
                         Expected number of events occurring in a fixed-time interval, 
@@ -56,10 +56,10 @@ def main():
               f"complete_unattain={job.complete_attain}, "
               f"complete_attain={job.complete_attain}")
 
-    sch_engine = Runtime(aqp_workload_dict, num_core, num_worker, schedule_round, scheduler)
+    runtime_engine = Runtime(aqp_workload_dict, num_core, num_worker, schedule_round, scheduler)
 
-    # sch_engine.run()
-    # sch_engine.test()
+    # runtime_engine.run()
+    runtime_engine.test()
 
 
 if __name__ == "__main__":
