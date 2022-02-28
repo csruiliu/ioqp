@@ -4,14 +4,35 @@ class RotaryConstants:
     KNOWLEDGEBASE_PATH = '/home/rotary/knowledgebase'
 
     # query list
-    QUERY_LIST = ['q1', 'q3', 'q5', 'q6', 'q11', 'q16', 'q19']
+    QUERY_LIST = ["q1", "q3", "q5", "q6", "q11", "q16", "q19"]
 
     # full query list
     QUERY_LIST_FULL = ["q1", "q2", "q3", "q4", "q5", "q6", "q7", "q8" "q9", "q10", "q11", "q12",
                        "q13", "q14", "q15", "q16", "q17", "q18", "q19", "q20", "q21", "q22"]
 
 
-class TPCHConstants:
+class TPCHMemoryConstants:
+    # TPCH queries JVM memory allocation for executor
+    # the jobs in the small list need 10G
+    LIST_S = ["q1", "q2", "q4", "q6", "q10", "q11", "q12", "q13", "q14", "q15", "q16", "q20"]
+
+    # the jobs in the medium list need 15G
+    LIST_M = ["q3", "q19"]
+
+    # the jobs in the large list need 20G
+    LIST_L = ["q8", "q20"]
+
+    # the jobs in the extra large list need 25G
+    LIST_XL = ["q5"]
+
+    # the jobs in the extra large list need 30G
+    LIST_XXL = ["q17"]
+
+    # the jobs in the extra large list need 40G
+    LIST_XXXL = ["q7", "q9", "q18", "q21"]
+
+
+class TPCHAGGConstants:
     # tpch-q1 agg schema
     Q1_AGG_COL = ['sum_qty', 'sum_base_price', 'sum_disc_price', 'sum_charge',
                   'avg_qty', 'avg_price', 'avg_disc', 'count_order']
