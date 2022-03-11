@@ -45,7 +45,8 @@ class QueryTPCH(bootstrap: String,
                 SR: Double,
                 trigger_interval: Int,
                 aggregation_interval: Int,
-                checkpoint_path: String) {
+                checkpoint_path: String,
+                cbo_enable: String) {
 
   val iOLAP_Q11_src = "/q11_config.csv"
   val iOLAP_Q17_src = "/q17_config.csv"
@@ -87,6 +88,7 @@ class QueryTPCH(bootstrap: String,
     query_name = query.toLowerCase
 
     val sparkConf = new SparkConf()
+      .set(SQLConf.CBO_ENABLED.key, cbo_enable)
       .set(SQLConf.SHUFFLE_PARTITIONS.key, shuffleNum)
       .set(SQLConf.SLOTHDB_STAT_DIR.key, statDIR)
       .set(SQLConf.SLOTHDB_EXECUTION_MODE.key, execution_mode)
@@ -194,6 +196,8 @@ class QueryTPCH(bootstrap: String,
         count_order(lit(1L)).as("count_order")
       )
       //.orderBy($"l_returnflag", $"l_linestatus")
+
+    result.explain(extended = true, cost = true)
 
     if (TPCHSchema.checkpointPath == "none") {
       DataUtils.writeToSinkNoCKPT(result, query_name, trigger_interval)
@@ -1120,7 +1124,7 @@ object QueryTPCH {
     val tpch = new QueryTPCH(args(0), args(1), args(2).toInt, args(3),
       args(4), args(5), args(6).toDouble, args(7), args(8), args(9).toInt,
       args(10), args(11).toBoolean, args(12).toInt, args(13), args(14), args(15),
-      args(16), args(17).toDouble, args(18).toInt, args(19).toInt, args(20))
+      args(16), args(17).toDouble, args(18).toInt, args(19).toInt, args(20), args(21))
     tpch.execQuery()
   }
 }

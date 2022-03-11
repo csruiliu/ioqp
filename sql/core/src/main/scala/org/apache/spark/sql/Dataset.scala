@@ -480,8 +480,8 @@ class Dataset[T] private[sql](
    * @group basic
    * @since 1.6.0
    */
-  def explain(extended: Boolean): Unit = {
-    val explain = ExplainCommand(queryExecution.logical, extended = extended)
+  def explain(extended: Boolean, cost: Boolean): Unit = {
+    val explain = ExplainCommand(queryExecution.logical, extended = extended, cost = cost)
     sparkSession.sessionState.executePlan(explain).executedPlan.executeCollect().foreach {
       // scalastyle:off println
       r => println(r.getString(0))
@@ -495,7 +495,7 @@ class Dataset[T] private[sql](
    * @group basic
    * @since 1.6.0
    */
-  def explain(): Unit = explain(extended = false)
+  def explain(): Unit = explain(extended = false, cost = false)
 
   /**
    * Returns all column names and their data types as an array.
