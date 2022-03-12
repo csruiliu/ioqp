@@ -181,7 +181,7 @@ class QueryTPCH(bootstrap: String,
     count_order.setAggregationSchemaName("count_order")
 
     val l = DataUtils.loadStreamTable(spark, "lineitem", "l")
-    val l_sampled = l.sample(false, SR, 42)
+    val l_sampled = l.sample(withReplacement = false, fraction = SR, seed = 42)
 
     val result = l_sampled.filter($"l_shipdate" <= "1998-09-01")
       .select($"l_returnflag", $"l_linestatus", $"l_quantity", $"l_extendedprice", $"l_discount", $"l_tax")
@@ -216,17 +216,17 @@ class QueryTPCH(bootstrap: String,
     min_supplycost.setAggregationSchemaName("min_supplycost")
 
     val s = DataUtils.loadStreamTable(spark, "supplier", "s")
-    val s_sampled = s.sample(false, SR, 42)
+    val s_sampled = s.sample(withReplacement = false, fraction = SR, seed = 42)
 
     val ps = DataUtils.loadStreamTable(spark, "partsupp", "ps")
-    val ps_sampled = ps.sample(false, SR, 42)
+    val ps_sampled = ps.sample(withReplacement = false, fraction = SR, seed = 42)
 
     val n = DataUtils.loadStreamTable(spark, "nation", "n")
-    val n_sampled = n.sample(false, SR, 42)
+    val n_sampled = n.sample(withReplacement = false, fraction = SR, seed = 42)
 
     val r = DataUtils.loadStreamTable(spark, "region", "r")
       .filter($"r_name" === "EUROPE")
-    val r_sampled = r.sample(false, SR, 42)
+    val r_sampled = r.sample(withReplacement = false, fraction = SR, seed = 42)
 
     r_sampled.join(n_sampled, $"r_regionkey" === $"n_regionkey")
       .join(s_sampled, $"n_nationkey" === $"s_nationkey")
@@ -241,20 +241,20 @@ class QueryTPCH(bootstrap: String,
 
     val p = DataUtils.loadStreamTable(spark, "part", "p")
       .filter(($"p_size" === 15) and ($"p_type" like("%BRASS")))
-    val p_sampled = p.sample(false, SR, 42)
+    val p_sampled = p.sample(withReplacement = false, fraction = SR, seed = 42)
 
     val s = DataUtils.loadStreamTable(spark, "supplier", "s")
-    val s_sampled = s.sample(false, SR, 42)
+    val s_sampled = s.sample(withReplacement = false, fraction = SR, seed = 42)
 
     val ps = DataUtils.loadStreamTable(spark, "partsupp", "ps")
-    val ps_sampled = ps.sample(false, SR, 42)
+    val ps_sampled = ps.sample(withReplacement = false, fraction = SR, seed = 42)
 
     val n = DataUtils.loadStreamTable(spark, "nation", "n")
-    val n_sampled = n.sample(false, SR, 42)
+    val n_sampled = n.sample(withReplacement = false, fraction = SR, seed = 42)
 
     val r = DataUtils.loadStreamTable(spark, "region", "r")
       .filter($"r_name" === "EUROPE")
-    val r_sampled = r.sample(false, SR, 42)
+    val r_sampled = r.sample(withReplacement = false, fraction = SR, seed = 42)
 
     val subquery1_a = r_sampled.join(n_sampled, $"r_regionkey" === $"n_regionkey")
       .join(s_sampled, $"n_nationkey" === $"s_nationkey")
@@ -286,15 +286,15 @@ class QueryTPCH(bootstrap: String,
 
     val c = DataUtils.loadStreamTable(spark, "customer", "c")
       .filter($"c_mktsegment" === "BUILDING")
-    val c_sampled = c.sample(false, SR, 42)
+    val c_sampled = c.sample(withReplacement = false, fraction = SR, seed = 42)
 
     val o = DataUtils.loadStreamTable(spark, "orders", "o")
       .filter($"o_orderdate" < "1995-03-15")
-    val o_sampled = o.sample(false, SR, 42)
+    val o_sampled = o.sample(withReplacement = false, fraction = SR, seed = 42)
 
     val l = DataUtils.loadStreamTable(spark, "lineitem", "l")
       .filter($"l_shipdate" > "1995-03-15")
-    val l_sampled = l.sample(false, SR, 42)
+    val l_sampled = l.sample(withReplacement = false, fraction = SR, seed = 42)
 
     val result = c.join(o_sampled, $"c_custkey" === $"o_custkey")
       .join(l_sampled, $"o_orderkey" === $"l_orderkey")
@@ -321,12 +321,12 @@ class QueryTPCH(bootstrap: String,
 
     val o = DataUtils.loadStreamTable(spark, "orders", "o")
       .filter($"o_orderdate" >= "1993-07-01" and $"o_orderdate" < "1993-10-01")
-    val o_sampled = o.sample(false, SR, 42)
+    val o_sampled = o.sample(withReplacement = false, fraction = SR, seed = 42)
 
     val l = DataUtils.loadStreamTable(spark, "lineitem", "l")
       .filter($"l_commitdate" < $"l_receiptdate")
       .select("l_orderkey")
-    val l_sampled = l.sample(false, SR, 42)
+    val l_sampled = l.sample(withReplacement = false, fraction = SR, seed = 42)
 
     val result = o_sampled.join(l_sampled, $"o_orderkey" === $"l_orderkey", "left_semi")
       .groupBy("o_orderpriority")
@@ -349,24 +349,24 @@ class QueryTPCH(bootstrap: String,
     sum_disc_price.setAggregationSchemaName("revenue")
 
     val c = DataUtils.loadStreamTable(spark, "customer", "c")
-    val c_sampled = c.sample(false, SR, 42)
+    val c_sampled = c.sample(withReplacement = false, fraction = SR, seed = 42)
 
     val o = DataUtils.loadStreamTable(spark, "orders", "o")
       .filter($"o_orderdate" >= "1994-01-01" and $"o_orderdate" < "1995-01-01")
-    val o_sampled = o.sample(false, SR, 42)
+    val o_sampled = o.sample(withReplacement = false, fraction = SR, seed = 42)
 
     val l = DataUtils.loadStreamTable(spark, "lineitem", "l")
-    val l_sampled = l.sample(false, SR, 42)
+    val l_sampled = l.sample(withReplacement = false, fraction = SR, seed = 42)
 
     val s = DataUtils.loadStreamTable(spark, "supplier", "s")
-    val s_sampled = s.sample(false, SR, 42)
+    val s_sampled = s.sample(withReplacement = false, fraction = SR, seed = 42)
 
     val n = DataUtils.loadStreamTable(spark, "nation", "n")
-    val n_sampled = n.sample(false, SR, 42)
+    val n_sampled = n.sample(withReplacement = false, fraction = SR, seed = 42)
 
     val r = DataUtils.loadStreamTable(spark, "region", "r")
       .filter($"r_name" === "ASIA")
-    val r_sampled = r.sample(false, SR, 42)
+    val r_sampled = r.sample(withReplacement = false, fraction = SR, seed = 42)
 
     val query_a = r_sampled.join(n_sampled, $"r_regionkey" === $"n_regionkey")
       .join(s_sampled, $"n_nationkey" === $"s_nationkey")
@@ -398,7 +398,7 @@ class QueryTPCH(bootstrap: String,
     val l = DataUtils.loadStreamTable(spark, "lineitem", "l")
       .filter(($"l_shipdate" between("1994-01-01", "1995-01-01"))
         and ($"l_discount" between(0.05, 0.07)) and ($"l_quantity" < 24))
-    val l_sampled = l.sample(false, SR, 42)
+    val l_sampled = l.sample(withReplacement = false, fraction = SR, seed = 42)
 
     val result = l_sampled.agg(doubleSum($"l_extendedprice" * $"l_discount").alias("revenue"))
 
@@ -420,24 +420,24 @@ class QueryTPCH(bootstrap: String,
 
     val l = DataUtils.loadStreamTable(spark, "lineitem", "l")
       .filter($"l_shipdate" between("1995-01-01", "1996-12-31"))
-    val l_sampled = l.sample(false, SR, 42)
+    val l_sampled = l.sample(withReplacement = false, fraction = SR, seed = 42)
 
     val s = DataUtils.loadStreamTable(spark, "supplier", "s")
-    val s_sampled = s.sample(false, SR, 42)
+    val s_sampled = s.sample(withReplacement = false, fraction = SR, seed = 42)
 
     val o = DataUtils.loadStreamTable(spark, "orders", "o")
-    val o_sampled = o.sample(false, SR, 42)
+    val o_sampled = o.sample(withReplacement = false, fraction = SR, seed = 42)
 
     val c = DataUtils.loadStreamTable(spark, "customer", "c")
-    val c_sampled = c.sample(false, SR, 42)
+    val c_sampled = c.sample(withReplacement = false, fraction = SR, seed = 42)
 
     val n1 = DataUtils.loadStreamTable(spark, "nation", "n1")
       .select($"n_name".alias("supp_nation"), $"n_nationkey".as("n1_nationkey"))
-    val n1_sampled = n1.sample(false, SR, 42)
+    val n1_sampled = n1.sample(withReplacement = false, fraction = SR, seed = 42)
 
     val n2 = DataUtils.loadStreamTable(spark, "nation", "n2")
       .select($"n_name".alias("cust_nation"), $"n_nationkey".as("n2_nationkey"))
-    val n2_sampled = n2.sample(false, SR, 42)
+    val n2_sampled = n2.sample(withReplacement = false, fraction = SR, seed = 42)
 
     val result = l_sampled.join(s_sampled, $"l_suppkey" === $"s_suppkey")
       .join(o_sampled, $"l_orderkey" === $"o_orderkey")
@@ -470,32 +470,32 @@ class QueryTPCH(bootstrap: String,
 
     val p = DataUtils.loadStreamTable(spark, "part", "p")
       .filter($"p_type" === "ECONOMY ANODIZED STEEL")
-    val p_sampled = p.sample(false, SR, 42)
+    val p_sampled = p.sample(withReplacement = false, fraction = SR, seed = 42)
 
     val s = DataUtils.loadStreamTable(spark, "supplier", "s")
-    val s_sampled = s.sample(false, SR, 42)
+    val s_sampled = s.sample(withReplacement = false, fraction = SR, seed = 42)
 
     val l = DataUtils.loadStreamTable(spark, "lineitem", "l")
-    val l_sampled = l.sample(false, SR, 42)
+    val l_sampled = l.sample(withReplacement = false, fraction = SR, seed = 42)
 
     val o = DataUtils.loadStreamTable(spark, "orders", "o")
       .filter($"o_orderdate" between("1995-01-01", "1996-12-31"))
-    val o_sampled = o.sample(false, SR, 42)
+    val o_sampled = o.sample(withReplacement = false, fraction = SR, seed = 42)
 
     val c = DataUtils.loadStreamTable(spark, "customer", "c")
-    val c_sampled = c.sample(false, SR, 42)
+    val c_sampled = c.sample(withReplacement = false, fraction = SR, seed = 42)
 
     val n1 = DataUtils.loadStreamTable(spark, "nation", "n1")
       .select($"n_regionkey".alias("n1_regionkey"), $"n_nationkey".as("n1_nationkey"))
-    val n1_sampled = n1.sample(false, SR, 42)
+    val n1_sampled = n1.sample(withReplacement = false, fraction = SR, seed = 42)
 
     val n2 = DataUtils.loadStreamTable(spark, "nation", "n2")
       .select($"n_name".alias("n2_name"), $"n_nationkey".as("n2_nationkey"))
-    val n2_sampled = n2.sample(false, SR, 42)
+    val n2_sampled = n2.sample(withReplacement = false, fraction = SR, seed = 42)
 
     val r = DataUtils.loadStreamTable(spark, "region", "r")
       .filter($"r_name" === "AMERICA")
-    val r_sampled = r.sample(false, SR, 42)
+    val r_sampled = r.sample(withReplacement = false, fraction = SR, seed = 42)
 
     val result = l_sampled.join(p, $"l_partkey" === $"p_partkey")
       .join(s_sampled, $"l_suppkey" === $"s_suppkey")
@@ -527,22 +527,22 @@ class QueryTPCH(bootstrap: String,
 
     val p = DataUtils.loadStreamTable(spark, "part", "p")
       .filter($"p_name" like("%green%"))
-    val p_sampled = p.sample(false, SR, 42)
+    val p_sampled = p.sample(withReplacement = false, fraction = SR, seed = 42)
 
     val s = DataUtils.loadStreamTable(spark, "supplier", "s")
-    val s_sampled = s.sample(false, SR, 42)
+    val s_sampled = s.sample(withReplacement = false, fraction = SR, seed = 42)
 
     val l = DataUtils.loadStreamTable(spark, "lineitem", "l")
-    val l_sampled = l.sample(false, SR, 42)
+    val l_sampled = l.sample(withReplacement = false, fraction = SR, seed = 42)
 
     val ps = DataUtils.loadStreamTable(spark, "partsupp", "ps")
-    val ps_sampled = ps.sample(false, SR, 42)
+    val ps_sampled = ps.sample(withReplacement = false, fraction = SR, seed = 42)
 
     val o = DataUtils.loadStreamTable(spark, "orders", "o")
-    val o_sampled = o.sample(false, SR, 42)
+    val o_sampled = o.sample(withReplacement = false, fraction = SR, seed = 42)
 
     val n = DataUtils.loadStreamTable(spark, "nation", "n")
-    val n_sampled = n.sample(false, SR, 42)
+    val n_sampled = n.sample(withReplacement = false, fraction = SR, seed = 42)
 
     val result = l_sampled.join(p_sampled, $"l_partkey" === $"p_partkey")
       .join(ps_sampled, $"l_partkey" === $"ps_partkey" and $"l_suppkey" === $"ps_suppkey")
@@ -573,18 +573,18 @@ class QueryTPCH(bootstrap: String,
     revenue.setAggregationSchemaName("revenue")
 
     val c = DataUtils.loadStreamTable(spark, "customer", "c")
-    val c_sampled = c.sample(false, SR, 42)
+    val c_sampled = c.sample(withReplacement = false, fraction = SR, seed = 42)
 
     val o = DataUtils.loadStreamTable(spark, "orders", "o")
       .filter($"o_orderdate" >= "1993-10-01" and $"o_orderdate" < "1994-01-01")
-    val o_sampled = o.sample(false, SR, 42)
+    val o_sampled = o.sample(withReplacement = false, fraction = SR, seed = 42)
 
     val l = DataUtils.loadStreamTable(spark, "lineitem", "l")
       .filter($"l_returnflag" === "R")
-    val l_sampled = l.sample(false, SR, 42)
+    val l_sampled = l.sample(withReplacement = false, fraction = SR, seed = 42)
 
     val n = DataUtils.loadStreamTable(spark, "nation", "n")
-    val n_sampled = n.sample(false, SR, 42)
+    val n_sampled = n.sample(withReplacement = false, fraction = SR, seed = 42)
 
     val result = l.join(o_sampled, $"l_orderkey" === $"o_orderkey")
       .join(c_sampled, $"o_custkey" === $"c_custkey")
@@ -607,14 +607,14 @@ class QueryTPCH(bootstrap: String,
     val doubleSum = new DoubleSum
 
     val ps = DataUtils.loadStreamTable(spark, "partsupp", "ps")
-    val ps_sampled = ps.sample(false, SR, 42)
+    val ps_sampled = ps.sample(withReplacement = false, fraction = SR, seed = 42)
 
     val s = DataUtils.loadStreamTable(spark, "supplier", "s")
-    val s_sampled = s.sample(false, SR, 42)
+    val s_sampled = s.sample(withReplacement = false, fraction = SR, seed = 42)
 
     val n = DataUtils.loadStreamTable(spark, "nation", "n")
       .filter($"n_name" === "GERMANY")
-    val n_sampled = n.sample(false, SR, 42)
+    val n_sampled = n.sample(withReplacement = false, fraction = SR, seed = 42)
 
     s_sampled.join(n_sampled, $"s_nationkey" === $"n_nationkey")
       .join(ps_sampled, $"s_suppkey" === $"ps_suppkey")
@@ -629,14 +629,14 @@ class QueryTPCH(bootstrap: String,
     doubleSum.setAggregationSchemaName("value")
 
     val ps = DataUtils.loadStreamTable(spark, "partsupp", "ps")
-    val ps_sampled = ps.sample(false, SR, 42)
+    val ps_sampled = ps.sample(withReplacement = false, fraction = SR, seed = 42)
 
     val s = DataUtils.loadStreamTable(spark, "supplier", "s")
-    val s_sampled = s.sample(false, SR, 42)
+    val s_sampled = s.sample(withReplacement = false, fraction = SR, seed = 42)
 
     val n = DataUtils.loadStreamTable(spark, "nation", "n")
       .filter($"n_name" === "GERMANY")
-    val n_sampled = n.sample(false, SR, 42)
+    val n_sampled = n.sample(withReplacement = false, fraction = SR, seed = 42)
 
     val subquery = execQ11_subquery(spark)
 
@@ -673,14 +673,14 @@ class QueryTPCH(bootstrap: String,
     udaf_q12_high.setAggregationSchemaName("high_line_count")
 
     val o = DataUtils.loadStreamTable(spark, "orders", "o")
-    val o_sampled = o.sample(false, SR, 42)
+    val o_sampled = o.sample(withReplacement = false, fraction = SR, seed = 42)
 
     val l = DataUtils.loadStreamTable(spark, "lineitem", "l")
       .filter(($"l_shipmode" === "MAIL")
         and ($"l_commitdate" < $"l_receiptdate")
         and ($"l_shipdate" < $"l_commitdate")
         and ($"l_receiptdate" === "1994-01-01"))
-    val l_sampled = l.sample(false, SR, 42)
+    val l_sampled = l.sample(withReplacement = false, fraction = SR, seed = 42)
 
     val result = o_sampled.join(l_sampled, $"o_orderkey" === $"l_orderkey")
       .groupBy($"l_shipmode")
@@ -709,11 +709,11 @@ class QueryTPCH(bootstrap: String,
     custdist.setAggregationSchemaName("custdist")
 
     val c = DataUtils.loadStreamTable(spark, "customer", "c")
-    val c_sampled = c.sample(false, SR, 42)
+    val c_sampled = c.sample(withReplacement = false, fraction = SR, seed = 42)
 
     val o = DataUtils.loadStreamTable(spark, "orders", "o")
       .filter(!($"o_comment" like("%special%requests%")))
-    val o_sampled = o.sample(false, SR, 42)
+    val o_sampled = o.sample(withReplacement = false, fraction = SR, seed = 42)
 
     val result = c_sampled.join(o_sampled, $"c_custkey" === $"o_custkey", "left_outer")
       .groupBy($"c_custkey")
@@ -742,10 +742,10 @@ class QueryTPCH(bootstrap: String,
 
     val l = DataUtils.loadStreamTable(spark, "lineitem", "l")
       .filter($"l_shipdate" between("1995-09-01", "1995-10-01"))
-    val l_sampled = l.sample(false, SR, 42)
+    val l_sampled = l.sample(withReplacement = false, fraction = SR, seed = 42)
 
     val p = DataUtils.loadStreamTable(spark, "part", "p")
-    val p_sampled = p.sample(false, SR, 42)
+    val p_sampled = p.sample(withReplacement = false, fraction = SR, seed = 42)
 
     val result = l_sampled.join(p_sampled, $"l_partkey" === $"p_partkey")
       .agg(
@@ -770,7 +770,7 @@ class QueryTPCH(bootstrap: String,
 
     val l = DataUtils.loadStreamTable(spark, "lineitem", "l")
       .filter($"l_shipdate" between("1996-01-01", "1996-04-01"))
-    val l_sampled = l.sample(false, SR, 42)
+    val l_sampled = l.sample(withReplacement = false, fraction = SR, seed = 42)
 
     l_sampled.groupBy($"l_suppkey")
       .agg(sum_disc_price($"l_extendedprice", $"l_discount").as("total_revenue"))
@@ -781,7 +781,7 @@ class QueryTPCH(bootstrap: String,
     import spark.implicits._
 
     val s = DataUtils.loadStreamTable(spark, "supplier", "s")
-    val s_sampled = s.sample(false, SR, 42)
+    val s_sampled = s.sample(withReplacement = false, fraction = SR, seed = 42)
 
     val revenue = execQ15_subquery(spark)
     val max_revenue = execQ15_subquery(spark).agg(max($"total_revenue").as("max_revenue"))
@@ -807,18 +807,18 @@ class QueryTPCH(bootstrap: String,
     supplier_cnt.setAggregationSchemaName("supplier_cnt")
 
     val ps = DataUtils.loadStreamTable(spark, "partsupp", "ps")
-    val ps_sampled = ps.sample(false, SR, 42)
+    val ps_sampled = ps.sample(withReplacement = false, fraction = SR, seed = 42)
 
     val p = DataUtils.loadStreamTable(spark, "part", "part")
       .filter(($"p_brand" =!= "Brand#45") and
         (!($"p_type" like("MEDIUM POLISHED%")))
         and ($"p_size" isin(49, 14, 23, 45, 19, 3, 36, 9)))
-    val p_sampled = p.sample(false, SR, 42)
+    val p_sampled = p.sample(withReplacement = false, fraction = SR, seed = 42)
 
     val s = DataUtils.loadStreamTable(spark, "supplier", "s")
       .filter($"s_comment" like("%Customer%Complaints%"))
       .select($"s_suppkey")
-    val s_sampled = s.sample(false, SR, 42)
+    val s_sampled = s.sample(withReplacement = false, fraction = SR, seed = 42)
 
     val result = ps_sampled.join(p_sampled, $"ps_partkey" === $"p_partkey")
       .join(s_sampled, $"ps_suppkey" === $"s_suppkey", "left_anti")
@@ -847,17 +847,17 @@ class QueryTPCH(bootstrap: String,
     doubleSum.setAggregationSchemaName("avg_yearly")
 
     val l = DataUtils.loadStreamTable(spark, "lineitem", "l")
-    val l_sampled = l.sample(false, SR, 42)
+    val l_sampled = l.sample(withReplacement = false, fraction = SR, seed = 42)
 
     val p = DataUtils.loadStreamTable(spark, "part", "p")
       .filter($"p_brand" === "Brand#23" and $"p_container" === "MED BOX")
-    val p_sampled = p.sample(false, SR, 42)
+    val p_sampled = p.sample(withReplacement = false, fraction = SR, seed = 42)
 
     val agg_l = DataUtils.loadStreamTable(spark, "lineitem", "l")
       .groupBy($"l_partkey")
       .agg((doubleAvg($"l_quantity") * 0.2).as("avg_quantity"))
       .select($"l_partkey".as("agg_l_partkey"), $"avg_quantity")
-    val agg_l_sampled = agg_l.sample(false, SR, 42)
+    val agg_l_sampled = agg_l.sample(withReplacement = false, fraction = SR, seed = 42)
 
     if (iOLAPConf == iOLAP_TRAINING) {
       val tmpDF = l.join(agg_l, $"l_partkey" === $"agg_l_partkey"
@@ -897,20 +897,20 @@ class QueryTPCH(bootstrap: String,
     doubleSum2.setAggregationSchemaName("avg_yearly")
 
     val c = DataUtils.loadStreamTable(spark, "customer", "c")
-    val c_sampled = c.sample(false, SR, 42)
+    val c_sampled = c.sample(withReplacement = false, fraction = SR, seed = 42)
 
     val o = DataUtils.loadStreamTable(spark, "orders", "o")
-    val o_sampled = o.sample(false, SR, 42)
+    val o_sampled = o.sample(withReplacement = false, fraction = SR, seed = 42)
 
     val l = DataUtils.loadStreamTable(spark, "lineitem", "l")
-    val l_sampled = l.sample(false, SR, 42)
+    val l_sampled = l.sample(withReplacement = false, fraction = SR, seed = 42)
 
     val agg_l = DataUtils.loadStreamTable(spark, "lineitem", "l")
       .groupBy("l_orderkey")
       .agg(doubleSum1($"l_quantity").as("sum_quantity"))
       .filter($"sum_quantity" > 300)
       .select($"l_orderkey".as("agg_orderkey"))
-    val agg_l_sampled = agg_l.sample(false, SR, 42)
+    val agg_l_sampled = agg_l.sample(withReplacement = false, fraction = SR, seed = 42)
 
     if (iOLAPConf == iOLAP_TRAINING) {
        DataUtils.writeToFile(agg_l, query_name, hdfsRoot + iOLAP_Q18_dst)
@@ -942,10 +942,10 @@ class QueryTPCH(bootstrap: String,
     val l = DataUtils.loadStreamTable(spark, "lineitem", "l")
       .filter(($"l_shipmode" isin("AIR", "AIR REG"))
         and ($"l_shipinstruct" === "DELIVER IN PERSON"))
-    val l_sampled = l.sample(false, SR, 42)
+    val l_sampled = l.sample(withReplacement = false, fraction = SR, seed = 42)
 
     val p = DataUtils.loadStreamTable(spark, "part", "p")
-    val p_sampled = p.sample(false, SR, 42)
+    val p_sampled = p.sample(withReplacement = false, fraction = SR, seed = 42)
 
     val result = l_sampled.join(p_sampled, $"l_partkey" === $"p_partkey"
       and ((($"p_brand" === "Brand#12") and
@@ -984,14 +984,14 @@ class QueryTPCH(bootstrap: String,
       .select($"l_partkey".as("agg_l_partkey"),
       $"l_suppkey".as("agg_l_suppkey"),
       $"agg_l_sum")
-    val agg_l_sampled = agg_l.sample(false, SR, 42)
+    val agg_l_sampled = agg_l.sample(withReplacement = false, fraction = SR, seed = 42)
 
     val p = DataUtils.loadStreamTable(spark, "part", "p")
       .filter($"p_name" like("forest%"))
-    val p_sampled = p.sample(false, SR, 42)
+    val p_sampled = p.sample(withReplacement = false, fraction = SR, seed = 42)
 
     val ps = DataUtils.loadStreamTable(spark, "partsupp", "ps")
-    val ps_sampled = ps.sample(false, SR, 42)
+    val ps_sampled = ps.sample(withReplacement = false, fraction = SR, seed = 42)
 
     val subquery = ps_sampled.join(agg_l_sampled, $"ps_partkey" === $"agg_l_partkey"
         and $"ps_suppkey" === $"agg_l_suppkey" and $"ps_availqty" > $"agg_l_sum")
@@ -999,11 +999,11 @@ class QueryTPCH(bootstrap: String,
       .select("ps_suppkey")
 
     val s = DataUtils.loadStreamTable(spark, "supplier", "s")
-    val s_sampled = s.sample(false, SR, 42)
+    val s_sampled = s.sample(withReplacement = false, fraction = SR, seed = 42)
 
     val n = DataUtils.loadStreamTable(spark, "nation", "n")
       .filter($"n_name" === "CANADA")
-    val n_sampled = n.sample(false, SR, 42)
+    val n_sampled = n.sample(withReplacement = false, fraction = SR, seed = 42)
 
     if (iOLAPConf == iOLAP_TRAINING) {
       DataUtils.writeToFile(subquery, query_name, hdfsRoot + iOLAP_Q20_dst)
@@ -1031,19 +1031,19 @@ class QueryTPCH(bootstrap: String,
     count.setAggregationSchemaName("numwait")
 
     val s = DataUtils.loadStreamTable(spark, "supplier", "s")
-    val s_sampled = s.sample(false, SR, 42)
+    val s_sampled = s.sample(withReplacement = false, fraction = SR, seed = 42)
 
     val l1 = DataUtils.loadStreamTable(spark, "lineitem", "l1")
       .filter($"l_receiptdate" > $"l_commitdate")
-    val l1_sampled = l1.sample(false, SR, 42)
+    val l1_sampled = l1.sample(withReplacement = false, fraction = SR, seed = 42)
 
     val o = DataUtils.loadStreamTable(spark, "orders", "o")
       .filter($"o_orderstatus" === "F")
-    val o_sampled = o.sample(false, SR, 42)
+    val o_sampled = o.sample(withReplacement = false, fraction = SR, seed = 42)
 
     val n = DataUtils.loadStreamTable(spark, "nation", "n")
       .filter($"n_name" === "SAUDI ARABIA")
-    val n_sampled = n.sample(false, SR, 42)
+    val n_sampled = n.sample(withReplacement = false, fraction = SR, seed = 42)
 
     val init_result = l1_sampled.join(o_sampled, $"l_orderkey" === $"o_orderkey")
       .join(s_sampled, $"l_suppkey" === $"s_suppkey")
@@ -1051,12 +1051,12 @@ class QueryTPCH(bootstrap: String,
 
     val l2 = DataUtils.loadStreamTable(spark, "lineitem", "l2")
       .select($"l_orderkey".as("l2_orderkey"), $"l_suppkey".as("l2_suppkey"))
-    val l2_sampled = l2.sample(false, SR, 42)
+    val l2_sampled = l2.sample(withReplacement = false, fraction = SR, seed = 42)
 
     val l3 = DataUtils.loadStreamTable(spark, "lineitem", "l3")
       .filter($"l_receiptdate" > $"l_commitdate")
       .select($"l_orderkey".as("l3_orderkey"), $"l_suppkey".as("l3_suppkey"))
-    val l3_sampled = l3.sample(false, SR, 42)
+    val l3_sampled = l3.sample(withReplacement = false, fraction = SR, seed = 42)
 
     val result = init_result
       .join(l2_sampled, ($"l_orderkey" === $"l2_orderkey")
@@ -1091,17 +1091,17 @@ class QueryTPCH(bootstrap: String,
     val c = DataUtils.loadStreamTable(spark, "customer", "c")
       .filter(substring($"c_phone", 1, 2)
         isin("13", "31", "23", "29", "30", "18", "17"))
-    val c_sampled = c.sample(false, SR, 42)
+    val c_sampled = c.sample(withReplacement = false, fraction = SR, seed = 42)
 
     val subquery1 = DataUtils.loadStreamTable(spark, "customer", "c1")
       .filter((substring($"c_phone", 1, 2)
         isin("13", "31", "23", "29", "30", "18", "17")) and
         ($"c_acctbal" > 0.00))
       .agg(doubleAvg($"c_acctbal").as("avg_acctbal"))
-    val subquery1_sampled = subquery1.sample(false, SR, 42)
+    val subquery1_sampled = subquery1.sample(withReplacement = false, fraction = SR, seed = 42)
 
     val o = DataUtils.loadStreamTable(spark, "orders", "o")
-    val o_sampled = o.sample(false, SR, 42)
+    val o_sampled = o.sample(withReplacement = false, fraction = SR, seed = 42)
 
     if (iOLAPConf == iOLAP_TRAINING) {
       DataUtils.writeToSink(subquery1.agg(min($"avg_acctbal"), max($"avg_acctbal")), query_name)
@@ -1233,7 +1233,7 @@ class QueryTPCH(bootstrap: String,
     val doubleAvg2 = new DoubleAvg
 
     val c = DataUtils.loadStreamTable(spark, "customer", "c")
-    val o = DataUtils.loadStreamTable(spark, "orders", "o")
+    // val o = DataUtils.loadStreamTable(spark, "orders", "o")
 
     val agg_o = DataUtils.loadStreamTable(spark, "orders", "o")
       .groupBy("o_custkey")
