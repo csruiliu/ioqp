@@ -1,35 +1,78 @@
 
-class RotaryConstants:
-    # knowledgebase path
-    KNOWLEDGEBASE_PATH = '/home/rotary/knowledgebase'
+class WorkloadConstants:
+    WORKLOAD_SIZE = 30
 
-    # query list
-    QUERY_LIST = ["q1", "q3", "q5", "q6", "q11", "q16", "q19"]
+    # the parameter used to generate arrival time. Expected number of events occurring in a fixed-time interval
+    ARRIVAL_LAMBDA = 4
 
-    # full query list
-    QUERY_LIST_FULL = ["q1", "q2", "q3", "q4", "q5", "q6", "q7", "q8" "q9", "q10", "q11", "q12",
-                       "q13", "q14", "q15", "q16", "q17", "q18", "q19", "q20", "q21", "q22"]
+    # period of schedule round
+    SCH_ROUND_PERIOD = 10
+
+    # queries used in relaqs
+    WORKLOAD_RELAQS = ["q1", "q3", "q5", "q6", "q11", "q16", "q19"]
+
+    # all queries in tpch
+    WORKLOAD_FULL = ["q1", "q2", "q3", "q4", "q5", "q6", "q7", "q8" "q9", "q10", "q11", "q12",
+                     "q13", "q14", "q15", "q16", "q17", "q18", "q19", "q20", "q21", "q22"]
+
+    # the queries cost 5-10 GB when scale factor is 1
+    WORKLOAD_LIGHT = ["q2", "q4", "q6", "q10", "q11", "q12", "q13", "q14", "q15", "q16", "q19", "q22"]
+    # the deadline list for workload_light, time unit second
+    DEADLINE_LIGHT = [60, 120, 180, 240, 300]
+    # the percentage of light workload
+    LIGHT_RATIO = 0.6
+
+    # the queries cost 15-30 GB when scale factor is 1
+    WORKLOAD_MEDIUM = ["q3", "q5", "q8", "q17", "q20"]
+    # the deadline list for workload_medium, time unit second
+    DEADLINE_MEDIUM = [240, 300, 360, 480, 540, 600]
+    # the percentage of medium workload
+    MEDIUM_RATIO = 0.3
+
+    # the queries cost over 30 GB when scale factor is 1
+    WORKLOAD_HEAVY = ["q7", "q9", "q18"]
+    # the deadline list for workload_heavy, time unit second
+    DEADLINE_HEAVY = [600, 1200, 1800, 2400, 3000, 3600]
+    # the percentage of heavy workload
+    HEAVY_RATIO = 0.1
+
+    # accuracy threshold for the jobs in the workload
+    ACCURACY_OBJECTIVE = [0.7, 0.75, 0.8, 0.85, 0.9, 0.95]
 
 
-class TPCHMemoryConstants:
-    # TPCH queries JVM memory allocation for executor
-    # the jobs in the small list need 10G
-    LIST_S = ["q1", "q2", "q4", "q6", "q10", "q11", "q12", "q13", "q14", "q15", "q16", "q20"]
+class MemoryConstants:
+    # Medum dimensionality, Result is TPCH scale factor independent
+    # Q1, Q3, Q4, Q5, Q6, Q7, Q8, Q12, Q13, Q14, Q16, Q19, Q22
 
-    # the jobs in the medium list need 15G
-    LIST_M = ["q3", "q19"]
+    # High dimensionality, Few results, lot of empty cells
+    # Q15, Q18
 
-    # the jobs in the large list need 20G
-    LIST_L = ["q8", "q20"]
+    # High dimensionality, Result % of scale factor
+    # Q2, Q9, Q10, Q11, Q17, Q20, Q21
 
-    # the jobs in the extra large list need 25G
-    LIST_XL = ["q5"]
-
-    # the jobs in the extra large list need 30G
-    LIST_XXL = ["q17"]
-
-    # the jobs in the extra large list need 40G
-    LIST_XXXL = ["q7", "q9", "q18", "q21"]
+    # TPCH queries JVM memory allocation for executor under TPCH dataset SF=1
+    Q1 = 5
+    Q2 = 10
+    Q3 = 15
+    Q4 = 10
+    Q5 = 25
+    Q6 = 5
+    Q7 = 55
+    Q8 = 20
+    Q9 = 65
+    Q10 = 5
+    Q11 = 5
+    Q12 = 5
+    Q13 = 10
+    Q14 = 5
+    Q15 = 5
+    Q16 = 5
+    Q17 = 30
+    Q18 = 65
+    Q19 = 10
+    Q20 = 20
+    Q21 = 100
+    Q22 = 10
 
 
 class TPCHAGGConstants:
@@ -101,7 +144,7 @@ class TPCHAGGConstants:
     Q22_AGG_COL = ['avg_acctbal', 'numcust', 'totalacctbal']
 
 
-class RuntimeConstants:
+class QueryRuntimeConstants:
     # max memory for each executor
     MAX_MEMORY = '10G'
 
@@ -134,6 +177,9 @@ class RuntimeConstants:
 
     # tpch query static files
     TPCH_STATIC_DIR = '/home/run_scripts/tpch_static'
+
+    # rotary knowledgebase path
+    ROTARY_KNOWLEDGEBASE_PATH = '/home/rotary/knowledgebase'
 
     # scale factor of the input tpch dataset
     SCALE_FACTOR = 5
@@ -198,3 +244,99 @@ class RuntimeConstants:
 
     # saprk work path
     SPARK_WORK_PATH = '/usr/local/spark/spark-2.4.0-bin-hadoop2.6/work'
+
+
+def get_query_memory(query_id):
+    if query_id == "q1":
+        return MemoryConstants.Q1
+    elif query_id == "q2":
+        return MemoryConstants.Q2
+    elif query_id == "q3":
+        return MemoryConstants.Q3
+    elif query_id == "q4":
+        return MemoryConstants.Q4
+    elif query_id == "q5":
+        return MemoryConstants.Q5
+    elif query_id == "q6":
+        return MemoryConstants.Q6
+    elif query_id == "q7":
+        return MemoryConstants.Q7
+    elif query_id == "q8":
+        return MemoryConstants.Q8
+    elif query_id == "q9":
+        return MemoryConstants.Q9
+    elif query_id == "q10":
+        return MemoryConstants.Q10
+    elif query_id == "q11":
+        return MemoryConstants.Q11
+    elif query_id == "q12":
+        return MemoryConstants.Q12
+    elif query_id == "q13":
+        return MemoryConstants.Q13
+    elif query_id == "q14":
+        return MemoryConstants.Q14
+    elif query_id == "q15":
+        return MemoryConstants.Q15
+    elif query_id == "q16":
+        return MemoryConstants.Q16
+    elif query_id == "q17":
+        return MemoryConstants.Q17
+    elif query_id == "q18":
+        return MemoryConstants.Q18
+    elif query_id == "q19":
+        return MemoryConstants.Q19
+    elif query_id == "q20":
+        return MemoryConstants.Q20
+    elif query_id == "q21":
+        return MemoryConstants.Q21
+    elif query_id == "q22":
+        return MemoryConstants.Q22
+
+
+def agg_schema_fetcher(job_id):
+    if job_id.startswith('q1'):
+        return TPCHAGGConstants.Q1_AGG_COL
+    elif job_id.startswith('q2'):
+        return TPCHAGGConstants.Q2_AGG_COL
+    elif job_id.startswith('q3'):
+        return TPCHAGGConstants.Q3_AGG_COL
+    elif job_id.startswith('q4'):
+        return TPCHAGGConstants.Q4_AGG_COL
+    elif job_id.startswith('q5'):
+        return TPCHAGGConstants.Q5_AGG_COL
+    elif job_id.startswith('q6'):
+        return TPCHAGGConstants.Q6_AGG_COL
+    elif job_id.startswith('q7'):
+        return TPCHAGGConstants.Q7_AGG_COL
+    elif job_id.startswith('q8'):
+        return TPCHAGGConstants.Q8_AGG_COL
+    elif job_id.startswith('q9'):
+        return TPCHAGGConstants.Q9_AGG_COL
+    elif job_id.startswith('q10'):
+        return TPCHAGGConstants.Q10_AGG_COL
+    elif job_id.startswith('q11'):
+        return TPCHAGGConstants.Q11_AGG_COL
+    elif job_id.startswith('q12'):
+        return TPCHAGGConstants.Q12_AGG_COL
+    elif job_id.startswith('q13'):
+        return TPCHAGGConstants.Q13_AGG_COL
+    elif job_id.startswith('q14'):
+        return TPCHAGGConstants.Q14_AGG_COL
+    elif job_id.startswith('q15'):
+        return TPCHAGGConstants.Q15_AGG_COL
+    elif job_id.startswith('q16'):
+        return TPCHAGGConstants.Q16_AGG_COL
+    elif job_id.startswith('q17'):
+        return TPCHAGGConstants.Q17_AGG_COL
+    elif job_id.startswith('q18'):
+        return TPCHAGGConstants.Q18_AGG_COL
+    elif job_id.startswith('q19'):
+        return TPCHAGGConstants.Q19_AGG_COL
+    elif job_id.startswith('q20'):
+        return TPCHAGGConstants.Q20_AGG_COL
+    elif job_id.startswith('q21'):
+        return TPCHAGGConstants.Q21_AGG_COL
+    elif job_id.startswith('q22'):
+        return TPCHAGGConstants.Q22_AGG_COL
+    else:
+        raise ValueError('The query is not supported')

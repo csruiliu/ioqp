@@ -4,6 +4,7 @@ import copy
 import signal
 import subprocess
 import numpy as np
+import multiprocessing as mp
 from pathlib import Path
 
 from estimator.rotary_estimator import RotaryEstimator
@@ -11,7 +12,7 @@ from estimator.relaqs_estimator import ReLAQSEstimator
 from estimator.envelop_bounder import EnvelopBounder
 from workload.job_aqp import JobAQP
 from common.loggers import get_logger_instance
-from common.constants import RuntimeConstants, RotaryConstants, TPCHConstants
+from common.constants import QueryRuntimeConstants, TPCHAGGConstants, WorkloadConstants, agg_schema_fetcher
 from common.file_utils import (read_curstep_from_file,
                                read_appid_from_file,
                                read_aggresult_from_file,
@@ -19,13 +20,16 @@ from common.file_utils import (read_curstep_from_file,
 
 
 class Runtime:
-    def __init__(self, workload_dict, num_core, num_worker, schedule_epoch, scheduler):
+    def __init__(self,
+                 workload_dict,
+                 scheduler):
+
         self.workload_dict = workload_dict
-        self.num_core = num_core
-        self.num_worker = num_worker
-        self.schedule_epoch = schedule_epoch
+        self.num_core = mp.cpu_count() - 2
+        self.num_worker = QueryRuntimeConstants.NUM_WORKER
+        self.schedule_time_window = WorkloadConstants.SCH_ROUND_PERIOD
         self.scheduler = scheduler
-        self.batch_size = RuntimeConstants.MAX_STEP // RuntimeConstants.BATCH_NUM
+        self.batch_size = QueryRuntimeConstants.MAX_STEP // QueryRuntimeConstants.BATCH_NUM
         self.workload_size = len(workload_dict)
 
         # create a logger
@@ -112,108 +116,59 @@ class Runtime:
             self.job_agg_time_dict[job_id] = dict()
             self.job_envelop_dict[job_id] = dict()
 
-            self.job_time_left[job_id] = job_item["deadline"]
+            self.job_time_left[job_id] = job_item.deadline
 
             # init lists for all schemas for each job
-            for schema_name in self.get_agg_schema(job_id):
+            for schema_name in agg_schema_fetcher(job_id):
                 self.job_agg_result_dict[job_id][schema_name] = list()
                 self.job_agg_time_dict[job_id][schema_name] = list()
                 self.job_envelop_dict[job_id][schema_name] = EnvelopBounder(seq_length=4)
 
             # create an estimator for each job
             if self.scheduler == "rotary":
-                rotary_estimator = RotaryEstimator(job_id, self.get_agg_schema(job_id), self.schedule_epoch)
-                rotary_estimator.import_knowledge_archive(RotaryConstants.KNOWLEDGEBASE_PATH,
-                                                          RotaryConstants.QUERY_LIST)
+                rotary_estimator = RotaryEstimator(job_id, agg_schema_fetcher(job_id), self.schedule_time_window)
+                rotary_estimator.import_knowledge_archive(QueryRuntimeConstants.ROTARY_KNOWLEDGEBASE_PATH,
+                                                          WorkloadConstants.WORKLOAD_FULL)
                 self.job_estimator_dict[job_id] = rotary_estimator
             elif self.scheduler == "relaqs":
                 self.job_estimator_dict[job_id] = ReLAQSEstimator(job_id,
-                                                                  self.get_agg_schema(job_id),
-                                                                  self.schedule_epoch,
+                                                                  agg_schema_fetcher(job_id),
+                                                                  self.schedule_time_window,
                                                                   self.batch_size,
                                                                   self.num_worker)
             else:
                 raise ValueError("the scheduler is not supported")
 
     @staticmethod
-    def get_agg_schema(job_id):
-        if job_id.startswith('q1'):
-            return TPCHConstants.Q1_AGG_COL
-        elif job_id.startswith('q2'):
-            return TPCHConstants.Q2_AGG_COL
-        elif job_id.startswith('q3'):
-            return TPCHConstants.Q3_AGG_COL
-        elif job_id.startswith('q4'):
-            return TPCHConstants.Q4_AGG_COL
-        elif job_id.startswith('q5'):
-            return TPCHConstants.Q5_AGG_COL
-        elif job_id.startswith('q6'):
-            return TPCHConstants.Q6_AGG_COL
-        elif job_id.startswith('q7'):
-            return TPCHConstants.Q7_AGG_COL
-        elif job_id.startswith('q8'):
-            return TPCHConstants.Q8_AGG_COL
-        elif job_id.startswith('q9'):
-            return TPCHConstants.Q9_AGG_COL
-        elif job_id.startswith('q10'):
-            return TPCHConstants.Q10_AGG_COL
-        elif job_id.startswith('q11'):
-            return TPCHConstants.Q11_AGG_COL
-        elif job_id.startswith('q12'):
-            return TPCHConstants.Q12_AGG_COL
-        elif job_id.startswith('q13'):
-            return TPCHConstants.Q13_AGG_COL
-        elif job_id.startswith('q14'):
-            return TPCHConstants.Q14_AGG_COL
-        elif job_id.startswith('q15'):
-            return TPCHConstants.Q15_AGG_COL
-        elif job_id.startswith('q16'):
-            return TPCHConstants.Q16_AGG_COL
-        elif job_id.startswith('q17'):
-            return TPCHConstants.Q17_AGG_COL
-        elif job_id.startswith('q18'):
-            return TPCHConstants.Q18_AGG_COL
-        elif job_id.startswith('q19'):
-            return TPCHConstants.Q19_AGG_COL
-        elif job_id.startswith('q20'):
-            return TPCHConstants.Q20_AGG_COL
-        elif job_id.startswith('q21'):
-            return TPCHConstants.Q21_AGG_COL
-        elif job_id.startswith('q22'):
-            return TPCHConstants.Q22_AGG_COL
-        else:
-            raise ValueError('The query is not supported')
-
-    @staticmethod
     def generate_job_cmd(res_unit, job_name):
         command = ('$SPARK_HOME/bin/spark-submit' +
                    f' --total-executor-cores {res_unit}' +
-                   f' --executor-memory {RuntimeConstants.MAX_MEMORY}' +
-                   f' --class {RuntimeConstants.ENTRY_CLASS}' +
-                   f' --master {RuntimeConstants.MASTER}' +
-                   f' --conf "{RuntimeConstants.JAVA_OPT}"' +
-                   f' {RuntimeConstants.ENTRY_JAR}' +
-                   f' {RuntimeConstants.BOOTSTRAP_SERVER}' +
+                   f' --executor-memory {QueryRuntimeConstants.MAX_MEMORY}' +
+                   f' --class {QueryRuntimeConstants.ENTRY_CLASS}' +
+                   f' --master {QueryRuntimeConstants.MASTER}' +
+                   f' --conf "{QueryRuntimeConstants.JAVA_OPT}"' +
+                   f' {QueryRuntimeConstants.ENTRY_JAR}' +
+                   f' {QueryRuntimeConstants.BOOTSTRAP_SERVER}' +
                    f' {job_name}' +
-                   f' {RuntimeConstants.BATCH_NUM}' +
-                   f' {RuntimeConstants.SHUFFLE_NUM}' +
-                   f' {RuntimeConstants.STAT_DIR}' +
-                   f' {RuntimeConstants.TPCH_STATIC_DIR}' +
-                   f' {RuntimeConstants.SCALE_FACTOR}' +
-                   f' {RuntimeConstants.HDFS_ROOT}' +
-                   f' {RuntimeConstants.EXECUTION_MDOE}' +
-                   f' {RuntimeConstants.INPUT_PARTITION}' +
-                   f' {RuntimeConstants.CONSTRAINT}' +
-                   f' {RuntimeConstants.LARGEDATASET}' +
-                   f' {RuntimeConstants.IOLAP}' +
-                   f' {RuntimeConstants.INC_PERCENTAGE}' +
-                   f' {RuntimeConstants.COST_BIAS}' +
-                   f' {RuntimeConstants.MAX_STEP}' +
-                   f' {RuntimeConstants.SAMPLE_TIME}' +
-                   f' {RuntimeConstants.SAMPLE_RATIO}' +
-                   f' {RuntimeConstants.TRIGGER_INTERVAL}' +
-                   f' {RuntimeConstants.AGGREGATION_INTERVAL}' +
-                   f' {RuntimeConstants.CHECKPOINT_PATH}')
+                   f' {QueryRuntimeConstants.BATCH_NUM}' +
+                   f' {QueryRuntimeConstants.SHUFFLE_NUM}' +
+                   f' {QueryRuntimeConstants.STAT_DIR}' +
+                   f' {QueryRuntimeConstants.TPCH_STATIC_DIR}' +
+                   f' {QueryRuntimeConstants.SCALE_FACTOR}' +
+                   f' {QueryRuntimeConstants.HDFS_ROOT}' +
+                   f' {QueryRuntimeConstants.EXECUTION_MDOE}' +
+                   f' {QueryRuntimeConstants.INPUT_PARTITION}' +
+                   f' {QueryRuntimeConstants.CONSTRAINT}' +
+                   f' {QueryRuntimeConstants.LARGEDATASET}' +
+                   f' {QueryRuntimeConstants.IOLAP}' +
+                   f' {QueryRuntimeConstants.INC_PERCENTAGE}' +
+                   f' {QueryRuntimeConstants.COST_BIAS}' +
+                   f' {QueryRuntimeConstants.MAX_STEP}' +
+                   f' {QueryRuntimeConstants.SAMPLE_TIME}' +
+                   f' {QueryRuntimeConstants.SAMPLE_RATIO}' +
+                   f' {QueryRuntimeConstants.TRIGGER_INTERVAL}' +
+                   f' {QueryRuntimeConstants.AGGREGATION_INTERVAL}' +
+                   f' {QueryRuntimeConstants.CHECKPOINT_PATH}')
 
         return command
 
@@ -221,8 +176,8 @@ class Runtime:
         self.generate_job_cmd(resource_unit, job.job_id)
 
         job_output_id = job.job_id + "-" + str(self.global_epoch_count)
-        stdout_file = open(RuntimeConstants.STDOUT_PATH + "/" + job_output_id + ".stdout", "w+")
-        stderr_file = open(RuntimeConstants.STDERR_PATH + '/' + job_output_id + '.stderr', "w+")
+        stdout_file = open(QueryRuntimeConstants.STDOUT_PATH + "/" + job_output_id + ".stdout", "w+")
+        stderr_file = open(QueryRuntimeConstants.STDERR_PATH + '/' + job_output_id + '.stderr', "w+")
 
         job_cmd = self.generate_job_cmd(resource_unit, job.job_id)
         subp = subprocess.Popen(job_cmd,
@@ -235,7 +190,7 @@ class Runtime:
 
     def run_job_epoch(self, job_process, stdout_file, stderr_file):
         try:
-            job_process.communicate(timeout=self.schedule_epoch)
+            job_process.communicate(timeout=self.schedule_time_window)
         except subprocess.TimeoutExpired:
             stdout_file.close()
             stderr_file.close()
@@ -245,8 +200,8 @@ class Runtime:
     def compute_progress_next_epoch(self, job_id):
         app_id = read_appid_from_file(job_id + '.stdout')
 
-        app_stdout_file = RuntimeConstants.SPARK_WORK_PATH + '/' + app_id + '/0/stdout'
-        agg_schema_list = self.get_agg_schema(job_id)
+        app_stdout_file = QueryRuntimeConstants.SPARK_WORK_PATH + '/' + app_id + '/0/stdout'
+        agg_schema_list = agg_schema_fetcher(job_id)
 
         job_estimator = self.job_estimator_dict[job_id]
 
@@ -255,9 +210,9 @@ class Runtime:
         job_parameter_dict = dict()
         job_parameter_dict['job_id'] = job_id
         job_parameter_dict['batch_size'] = self.batch_size
-        job_parameter_dict['scale_factor'] = RuntimeConstants.SCALE_FACTOR
-        job_parameter_dict['num_worker'] = RuntimeConstants.NUM_WORKER
-        job_parameter_dict['agg_interval'] = RuntimeConstants.AGGREGATION_INTERVAL
+        job_parameter_dict['scale_factor'] = QueryRuntimeConstants.SCALE_FACTOR
+        job_parameter_dict['num_worker'] = QueryRuntimeConstants.NUM_WORKER
+        job_parameter_dict['agg_interval'] = QueryRuntimeConstants.AGGREGATION_INTERVAL
 
         for schema_name in agg_schema_list:
             agg_results_dict = read_aggresult_from_file(app_stdout_file, agg_schema_list)
@@ -288,7 +243,7 @@ class Runtime:
             # compute the estimated progress of jobs in the active queue
             for job_id in self.active_queue:
                 job_output_id = job_id + "-" + str(self.global_epoch_count)
-                job_stdout_file = RuntimeConstants.STDOUT_PATH + job_output_id + '.stdout'
+                job_stdout_file = QueryRuntimeConstants.STDOUT_PATH + job_output_id + '.stdout'
                 self.job_step_dict[job_id] = read_curstep_from_file(job_stdout_file)
                 self.job_estimate_progress[job_id] = self.compute_progress_next_epoch(job_id)
 
@@ -326,7 +281,7 @@ class Runtime:
 
             # calculate the average estimated accuracy/progress
             schema_estimate_agg_sum = 0
-            agg_schema_list = self.get_agg_schema(job_id)
+            agg_schema_list = agg_schema_fetcher(job_id)
             for schema_name in agg_schema_list:
                 envelop_func: EnvelopBounder = self.job_envelop_dict[job_id][schema_name]
                 job_estimated_accuracy = envelop_func.get_estimated_accuracy()
@@ -351,10 +306,10 @@ class Runtime:
         self.priority_queue.clear()
 
         for job_id in self.active_queue:
-            output_file = RuntimeConstants.STDOUT_PATH + "/" + job_id + "-" + str(self.global_epoch_count) + ".stdout"
+            output_file = QueryRuntimeConstants.STDOUT_PATH + "/" + job_id + "-" + str(self.global_epoch_count) + ".stdout"
             output_path = Path(output_file)
             if output_path.is_file():
-                agg_schema_list = self.get_agg_schema(job_id)
+                agg_schema_list = agg_schema_fetcher(job_id)
                 current_agg_results_dict = read_aggresult_from_file(output_file, agg_schema_list)
 
                 # extract and store the agg result and time
@@ -374,10 +329,10 @@ class Runtime:
         prerun_time_start = time.perf_counter()
 
         # if STDOUT_PATH or STDERR_PATH doesn't exist, create them then
-        if not Path(RuntimeConstants.STDOUT_PATH).is_dir():
-            Path(RuntimeConstants.STDOUT_PATH).mkdir()
-        if not Path(RuntimeConstants.STDERR_PATH).is_dir():
-            Path(RuntimeConstants.STDERR_PATH).mkdir()
+        if not Path(QueryRuntimeConstants.STDOUT_PATH).is_dir():
+            Path(QueryRuntimeConstants.STDOUT_PATH).mkdir()
+        if not Path(QueryRuntimeConstants.STDERR_PATH).is_dir():
+            Path(QueryRuntimeConstants.STDERR_PATH).mkdir()
 
         # create a copy of active queue for resource allocation
         active_queue_deep_copy = copy.deepcopy(self.active_queue)
@@ -432,7 +387,7 @@ class Runtime:
         prerun_time = prerun_time_end - prerun_time_start
 
         # make the time elapse for prerun_time + schedule_epoch to avoid checkpoint time
-        self.time_elapse(prerun_time + self.schedule_epoch)
+        self.time_elapse(prerun_time + self.schedule_time_window)
 
         # collect current
         self.collect_results_epoch()
@@ -503,21 +458,21 @@ class Runtime:
 
     def test(self):
         app_id = read_appid_from_file("/home/stdout/q1.stdout")
-        app_stdout_file = RuntimeConstants.SPARK_WORK_PATH + '/' + app_id + '/0/stdout'
+        app_stdout_file = QueryRuntimeConstants.SPARK_WORK_PATH + '/' + app_id + '/0/stdout'
 
         parameter_dict = dict()
         parameter_dict["query_id"] = "q1"
-        parameter_dict["scale_factor"] = RuntimeConstants.SCALE_FACTOR
-        parameter_dict["agg_interval"] = RuntimeConstants.AGGREGATION_INTERVAL
+        parameter_dict["scale_factor"] = QueryRuntimeConstants.SCALE_FACTOR
+        parameter_dict["agg_interval"] = QueryRuntimeConstants.AGGREGATION_INTERVAL
         parameter_dict["batch_size"] = self.batch_size
-        parameter_dict["num_worker"] = RuntimeConstants.NUM_WORKER
+        parameter_dict["num_worker"] = QueryRuntimeConstants.NUM_WORKER
 
         serialize_stdout_to_knowledge(app_stdout_file,
-                                      RotaryConstants.KNOWLEDGEBASE_PATH,
-                                      TPCHConstants.Q1_AGG_COL,
+                                      QueryRuntimeConstants.ROTARY_KNOWLEDGEBASE_PATH,
+                                      TPCHAGGConstants.Q1_AGG_COL,
                                       parameter_dict)
 
-        # rotary_estimator = RotaryEstimator("q1", RuntimeConstants.Q1_AGG_COL, 5)
+        # rotary_estimator = RotaryEstimator("q1", QueryRuntimeConstants.Q1_AGG_COL, 5)
 
         # for k, v in self.job_estimator_dict.items():
         #     print(v._knowledge_dict_archive)

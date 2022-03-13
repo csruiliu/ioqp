@@ -1,11 +1,12 @@
 
 
 class JobAQP:
-    def __init__(self, job_id, arrival_time, accuracy_threshold, deadline):
+    def __init__(self, job_id, arrival_time, accuracy_threshold, deadline, sch_period):
         self._job_id = job_id
         self._arrival_time = arrival_time
         self._accuracy_threshold = accuracy_threshold
         self._deadline = deadline
+        self._schedule_period = sch_period
 
         # count the time since the job is arrived
         self._time_elapse = 0
@@ -61,6 +62,16 @@ class JobAQP:
         if value == 0 or value is None:
             raise ValueError("the value is not valid")
         self._deadline = value
+
+    @property
+    def schedule_period(self):
+        return self._schedule_period
+
+    @schedule_period.setter
+    def schedule_period(self, value):
+        if not isinstance(value, int):
+            raise ValueError("the value can only be integer type, unit second")
+        self._schedule_period = value
 
     @property
     def current_step(self):
