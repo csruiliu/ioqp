@@ -147,7 +147,7 @@ class Runtime:
 
     @staticmethod
     def generate_job_cmd(res_unit, job_name):
-        command = ('$SPARK_HOME/bin/spark-submit' +
+        command = ('/tank/hdfs/ruiliu/rotary-aqp/spark/bin/spark-submit' +
                    f' --total-executor-cores {res_unit}' +
                    f' --executor-memory {QueryRuntimeConstants.MAX_MEMORY}' +
                    f' --class {QueryRuntimeConstants.ENTRY_CLASS}' +

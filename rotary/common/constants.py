@@ -161,7 +161,8 @@ class QueryRuntimeConstants:
     JAVA_OPT = 'spark.executor.extraJavaOptions=-Xms10G -XX:+UseParallelGC -XX:+UseParallelOldGC'
 
     # entry point for your application
-    ENTRY_JAR = '$SPARK_HOME/jars/ruiliu-aqp_2.11-2.4.0.jar'
+    # ENTRY_JAR = '$SPARK_HOME/jars/ruiliu-aqp_2.11-2.4.0.jar'
+    ENTRY_JAR = '/tank/hdfs/ruiliu/rotary-aqp/spark/jars/ruiliu-aqp_2.11-2.4.0.jar'
 
     # kafka bootstrap server
     BOOTSTRAP_SERVER = 'lincoln:9092'
@@ -173,13 +174,16 @@ class QueryRuntimeConstants:
     SHUFFLE_NUM = 20
 
     # query statistical information
-    STAT_DIR = '/home/run_scripts/stat_dir'
+    # STAT_DIR = '/home/run_scripts/stat_dir'
+    STAT_DIR = '/tank/hdfs/ruiliu/rotary-aqp/scripts/stat_dir'
 
     # tpch query static files
-    TPCH_STATIC_DIR = '/home/run_scripts/tpch_static'
+    # TPCH_STATIC_DIR = '/home/run_scripts/tpch_static'
+    TPCH_STATIC_DIR = '/tank/hdfs/ruiliu/rotary-aqp/scripts/tpch_static'
 
     # rotary knowledgebase path
-    ROTARY_KNOWLEDGEBASE_PATH = '/home/rotary/knowledgebase'
+    # ROTARY_KNOWLEDGEBASE_PATH = '/home/rotary/knowledgebase'
+    ROTARY_KNOWLEDGEBASE_PATH = '/tank/hdfs/ruiliu/rotary-aqp/rotary-aqp/rotary/knowledgebas'
 
     # scale factor of the input tpch dataset
     SCALE_FACTOR = 5
@@ -234,16 +238,20 @@ class QueryRuntimeConstants:
     AGGREGATION_INTERVAL = 100
 
     # checkpoint path
-    CHECKPOINT_PATH = 'file:///home/tpch-checkpoint'
+    # CHECKPOINT_PATH = 'file:///home/tpch-checkpoint'
+    CHECKPOINT_PATH = 'hdfs://southport:9000/tpch-checkpoint'
 
     # stdout path redirection
-    STDOUT_PATH = '/home/stdout'
+    # STDOUT_PATH = '/home/stdout'
+    STDOUT_PATH = '/tank/hdfs/ruiliu/rotary-aqp/stdout'
 
     # stdout path redirection
-    STDERR_PATH = '/home/stderr'
+    # STDERR_PATH = '/home/stderr'
+    STDERR_PATH = '/tank/hdfs/ruiliu/rotary-aqp/stderr'
 
     # saprk work path
-    SPARK_WORK_PATH = '/usr/local/spark/spark-2.4.0-bin-hadoop2.6/work'
+    # SPARK_WORK_PATH = '/usr/local/spark/spark-2.4.0-bin-hadoop2.6/work'
+    SPARK_WORK_PATH = '/tank/hdfs/ruiliu/rotary-aqp/spark/work'
 
 
 def query_memory_fetcher(job_id):
