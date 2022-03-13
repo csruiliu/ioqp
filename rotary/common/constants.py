@@ -186,7 +186,7 @@ class QueryRuntimeConstants:
     ROTARY_KNOWLEDGEBASE_PATH = '/tank/hdfs/ruiliu/rotary-aqp/rotary-aqp/rotary/knowledgebas'
 
     # scale factor of the input tpch dataset
-    SCALE_FACTOR = 5
+    SCALE_FACTOR = 1
 
     # hdfs url for the cluster
     HDFS_ROOT = 'hdfs://southport:9000'
@@ -199,7 +199,7 @@ class QueryRuntimeConstants:
     EXECUTION_MDOE = 0
 
     # number of partition for input dataset
-    INPUT_PARTITION = 20
+    INPUT_PARTITION = 1
 
     # Performance goal
     # smaller than 1.0 -> latency constraint
