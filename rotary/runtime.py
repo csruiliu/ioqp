@@ -147,12 +147,14 @@ class Runtime:
 
     @staticmethod
     def generate_job_cmd(res_unit, job_name):
+        java_opt = "spark.executor.extraJavaOptions=-Xms" + query_memory_fetcher(job_name) + " -XX:+UseParallelGC -XX:+UseParallelOldGC"
+
         command = ('/tank/hdfs/ruiliu/rotary-aqp/spark/bin/spark-submit' +
                    f' --total-executor-cores {res_unit}' +
                    f' --executor-memory {QueryRuntimeConstants.MAX_MEMORY}' +
                    f' --class {QueryRuntimeConstants.ENTRY_CLASS}' +
                    f' --master {QueryRuntimeConstants.MASTER}' +
-                   f' --conf "{QueryRuntimeConstants.JAVA_OPT}"' +
+                   f' --conf "{java_opt}"' +
                    f' {QueryRuntimeConstants.ENTRY_JAR}' +
                    f' {QueryRuntimeConstants.BOOTSTRAP_SERVER}' +
                    f' {job_name}' +
