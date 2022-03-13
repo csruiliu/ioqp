@@ -2,6 +2,8 @@ import os
 import time
 import copy
 import signal
+import psutil
+import math
 import subprocess
 import numpy as np
 import multiprocessing as mp
@@ -12,7 +14,11 @@ from estimator.relaqs_estimator import ReLAQSEstimator
 from estimator.envelop_bounder import EnvelopBounder
 from workload.job_aqp import JobAQP
 from common.loggers import get_logger_instance
-from common.constants import QueryRuntimeConstants, TPCHAGGConstants, WorkloadConstants, agg_schema_fetcher
+from common.constants import (QueryRuntimeConstants,
+                              TPCHAGGConstants,
+                              WorkloadConstants,
+                              agg_schema_fetcher,
+                              query_memory_fetcher)
 from common.file_utils import (read_curstep_from_file,
                                read_appid_from_file,
                                read_aggresult_from_file,
@@ -137,7 +143,7 @@ class Runtime:
                                                                   self.batch_size,
                                                                   self.num_worker)
             else:
-                raise ValueError("the scheduler is not supported")
+                print("The scheduler does not need estimation")
 
     @staticmethod
     def generate_job_cmd(res_unit, job_name):
@@ -344,18 +350,28 @@ class Runtime:
             # check if the job in the priority queue, if so provide 2 cores otherwise 1
             if self.priority_queue:
                 if len(self.priority_queue) > extra_cores:
+                    # check available memory
+                    available_mem = psutil.virtual_memory().available / math.pow(1024, 3)
+
                     for jidx in np.arange(extra_cores):
                         job_id = self.priority_queue[jidx]
-                        job = self.workload_dict[job_id]
-                        active_queue_deep_copy.remove(job_id)
-                        subp, out_file, err_file = self.create_job(job, resource_unit=2)
-                        subprocess_list.append((subp, out_file, err_file))
+                        if available_mem > query_memory_fetcher(job_id):
+                            job = self.workload_dict[job_id]
+                            active_queue_deep_copy.remove(job_id)
+                            subp, out_file, err_file = self.create_job(job, resource_unit=2)
+                            subprocess_list.append((subp, out_file, err_file))
+                            available_mem = available_mem - query_memory_fetcher(job_id)
                 else:
+                    # check available memory
+                    available_mem = psutil.virtual_memory().available / math.pow(1024, 3)
+
                     for job_id in self.priority_queue:
-                        job = self.workload_dict[job_id]
-                        active_queue_deep_copy.remove(job_id)
-                        subp, out_file, err_file = self.create_job(job, resource_unit=2)
-                        subprocess_list.append((subp, out_file, err_file))
+                        if available_mem > query_memory_fetcher(job_id):
+                            job = self.workload_dict[job_id]
+                            active_queue_deep_copy.remove(job_id)
+                            subp, out_file, err_file = self.create_job(job, resource_unit=2)
+                            subprocess_list.append((subp, out_file, err_file))
+                            available_mem = available_mem - query_memory_fetcher(job_id)
 
             for job_id in active_queue_deep_copy:
                 job = self.workload_dict[job_id]

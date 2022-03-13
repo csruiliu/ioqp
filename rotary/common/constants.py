@@ -246,50 +246,50 @@ class QueryRuntimeConstants:
     SPARK_WORK_PATH = '/usr/local/spark/spark-2.4.0-bin-hadoop2.6/work'
 
 
-def get_query_memory(query_id):
-    if query_id == "q1":
+def query_memory_fetcher(job_id):
+    if job_id.startswith("q1"):
         return MemoryConstants.Q1
-    elif query_id == "q2":
+    elif job_id.startswith("q2"):
         return MemoryConstants.Q2
-    elif query_id == "q3":
+    elif job_id.startswith("q3"):
         return MemoryConstants.Q3
-    elif query_id == "q4":
+    elif job_id.startswith("q4"):
         return MemoryConstants.Q4
-    elif query_id == "q5":
+    elif job_id.startswith("q5"):
         return MemoryConstants.Q5
-    elif query_id == "q6":
+    elif job_id.startswith("q6"):
         return MemoryConstants.Q6
-    elif query_id == "q7":
+    elif job_id.startswith("q7"):
         return MemoryConstants.Q7
-    elif query_id == "q8":
+    elif job_id.startswith("q8"):
         return MemoryConstants.Q8
-    elif query_id == "q9":
+    elif job_id.startswith("q9"):
         return MemoryConstants.Q9
-    elif query_id == "q10":
+    elif job_id.startswith("q10"):
         return MemoryConstants.Q10
-    elif query_id == "q11":
+    elif job_id.startswith("q11"):
         return MemoryConstants.Q11
-    elif query_id == "q12":
+    elif job_id.startswith("q12"):
         return MemoryConstants.Q12
-    elif query_id == "q13":
+    elif job_id.startswith("q13"):
         return MemoryConstants.Q13
-    elif query_id == "q14":
+    elif job_id.startswith("q14"):
         return MemoryConstants.Q14
-    elif query_id == "q15":
+    elif job_id.startswith("q15"):
         return MemoryConstants.Q15
-    elif query_id == "q16":
+    elif job_id.startswith("q16"):
         return MemoryConstants.Q16
-    elif query_id == "q17":
+    elif job_id.startswith("q17"):
         return MemoryConstants.Q17
-    elif query_id == "q18":
+    elif job_id.startswith("q18"):
         return MemoryConstants.Q18
-    elif query_id == "q19":
+    elif job_id.startswith("q19"):
         return MemoryConstants.Q19
-    elif query_id == "q20":
+    elif job_id.startswith("q20"):
         return MemoryConstants.Q20
-    elif query_id == "q21":
+    elif job_id.startswith("q21"):
         return MemoryConstants.Q21
-    elif query_id == "q22":
+    elif job_id.startswith("q22"):
         return MemoryConstants.Q22
 
 

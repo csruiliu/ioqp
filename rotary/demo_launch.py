@@ -2,7 +2,7 @@ import argparse
 
 from runtime import Runtime
 from workload.workload_builder import WorkloadBuilder
-from common.constants import WorkloadConstants, get_query_memory
+from common.constants import WorkloadConstants, query_memory_fetcher
 
 
 def arg_config():
@@ -30,7 +30,7 @@ def main():
                                        WorkloadConstants.MEDIUM_RATIO,
                                        WorkloadConstants.HEAVY_RATIO,
                                        WorkloadConstants.ACCURACY_OBJECTIVE,
-                                       get_query_memory)
+                                       query_memory_fetcher)
 
     aqp_workload_dict = workload_builder.generate_workload_aqp(WorkloadConstants.ARRIVAL_LAMBDA,
                                                                WorkloadConstants.SCH_ROUND_PERIOD,
@@ -49,7 +49,7 @@ def main():
 
     runtime_engine = Runtime(aqp_workload_dict, scheduler)
 
-    runtime_engine.run()
+    # runtime_engine.run()
     # runtime_engine.test()
 
 
