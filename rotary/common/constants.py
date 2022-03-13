@@ -183,7 +183,7 @@ class QueryRuntimeConstants:
 
     # rotary knowledgebase path
     # ROTARY_KNOWLEDGEBASE_PATH = '/home/rotary/knowledgebase'
-    ROTARY_KNOWLEDGEBASE_PATH = '/tank/hdfs/ruiliu/rotary-aqp/rotary-aqp/rotary/knowledgebas'
+    ROTARY_KNOWLEDGEBASE_PATH = '/tank/hdfs/ruiliu/rotary-aqp/rotary-aqp/rotary/knowledgebase'
 
     # scale factor of the input tpch dataset
     SCALE_FACTOR = 1
