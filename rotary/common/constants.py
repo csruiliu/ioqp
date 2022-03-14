@@ -231,6 +231,9 @@ class QueryRuntimeConstants:
     # sample ratio for running
     SAMPLE_RATIO = 1.0
 
+    # Enable Cost-Based Optimization
+    CBO_ENABLE = 'false'
+
     # trigger interval (milliseconds)
     TRIGGER_INTERVAL = 100
 

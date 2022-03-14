@@ -1256,7 +1256,7 @@ object QueryTPCH {
         "<bootstrap-servers> <query> <numBatch> <number-shuffle-partition> <statistics dir>" +
         "<statistics dir> <SF> <HDFS root> <execution mode> <num of input partitions> <performance constraint>" +
         "<large dataset> <iOLAP Config> <inc_pct> <cost model bias> <max step> <sample time>" +
-        "<sample rate> <trigger interval> <aggregation interval> <checkpoint>")
+        "<sample rate> <trigger interval> <aggregation interval> <checkpoint> <cbo_enable>")
       System.exit(1)
     }
 

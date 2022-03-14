@@ -147,7 +147,7 @@ class Runtime:
 
     @staticmethod
     def generate_job_cmd(res_unit, job_name):
-        java_opt = "spark.executor.extraJavaOptions=-Xms" + query_memory_fetcher(job_name) + " -XX:+UseParallelGC -XX:+UseParallelOldGC"
+        java_opt = "spark.executor.extraJavaOptions=-Xms" + str(query_memory_fetcher(job_name)) + " -XX:+UseParallelGC -XX:+UseParallelOldGC"
 
         command = ('/tank/hdfs/ruiliu/rotary-aqp/spark/bin/spark-submit' +
                    f' --total-executor-cores {res_unit}' +
@@ -176,7 +176,8 @@ class Runtime:
                    f' {QueryRuntimeConstants.SAMPLE_RATIO}' +
                    f' {QueryRuntimeConstants.TRIGGER_INTERVAL}' +
                    f' {QueryRuntimeConstants.AGGREGATION_INTERVAL}' +
-                   f' {QueryRuntimeConstants.CHECKPOINT_PATH}')
+                   f' {QueryRuntimeConstants.CHECKPOINT_PATH}' +
+                   f' {QueryRuntimeConstants.CBO_ENABLE}')
 
         return command
 
@@ -324,9 +325,9 @@ class Runtime:
                 self.job_step_dict[job_id] = read_curstep_from_file(output_file)
                 for schema_name in agg_schema_list:
                     # store agg result
-                    self.job_agg_result_dict[job_id][schema_name].append(current_agg_results_dict[0])
+                    self.job_agg_result_dict[job_id][schema_name].append(current_agg_results_dict[schema_name][0])
                     # store agg time
-                    self.job_agg_time_dict[job_id][schema_name].append(current_agg_results_dict[1])
+                    self.job_agg_time_dict[job_id][schema_name].append(current_agg_results_dict[schema_name][1])
                     # update envelop function
                     schema_envelop_function: EnvelopBounder = self.job_envelop_dict[job_id][schema_name]
                     schema_envelop_function.input_agg_result(current_agg_results_dict[0])
