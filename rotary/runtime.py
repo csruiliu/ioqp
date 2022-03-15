@@ -1,7 +1,5 @@
-import os
 import time
 import copy
-import signal
 import psutil
 import math
 import subprocess
@@ -84,6 +82,13 @@ class Runtime:
                With in this subdict, the key is schema_name, and value is a list to store time over epochs 
         """
         self.job_agg_time_dict = dict()
+
+        """
+        The dict to store the job process running from background 
+        key: job_id
+        value: a tuple for process handler, stdout handler, stderr hander, job instance
+        """
+        self.job_process_dict = dict()
 
         """
         The dict to maintain estimated progress for next epoch for each job
@@ -197,14 +202,22 @@ class Runtime:
 
         return subp, stdout_file, stderr_file
 
-    def run_job_epoch(self, job_process, stdout_file, stderr_file):
+    def time_window_check(self):
+        for job_proc, out_file, err_file, job_instance in self.job_process_dict:
+            if job_instance.check:
+                out_file.close()
+                err_file.close()
+                job_proc.terminate()
+        '''
         try:
-            job_process.communicate(timeout=self.schedule_time_window)
+            print(f"start to run {job.job_id}")
+            job_process.communicate(timeout=job.schedule_period)
         except subprocess.TimeoutExpired:
             stdout_file.close()
             stderr_file.close()
-            os.killpg(os.getpgid(job_process.pid), signal.SIGTERM)
+            # os.killpg(os.getpgid(job_process.pid), signal.SIGTERM)
             job_process.terminate()
+        '''
 
     def compute_progress_next_epoch(self, job_id):
         app_id = read_appid_from_file(job_id + '.stdout')
@@ -349,7 +362,6 @@ class Runtime:
         # more resources than active jobs
         if self.num_core >= len(self.active_queue):
             extra_cores = self.num_core - len(self.active_queue)
-            subprocess_list = list()
             # check if the job in the priority queue, if so provide 2 cores otherwise 1
             if self.priority_queue:
                 if len(self.priority_queue) > extra_cores:
@@ -362,7 +374,7 @@ class Runtime:
                             job = self.workload_dict[job_id]
                             active_queue_deep_copy.remove(job_id)
                             subp, out_file, err_file = self.create_job(job, resource_unit=2)
-                            subprocess_list.append((subp, out_file, err_file))
+                            self.job_process_dict[job_id] = (subp, out_file, err_file, job)
                             available_mem = available_mem - query_memory_fetcher(job_id)
                 else:
                     # check available memory
@@ -373,17 +385,16 @@ class Runtime:
                             job = self.workload_dict[job_id]
                             active_queue_deep_copy.remove(job_id)
                             subp, out_file, err_file = self.create_job(job, resource_unit=2)
-                            subprocess_list.append((subp, out_file, err_file))
+                            self.job_process_dict[job_id] = (subp, out_file, err_file, job)
                             available_mem = available_mem - query_memory_fetcher(job_id)
 
             for job_id in active_queue_deep_copy:
                 job = self.workload_dict[job_id]
                 subp, out_file, err_file = self.create_job(job, resource_unit=1)
-                subprocess_list.append((subp, out_file, err_file))
+                self.job_process_dict[job_id] = (subp, out_file, err_file, job)
 
         # less resources than active jobs
         else:
-            subprocess_list = list()
             for jidx in np.arange(self.num_core):
                 job_id = self.active_queue[jidx]
                 job = self.workload_dict[job_id]
@@ -393,14 +404,19 @@ class Runtime:
                 self.active_queue.append(job_id)
 
                 subp, out_file, err_file = self.create_job(job, resource_unit=1)
-                subprocess_list.append((subp, out_file, err_file))
+                self.job_process_dict[job_id] = (subp, out_file, err_file, job)
 
         # end counting the preparation time
         prerun_time_end = time.perf_counter()
 
+        '''
         # run the job for an epoch
-        for sp, sp_out, sp_err in subprocess_list:
-            self.run_job_epoch(sp, sp_out, sp_err)
+        for sp, sp_out, sp_err, sp_job in subprocess_list:
+            self.run_job_epoch(sp, sp_out, sp_err, sp_job)
+        '''
+
+        # check the progress within a unit of time window
+        self.run_job_epoch()
 
         # compute the pre-run time
         prerun_time = prerun_time_end - prerun_time_start

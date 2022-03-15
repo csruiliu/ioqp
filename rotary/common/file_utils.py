@@ -34,7 +34,7 @@ def read_aggresult_from_file(file_path, target_schema_list):
         value: [current agg result/value, current time]
     """
     agg_result_dict = dict()
-    agg_indicator_list = [0] * len(target_schema_list)
+    # agg_indicator_list = [0] * len(target_schema_list)
 
     for schema_name in target_schema_list:
         agg_result_dict[schema_name] = [0.0, 0]
@@ -52,10 +52,12 @@ def read_aggresult_from_file(file_path, target_schema_list):
                 if agg_current_time > agg_result_dict[agg_schema][1]:
                     agg_result_dict[agg_schema][0] = agg_result
                     agg_result_dict[agg_schema][1] = agg_current_time
-                    agg_indicator_list[target_schema_list.index(agg_schema)] = 1
-
+                    # agg_indicator_list[target_schema_list.index(agg_schema)] = 1
+            '''
             if 0 not in agg_indicator_list:
                 return agg_result_dict
+            '''
+    return agg_result_dict
 
 
 def serialize_stdout_to_knowledge(input_file_path,
