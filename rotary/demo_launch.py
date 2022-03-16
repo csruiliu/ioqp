@@ -40,16 +40,16 @@ def main():
         print(f"job: job_id={job_id}, "
               f"arrive_time={job.arrival_time}, "
               f"deadline={job.deadline}, "
-              f"schedule_period={job.schedule_period}, "
               f"accuracy_threshold={job.accuracy_threshold}, "
-              f"current_step={job.current_step}, "
-              f"arrived={job.arrived}, "
+              f"schedule_time_window={job.schedule_window}, "
+              f"arrived={job.arrive}, "
+              f"active={job.active}, "
               f"complete_unattain={job.complete_attain}, "
               f"complete_attain={job.complete_attain}")
 
     runtime_engine = Runtime(aqp_workload_dict, scheduler)
 
-    # runtime_engine.run()
+    runtime_engine.run()
     # runtime_engine.test()
 
 
