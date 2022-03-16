@@ -225,14 +225,14 @@ class Runtime:
                 job.active = True
                 self.workload_dict[job_id] = job
 
-    def run_job(self, job, resource_unit):
-        self.generate_job_cmd(resource_unit, job.job_id)
+    def run_job(self, job_id, resource_unit):
+        self.generate_job_cmd(resource_unit, job_id)
 
-        job_output_id = job.job_id + "-" + str(job.current_epoch)
+        job_output_id = job_id + "-" + str(self.job_epoch_dict[job_id])
         stdout_file = open(QueryRuntimeConstants.STDOUT_PATH + "/" + job_output_id + ".stdout", "w+")
         stderr_file = open(QueryRuntimeConstants.STDERR_PATH + '/' + job_output_id + '.stderr', "w+")
 
-        job_cmd = self.generate_job_cmd(resource_unit, job.job_id)
+        job_cmd = self.generate_job_cmd(resource_unit, job_id)
         subp = subprocess.Popen(job_cmd,
                                 bufsize=0,
                                 stdout=stdout_file,
@@ -255,60 +255,57 @@ class Runtime:
             self.logger("no available cpu resources for allocation")
             return
 
+        # check available memory
+        available_mem = psutil.virtual_memory().available / math.pow(1024, 3)
+
         # more resources than active jobs
         if self.available_cpu_core >= len(self.active_queue):
             extra_cores = self.available_cpu_core - len(self.active_queue)
+
             # check if the job in the priority queue, if so provide 2 cores otherwise 1
             if self.priority_queue:
                 if len(self.priority_queue) > extra_cores:
-                    # check available memory
-                    available_mem = psutil.virtual_memory().available / math.pow(1024, 3)
-
                     for jidx in np.arange(extra_cores):
                         job_id = self.priority_queue[jidx]
                         if available_mem > query_memory_fetcher(job_id):
-                            job = self.workload_dict[job_id]
                             active_queue_deep_copy.remove(job_id)
-                            subp, out_file, err_file = self.run_job(job, resource_unit=2)
+                            subp, out_file, err_file = self.run_job(job_id, resource_unit=2)
                             self.job_resource_dict[job_id] = 2
                             self.available_cpu_core -= 2
                             self.job_process_dict[job_id] = (subp, out_file, err_file, job_id)
                             available_mem = available_mem - query_memory_fetcher(job_id)
                 else:
-                    # check available memory
-                    available_mem = psutil.virtual_memory().available / math.pow(1024, 3)
-
                     for job_id in self.priority_queue:
                         if available_mem > query_memory_fetcher(job_id):
-                            job = self.workload_dict[job_id]
                             active_queue_deep_copy.remove(job_id)
-                            subp, out_file, err_file = self.run_job(job, resource_unit=2)
+                            subp, out_file, err_file = self.run_job(job_id, resource_unit=2)
                             self.job_resource_dict[job_id] = 2
                             self.available_cpu_core -= 2
                             self.job_process_dict[job_id] = (subp, out_file, err_file, job_id)
                             available_mem = available_mem - query_memory_fetcher(job_id)
 
             for job_id in active_queue_deep_copy:
-                job = self.workload_dict[job_id]
-                subp, out_file, err_file = self.run_job(job, resource_unit=1)
-                self.job_resource_dict[job_id] = 1
-                self.available_cpu_core -= 1
-                self.job_process_dict[job_id] = (subp, out_file, err_file, job_id)
+                if available_mem > query_memory_fetcher(job_id):
+                    subp, out_file, err_file = self.run_job(job_id, resource_unit=1)
+                    self.job_resource_dict[job_id] = 1
+                    self.available_cpu_core -= 1
+                    self.job_process_dict[job_id] = (subp, out_file, err_file, job_id)
+                    available_mem = available_mem - query_memory_fetcher(job_id)
 
         # less resources than active jobs
         else:
             for jidx in np.arange(self.available_cpu_core):
                 job_id = self.active_queue[jidx]
-                job = self.workload_dict[job_id]
 
                 # move the job_id to the end for fairness
                 self.active_queue.remove(job_id)
                 self.active_queue.append(job_id)
 
-                subp, out_file, err_file = self.run_job(job, resource_unit=1)
+                subp, out_file, err_file = self.run_job(job_id, resource_unit=1)
                 self.job_resource_dict[job_id] = 1
-                self.available_cpu_core -= 2
+                self.available_cpu_core -= 1
                 self.job_process_dict[job_id] = (subp, out_file, err_file, job_id)
+                available_mem = available_mem - query_memory_fetcher(job_id)
 
     def time_elapse(self, time_period):
         # the time unit is second
@@ -351,6 +348,7 @@ class Runtime:
                 job_proc.terminate()
                 job.check = False
                 self.available_cpu_core += self.job_resource_dict[job_id]
+                self.job_resource_dict[job_id] = 0
 
     def check_job_completeness(self):
         for job_id in self.active_queue:
