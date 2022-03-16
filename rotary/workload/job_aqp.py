@@ -7,11 +7,10 @@ class JobAQP:
         self._accuracy_threshold = accuracy_threshold
         self._deadline = deadline
         self._schedule_window = sch_window
+        self._schedule_window_progress = sch_window
 
         # count the time since the job is arrived
         self._time_elapse = 0
-
-        self._current_step = 0
 
         # if the job has arrived
         self._arrive = False
@@ -32,10 +31,12 @@ class JobAQP:
         if self.complete_unattain or self.complete_attain:
             return
 
-        if self.arrive and self.active:
+        if self.active:
             self.time_elapse += time_elapse
-
-
+            self.schedule_window_progress -= time_elapse
+            if self.schedule_window_progress <= 0:
+                self.check = True
+                self.schedule_window_progress = self.schedule_window
         else:
             self.arrival_time -= time_elapse
             if self.arrival_time <= 0:
@@ -88,22 +89,22 @@ class JobAQP:
         self._schedule_window = value
 
     @property
+    def schedule_window_progress(self):
+        return self._schedule_window_progress
+
+    @schedule_window_progress.setter
+    def schedule_window_progress(self, value):
+        if not isinstance(value, int):
+            raise ValueError("the value can only be integer type, unit second")
+        self._schedule_window_progress = value
+
+    @property
     def time_elapse(self):
         return self._time_elapse
 
     @time_elapse.setter
     def time_elapse(self, value):
         self._time_elapse = value
-
-    @property
-    def current_step(self):
-        return self._current_step
-
-    @current_step.setter
-    def current_step(self, value):
-        if not isinstance(value, int):
-            raise ValueError("the value can only be int type")
-        self._current_step = value
 
     @property
     def arrive(self):
