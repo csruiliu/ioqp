@@ -66,7 +66,7 @@ class Runtime:
         """
         The dict to store the job process running from background 
         key: job_id
-        value: a tuple for process handler, stdout handler, stderr hander, job instance
+        value: a tuple for process handler, stdout handler, stderr handler
         """
         self.job_process_dict = dict()
 
@@ -178,7 +178,7 @@ class Runtime:
                                                                   self.batch_size,
                                                                   self.num_worker)
             else:
-                self.logger("The scheduler does not need estimation")
+                self.logger.info("The scheduler does not need estimation")
 
     @staticmethod
     def generate_job_cmd(res_unit, job_name):
@@ -272,7 +272,7 @@ class Runtime:
                             subp, out_file, err_file = self.run_job(job_id, resource_unit=2)
                             self.job_resource_dict[job_id] = 2
                             self.available_cpu_core -= 2
-                            self.job_process_dict[job_id] = (subp, out_file, err_file, job_id)
+                            self.job_process_dict[job_id] = (subp, out_file, err_file)
                             available_mem = available_mem - query_memory_fetcher(job_id)
                 else:
                     for job_id in self.priority_queue:
@@ -281,7 +281,7 @@ class Runtime:
                             subp, out_file, err_file = self.run_job(job_id, resource_unit=2)
                             self.job_resource_dict[job_id] = 2
                             self.available_cpu_core -= 2
-                            self.job_process_dict[job_id] = (subp, out_file, err_file, job_id)
+                            self.job_process_dict[job_id] = (subp, out_file, err_file)
                             available_mem = available_mem - query_memory_fetcher(job_id)
 
             for job_id in active_queue_deep_copy:
@@ -289,7 +289,7 @@ class Runtime:
                     subp, out_file, err_file = self.run_job(job_id, resource_unit=1)
                     self.job_resource_dict[job_id] = 1
                     self.available_cpu_core -= 1
-                    self.job_process_dict[job_id] = (subp, out_file, err_file, job_id)
+                    self.job_process_dict[job_id] = (subp, out_file, err_file)
                     available_mem = available_mem - query_memory_fetcher(job_id)
 
         # less resources than active jobs
@@ -304,7 +304,7 @@ class Runtime:
                 subp, out_file, err_file = self.run_job(job_id, resource_unit=1)
                 self.job_resource_dict[job_id] = 1
                 self.available_cpu_core -= 1
-                self.job_process_dict[job_id] = (subp, out_file, err_file, job_id)
+                self.job_process_dict[job_id] = (subp, out_file, err_file)
                 available_mem = available_mem - query_memory_fetcher(job_id)
 
     def time_elapse(self, time_period):
@@ -339,7 +339,7 @@ class Runtime:
                     self.job_envelop_dict[job_id][schema_name] = schema_envelop_function
 
     def check_time_window(self):
-        for job_proc, out_file, err_file, job_id in self.job_process_dict:
+        for job_id, (job_proc, out_file, err_file) in self.job_process_dict.items():
             job = self.workload_dict[job_id]
 
             if job.check:

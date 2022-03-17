@@ -84,8 +84,6 @@ class JobAQP:
 
     @schedule_window.setter
     def schedule_window(self, value):
-        if not isinstance(value, int):
-            raise ValueError("the value can only be integer type, unit second")
         self._schedule_window = value
 
     @property
@@ -94,8 +92,6 @@ class JobAQP:
 
     @schedule_window_progress.setter
     def schedule_window_progress(self, value):
-        if not isinstance(value, int):
-            raise ValueError("the value can only be integer type, unit second")
         self._schedule_window_progress = value
 
     @property
