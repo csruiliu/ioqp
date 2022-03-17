@@ -5,8 +5,8 @@ class WorkloadConstants:
     # the parameter used to generate arrival time. Expected number of events occurring in a fixed-time interval
     ARRIVAL_LAMBDA = 4
 
-    # period of schedule round
-    SCH_ROUND_PERIOD = 10
+    # period of scheduling time window (second)
+    SCH_ROUND_PERIOD = 60
 
     # queries used in relaqs
     WORKLOAD_RELAQS = ["q1", "q3", "q5", "q6", "q11", "q16", "q19"]

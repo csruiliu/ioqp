@@ -267,26 +267,35 @@ class Runtime:
                 if len(self.priority_queue) > extra_cores:
                     for jidx in np.arange(extra_cores):
                         job_id = self.priority_queue[jidx]
-                        if available_mem > query_memory_fetcher(job_id):
+                        job = self.workload_dict[job_id]
+                        if available_mem > query_memory_fetcher(job_id) and not job.running:
                             active_queue_deep_copy.remove(job_id)
                             subp, out_file, err_file = self.run_job(job_id, resource_unit=2)
+                            job.running = True
+                            self.workload_dict[job_id] = job
                             self.job_resource_dict[job_id] = 2
                             self.available_cpu_core -= 2
                             self.job_process_dict[job_id] = (subp, out_file, err_file)
                             available_mem = available_mem - query_memory_fetcher(job_id)
                 else:
                     for job_id in self.priority_queue:
-                        if available_mem > query_memory_fetcher(job_id):
+                        job = self.workload_dict[job_id]
+                        if available_mem > query_memory_fetcher(job_id) and not job.running:
                             active_queue_deep_copy.remove(job_id)
                             subp, out_file, err_file = self.run_job(job_id, resource_unit=2)
+                            job.running = True
+                            self.workload_dict[job_id] = job
                             self.job_resource_dict[job_id] = 2
                             self.available_cpu_core -= 2
                             self.job_process_dict[job_id] = (subp, out_file, err_file)
                             available_mem = available_mem - query_memory_fetcher(job_id)
 
             for job_id in active_queue_deep_copy:
-                if available_mem > query_memory_fetcher(job_id):
+                job = self.workload_dict[job_id]
+                if available_mem > query_memory_fetcher(job_id) and not job.running:
                     subp, out_file, err_file = self.run_job(job_id, resource_unit=1)
+                    job.running = True
+                    self.workload_dict[job_id] = job
                     self.job_resource_dict[job_id] = 1
                     self.available_cpu_core -= 1
                     self.job_process_dict[job_id] = (subp, out_file, err_file)
@@ -296,16 +305,20 @@ class Runtime:
         else:
             for jidx in np.arange(self.available_cpu_core):
                 job_id = self.active_queue[jidx]
+                job = self.workload_dict[job_id]
 
-                # move the job_id to the end for fairness
-                self.active_queue.remove(job_id)
-                self.active_queue.append(job_id)
+                if available_mem > query_memory_fetcher(job_id) and not job.running:
+                    # move the job_id to the end for fairness
+                    self.active_queue.remove(job_id)
+                    self.active_queue.append(job_id)
 
-                subp, out_file, err_file = self.run_job(job_id, resource_unit=1)
-                self.job_resource_dict[job_id] = 1
-                self.available_cpu_core -= 1
-                self.job_process_dict[job_id] = (subp, out_file, err_file)
-                available_mem = available_mem - query_memory_fetcher(job_id)
+                    subp, out_file, err_file = self.run_job(job_id, resource_unit=1)
+                    job.running = True
+                    self.workload_dict[job_id] = job
+                    self.job_resource_dict[job_id] = 1
+                    self.available_cpu_core -= 1
+                    self.job_process_dict[job_id] = (subp, out_file, err_file)
+                    available_mem = available_mem - query_memory_fetcher(job_id)
 
     def time_elapse(self, time_period):
         # the time unit is second
@@ -319,7 +332,8 @@ class Runtime:
 
         for job_id in self.active_queue:
             self.job_epoch_dict[job_id] += 1
-            output_file = QueryRuntimeConstants.STDOUT_PATH + "/" + job_id + "-" + str(self.job_epoch_dict[job_id]) + ".stdout"
+            output_file = QueryRuntimeConstants.STDOUT_PATH + "/" + job_id + "-" + str(
+                self.job_epoch_dict[job_id]) + ".stdout"
             output_path = Path(output_file)
 
             if output_path.is_file():
@@ -347,6 +361,8 @@ class Runtime:
                 err_file.close()
                 job_proc.terminate()
                 job.check = False
+                job.running = False
+                self.workload_dict[job_id] = job
                 self.available_cpu_core += self.job_resource_dict[job_id]
                 self.job_resource_dict[job_id] = 0
 
@@ -365,11 +381,13 @@ class Runtime:
 
             if job.accuracy_threshold < job_average_estimated_accuracy:
                 job.complete_attain = True
+                job.running = False
                 self.logger.info(f"the job {job_id} is completed and attained")
                 self.complete_attain_set.add(job_id)
                 self.active_queue.remove(job_id)
             elif job.time_elapse >= job.deadline:
                 job.complete_unattain = True
+                job.running = False
                 self.logger.info(f"the job {job_id} is completed but not attained")
                 self.complete_unattain_set.add(job_id)
                 self.active_queue.remove(job_id)
@@ -422,7 +440,7 @@ class Runtime:
             # compute the estimated progress of jobs in the active queue
             for job_id in self.active_queue:
                 job_output_id = job_id + "-" + str(self.job_epoch_dict[job_id])
-                job_stdout_file = QueryRuntimeConstants.STDOUT_PATH + job_output_id + '.stdout'
+                job_stdout_file = QueryRuntimeConstants.STDOUT_PATH + "/" + job_output_id + ".stdout"
                 self.job_step_dict[job_id] = read_curstep_from_file(job_stdout_file)
                 self.job_estimate_progress[job_id] = self.compute_progress_next_epoch(job_id)
 

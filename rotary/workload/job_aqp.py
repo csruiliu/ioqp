@@ -27,16 +27,21 @@ class JobAQP:
         # if the job has been complete but not attain the objective
         self._complete_unattain = False
 
+        # if the job is currently running
+        self._running = False
+
     def move_forward(self, time_elapse):
         if self.complete_unattain or self.complete_attain:
             return
 
-        if self.active:
+        if self.active and self.running:
             self.time_elapse += time_elapse
             self.schedule_window_progress -= time_elapse
             if self.schedule_window_progress <= 0:
                 self.check = True
                 self.schedule_window_progress = self.schedule_window
+        elif self.active and not self.running:
+            self.time_elapse += time_elapse
         else:
             self.arrival_time -= time_elapse
             if self.arrival_time <= 0:
@@ -131,6 +136,16 @@ class JobAQP:
         if not isinstance(value, bool):
             raise ValueError("the value can only be bool type")
         self._check = value
+
+    @property
+    def running(self):
+        return self._running
+
+    @running.setter
+    def running(self, value):
+        if not isinstance(value, bool):
+            raise ValueError("the value can only be bool type")
+        self._running = value
 
     @property
     def complete_attain(self):
