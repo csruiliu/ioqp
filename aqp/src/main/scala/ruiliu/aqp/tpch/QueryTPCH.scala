@@ -99,6 +99,7 @@ class QueryTPCH(bootstrap: String,
       .set(SQLConf.SLOTHDB_COST_MODEL_BIAS.key, costBias)
       .set(SQLConf.SLOTHDB_MAX_STEP.key, maxStep)
       .set(SQLConf.SLOTHDB_SAMPLE_TIME.key, sampleTime)
+      .set("spark.port.maxRetries", "1000")
 
     val digit_constraint = constraint.toDouble
     if (digit_constraint <= 1.0) sparkConf.set(SQLConf.SLOTHDB_LATENCY_CONSTRAINT.key, constraint)

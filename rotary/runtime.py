@@ -318,6 +318,8 @@ class Runtime:
                 self.active_queue.append(job_id)
                 self.check_queue.append(job_id)
 
+        self.logger.info(f"## Check Queue ## {self.check_queue}")
+
     def collect_results(self):
         for job_id in self.check_queue:
             output_file = QueryRuntimeConstants.STDOUT_PATH + "/" + job_id + "-" + str(self.job_epoch_dict[job_id]) + ".stdout"
