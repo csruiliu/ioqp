@@ -1,5 +1,4 @@
 import time
-import copy
 import psutil
 import math
 import subprocess
@@ -48,6 +47,9 @@ class Runtime:
 
         # the list stores the jobs for extra resources and is refreshed every epoch
         self.priority_queue = list()
+
+        # the list stores the jobs for progress checking, it is updated for each basic schedule time unit
+        self.check_queue = list()
 
         # the list stores the jobs that have been completed and attained the objective
         self.complete_attain_set = set()
@@ -217,16 +219,9 @@ class Runtime:
 
         return command
 
-    def check_arrived_job(self):
-        for job_id, job in self.workload_dict.items():
-            if job.arrive and not job.active:
-                self.logger.info(f"the job {job_id} arrives and is active now")
-                self.active_queue.append(job_id)
-                job.active = True
-                self.workload_dict[job_id] = job
-
     def run_job(self, job_id, resource_unit):
         self.generate_job_cmd(resource_unit, job_id)
+        self.logger.info(f"=== Start to run {job_id} for epoch {self.job_epoch_dict[job_id]} ===")
 
         job_output_id = job_id + "-" + str(self.job_epoch_dict[job_id])
         stdout_file = open(QueryRuntimeConstants.STDOUT_PATH + "/" + job_output_id + ".stdout", "w+")
@@ -241,18 +236,21 @@ class Runtime:
 
         return subp, stdout_file, stderr_file
 
-    def process_workload(self):
-        # if STDOUT_PATH or STDERR_PATH doesn't exist, create them then
-        if not Path(QueryRuntimeConstants.STDOUT_PATH).is_dir():
-            Path(QueryRuntimeConstants.STDOUT_PATH).mkdir()
-        if not Path(QueryRuntimeConstants.STDERR_PATH).is_dir():
-            Path(QueryRuntimeConstants.STDERR_PATH).mkdir()
+    def check_arrived_job(self):
+        for job_id, job in self.workload_dict.items():
+            if job.arrive and not job.active:
+                self.logger.info(f"the job {job_id} arrives and is active now")
+                self.active_queue.append(job_id)
+                job.active = True
+                self.workload_dict[job_id] = job
 
-        # create a copy of active queue for resource allocation
-        active_queue_deep_copy = copy.deepcopy(self.active_queue)
+    def process_active_queue(self):
+        self.logger.info(f"## Active Queue ## {self.active_queue}")
+        self.logger.info(f"## Priority Queue ## {self.priority_queue}")
 
+        # check available cpu cores
         if self.available_cpu_core == 0:
-            self.logger("no available cpu resources for allocation")
+            self.logger.info("no available cpu resources for allocation")
             return
 
         # check available memory
@@ -267,58 +265,31 @@ class Runtime:
                 if len(self.priority_queue) > extra_cores:
                     for jidx in np.arange(extra_cores):
                         job_id = self.priority_queue[jidx]
-                        job = self.workload_dict[job_id]
-                        if available_mem > query_memory_fetcher(job_id) and not job.running:
-                            active_queue_deep_copy.remove(job_id)
+                        if available_mem > query_memory_fetcher(job_id):
                             subp, out_file, err_file = self.run_job(job_id, resource_unit=2)
-                            job.running = True
-                            self.workload_dict[job_id] = job
+                            available_mem = available_mem - query_memory_fetcher(job_id)
                             self.job_resource_dict[job_id] = 2
                             self.available_cpu_core -= 2
                             self.job_process_dict[job_id] = (subp, out_file, err_file)
-                            available_mem = available_mem - query_memory_fetcher(job_id)
+                            self.active_queue.remove(job_id)
                 else:
                     for job_id in self.priority_queue:
-                        job = self.workload_dict[job_id]
-                        if available_mem > query_memory_fetcher(job_id) and not job.running:
-                            active_queue_deep_copy.remove(job_id)
+                        if available_mem > query_memory_fetcher(job_id):
                             subp, out_file, err_file = self.run_job(job_id, resource_unit=2)
-                            job.running = True
-                            self.workload_dict[job_id] = job
+                            available_mem = available_mem - query_memory_fetcher(job_id)
                             self.job_resource_dict[job_id] = 2
                             self.available_cpu_core -= 2
                             self.job_process_dict[job_id] = (subp, out_file, err_file)
-                            available_mem = available_mem - query_memory_fetcher(job_id)
+                            self.active_queue.remove(job_id)
 
-            for job_id in active_queue_deep_copy:
-                job = self.workload_dict[job_id]
-                if available_mem > query_memory_fetcher(job_id) and not job.running:
+            for job_id in self.active_queue:
+                if available_mem > query_memory_fetcher(job_id):
                     subp, out_file, err_file = self.run_job(job_id, resource_unit=1)
-                    job.running = True
-                    self.workload_dict[job_id] = job
+                    available_mem = available_mem - query_memory_fetcher(job_id)
                     self.job_resource_dict[job_id] = 1
                     self.available_cpu_core -= 1
                     self.job_process_dict[job_id] = (subp, out_file, err_file)
-                    available_mem = available_mem - query_memory_fetcher(job_id)
-
-        # less resources than active jobs
-        else:
-            for jidx in np.arange(self.available_cpu_core):
-                job_id = self.active_queue[jidx]
-                job = self.workload_dict[job_id]
-
-                if available_mem > query_memory_fetcher(job_id) and not job.running:
-                    # move the job_id to the end for fairness
                     self.active_queue.remove(job_id)
-                    self.active_queue.append(job_id)
-
-                    subp, out_file, err_file = self.run_job(job_id, resource_unit=1)
-                    job.running = True
-                    self.workload_dict[job_id] = job
-                    self.job_resource_dict[job_id] = 1
-                    self.available_cpu_core -= 1
-                    self.job_process_dict[job_id] = (subp, out_file, err_file)
-                    available_mem = available_mem - query_memory_fetcher(job_id)
 
     def time_elapse(self, time_period):
         # the time unit is second
@@ -326,14 +297,30 @@ class Runtime:
             job.move_forward(time_period)
             self.workload_dict[job_id] = job
 
-    def collect_results(self):
-        # clean the priority queue for next round
-        self.priority_queue.clear()
+    def check_progress(self):
+        for job_id, (job_proc, out_file, err_file) in self.job_process_dict.items():
+            job = self.workload_dict[job_id]
 
-        for job_id in self.active_queue:
-            self.job_epoch_dict[job_id] += 1
-            output_file = QueryRuntimeConstants.STDOUT_PATH + "/" + job_id + "-" + str(
-                self.job_epoch_dict[job_id]) + ".stdout"
+            if job.check:
+                self.logger.info(f"Complete epoch {self.job_epoch_dict[job_id]} of {job_id}")
+                out_file.close()
+                err_file.close()
+                job_proc.terminate()
+
+                job.check = False
+                job.reset_scheduling_window_progress()
+                self.workload_dict[job_id] = job
+                self.available_cpu_core += self.job_resource_dict[job_id]
+                self.job_resource_dict[job_id] = 0
+                # finish an epoch so add 1
+                self.job_epoch_dict[job_id] += 1
+
+                self.active_queue.append(job_id)
+                self.check_queue.append(job_id)
+
+    def collect_results(self):
+        for job_id in self.check_queue:
+            output_file = QueryRuntimeConstants.STDOUT_PATH + "/" + job_id + "-" + str(self.job_epoch_dict[job_id]) + ".stdout"
             output_path = Path(output_file)
 
             if output_path.is_file():
@@ -352,22 +339,8 @@ class Runtime:
                     schema_envelop_function.input_agg_result(current_agg_results_dict[0])
                     self.job_envelop_dict[job_id][schema_name] = schema_envelop_function
 
-    def check_time_window(self):
-        for job_id, (job_proc, out_file, err_file) in self.job_process_dict.items():
-            job = self.workload_dict[job_id]
-
-            if job.check:
-                out_file.close()
-                err_file.close()
-                job_proc.terminate()
-                job.check = False
-                job.running = False
-                self.workload_dict[job_id] = job
-                self.available_cpu_core += self.job_resource_dict[job_id]
-                self.job_resource_dict[job_id] = 0
-
-    def check_job_completeness(self):
-        for job_id in self.active_queue:
+    def check_completeness(self):
+        for job_id in self.check_queue:
             job: JobAQP = self.workload_dict[job_id]
 
             # calculate the average estimated accuracy/progress
@@ -381,16 +354,16 @@ class Runtime:
 
             if job.accuracy_threshold < job_average_estimated_accuracy:
                 job.complete_attain = True
-                job.running = False
                 self.logger.info(f"the job {job_id} is completed and attained")
                 self.complete_attain_set.add(job_id)
                 self.active_queue.remove(job_id)
+                self.check_queue.remove(job_id)
             elif job.time_elapse >= job.deadline:
                 job.complete_unattain = True
-                job.running = False
                 self.logger.info(f"the job {job_id} is completed but not attained")
                 self.complete_unattain_set.add(job_id)
                 self.active_queue.remove(job_id)
+                self.check_queue.remove(job_id)
             else:
                 self.logger.info(f"the job {job_id} stay in active, has run {job.time_elapse} seconds")
 
@@ -433,9 +406,6 @@ class Runtime:
         return job_overall_progress / len(agg_schema_list)
 
     def rank_job_next_epoch(self):
-        # clean the priority queue for next round
-        self.priority_queue.clear()
-
         if self.scheduler_name == "rotary" or self.scheduler_name == "relaqs":
             # compute the estimated progress of jobs in the active queue
             for job_id in self.active_queue:
@@ -473,29 +443,35 @@ class Runtime:
             raise ValueError("The scheduler is not supported")
 
     def run(self):
+        # if STDOUT_PATH or STDERR_PATH doesn't exist, create them then
+        if not Path(QueryRuntimeConstants.STDOUT_PATH).is_dir():
+            Path(QueryRuntimeConstants.STDOUT_PATH).mkdir()
+        if not Path(QueryRuntimeConstants.STDERR_PATH).is_dir():
+            Path(QueryRuntimeConstants.STDERR_PATH).mkdir()
+
         while len(self.complete_attain_set) + len(self.complete_unattain_set) != self.workload_size:
             self.check_arrived_job()
 
             if self.active_queue:
                 # start to process arriving jobs
-                self.process_workload()
-
+                self.process_active_queue()
                 # let the jobs run for a time window
                 time.sleep(self.schedule_time_window)
-
                 # make the time elapse for schedule_time_window
                 self.time_elapse(self.schedule_time_window)
 
-                # check the progress within a unit of time window
-                self.check_time_window()
+                # reset the check queue and priority queue for each epoch
+                self.priority_queue.clear()
+                self.check_queue.clear()
 
+                # check the progress within a unit of time window
+                self.check_progress()
                 # collect results
                 self.collect_results()
-
                 # check the job completeness
-                self.check_job_completeness()
-
+                self.check_completeness()
                 # rank the jobs for next scheduling epoch
                 self.rank_job_next_epoch()
+
             else:
                 self.time_elapse(1)
