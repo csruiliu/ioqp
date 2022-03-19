@@ -1,6 +1,8 @@
+import os
 import time
 import psutil
 import math
+import signal
 import subprocess
 import numpy as np
 import multiprocessing as mp
@@ -232,7 +234,8 @@ class Runtime:
                                 bufsize=0,
                                 stdout=stdout_file,
                                 stderr=stderr_file,
-                                shell=True)
+                                shell=True,
+                                start_new_session=True)
 
         return subp, stdout_file, stderr_file
 
@@ -305,6 +308,7 @@ class Runtime:
                 out_file.close()
                 err_file.close()
                 job_proc.terminate()
+                os.killpg(job_proc.pid, signal.SIGTERM)
 
                 job.check = False
                 job.reset_scheduling_window_progress()
