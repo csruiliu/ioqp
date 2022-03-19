@@ -245,8 +245,8 @@ class Runtime:
                 self.workload_dict[job_id] = job
 
     def process_active_queue(self):
-        self.logger.info(f"## Active Queue ## {self.active_queue}")
-        self.logger.info(f"## Priority Queue ## {self.priority_queue}")
+        self.logger.info(f"** Active Queue ** {self.active_queue}")
+        self.logger.info(f"** Priority Queue ** {self.priority_queue}")
 
         # check available cpu cores
         if self.available_cpu_core == 0:
@@ -302,7 +302,6 @@ class Runtime:
             job = self.workload_dict[job_id]
 
             if job.check:
-                self.logger.info(f"Complete epoch {self.job_epoch_dict[job_id]} of {job_id}")
                 out_file.close()
                 err_file.close()
                 job_proc.terminate()
@@ -318,7 +317,7 @@ class Runtime:
                 self.active_queue.append(job_id)
                 self.check_queue.append(job_id)
 
-        self.logger.info(f"## Check Queue ## {self.check_queue}")
+        self.logger.info(f"** Check Queue ** {self.check_queue}")
 
     def collect_results(self):
         for job_id in self.check_queue:
@@ -455,6 +454,7 @@ class Runtime:
             self.check_arrived_job()
 
             if self.active_queue:
+                self.logger.info("#####################################################################")
                 # start to process arriving jobs
                 self.process_active_queue()
                 # let the jobs run for a time window
