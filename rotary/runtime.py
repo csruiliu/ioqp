@@ -354,13 +354,13 @@ class Runtime:
 
             if job.accuracy_threshold < job_average_estimated_accuracy:
                 job.complete_attain = True
-                self.logger.info(f"the job {job_id} is completed and attained")
+                self.logger.info(f"the job {job_id} is completed at {self.job_epoch_dict[job_id]} and attained")
                 self.complete_attain_set.add(job_id)
                 self.active_queue.remove(job_id)
                 self.check_queue.remove(job_id)
             elif job.time_elapse >= job.deadline:
                 job.complete_unattain = True
-                self.logger.info(f"the job {job_id} is completed but not attained")
+                self.logger.info(f"the job {job_id} is completed at at {self.job_epoch_dict[job_id]} but not attained")
                 self.complete_unattain_set.add(job_id)
                 self.active_queue.remove(job_id)
                 self.check_queue.remove(job_id)
