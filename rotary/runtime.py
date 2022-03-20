@@ -53,6 +53,9 @@ class Runtime:
         # the list stores the jobs for progress checking, it is updated for each basic schedule time unit
         self.check_queue = list()
 
+        # for debug, the list stores the jobs are running for the current epoch
+        self.running_queue = list()
+
         # the list stores the jobs that have been completed and attained the objective
         self.complete_attain_set = set()
 
@@ -222,6 +225,7 @@ class Runtime:
         return command
 
     def run_job(self, job_id, resource_unit):
+        self.running_queue.append(job_id)
         self.generate_job_cmd(resource_unit, job_id)
         self.logger.info(f"=== Start to run {job_id} for epoch {self.job_epoch_dict[job_id]} ===")
 
@@ -248,9 +252,6 @@ class Runtime:
                 self.workload_dict[job_id] = job
 
     def process_active_queue(self):
-        self.logger.info(f"** Active Queue ** {self.active_queue}")
-        self.logger.info(f"** Priority Queue ** {self.priority_queue}")
-
         # check available cpu cores
         if self.available_cpu_core == 0:
             self.logger.info("no available cpu resources for allocation")
@@ -320,8 +321,9 @@ class Runtime:
 
                 self.active_queue.append(job_id)
                 self.check_queue.append(job_id)
-
-        self.logger.info(f"** Check Queue ** {self.check_queue}")
+                self.running_queue.remove(job_id)
+            else:
+                self.logger.info(f"Job {job_id} are running, not hitting time window")
 
     def collect_results(self):
         for job_id in self.check_queue:
@@ -356,6 +358,8 @@ class Runtime:
                 job_estimated_accuracy = envelop_func.get_estimated_accuracy()
                 schema_estimate_agg_sum += job_estimated_accuracy
             job_average_estimated_accuracy = schema_estimate_agg_sum / len(agg_schema_list)
+
+            self.logger.info(f"Job {job_id} estimated accuracy {job_average_estimated_accuracy}")
 
             if job.accuracy_threshold < job_average_estimated_accuracy:
                 job.complete_attain = True
@@ -459,8 +463,13 @@ class Runtime:
 
             if self.active_queue:
                 self.logger.info("#####################################################################")
+                self.logger.info(f"** Active Queue ** {self.active_queue}")
+                self.logger.info(f"** Priority Queue ** {self.priority_queue}")
+
                 # start to process arriving jobs
                 self.process_active_queue()
+                # show the running jobs
+                self.logger.info(f"** Running Queue {self.running_queue} **")
                 # let the jobs run for a time window
                 time.sleep(self.schedule_time_window)
                 # make the time elapse for schedule_time_window
@@ -472,6 +481,7 @@ class Runtime:
 
                 # check the progress within a unit of time window
                 self.check_progress()
+                self.logger.info(f"** Check Queue ** {self.check_queue}")
                 # collect results
                 self.collect_results()
                 # check the job completeness
