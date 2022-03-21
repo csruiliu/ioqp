@@ -15,8 +15,11 @@ class JobAQP:
         # if the job has arrived
         self._arrive = False
 
-        # if the job is running (in the active queue)
+        # if the job is in the active queue
         self._active = False
+
+        # if the job is running
+        self._running = False
 
         # if the job hit its scheduling time window
         self._check = False
@@ -31,15 +34,19 @@ class JobAQP:
         if self.complete_unattain or self.complete_attain:
             return
 
-        if self.active:
+        if not self.arrive:
+            self.arrival_time -= time_elapse
+            if self.arrival_time <= 0:
+                self.arrive = True
+                return
+
+        if self.running:
             self.time_elapse += time_elapse
             self.schedule_window_progress -= time_elapse
             if self.schedule_window_progress <= 0:
                 self.check = True
         else:
-            self.arrival_time -= time_elapse
-            if self.arrival_time <= 0:
-                self.arrive = True
+            self.time_elapse += time_elapse
 
     def reset_scheduling_window_progress(self):
         self.schedule_window_progress = self.schedule_window
@@ -123,6 +130,16 @@ class JobAQP:
         if not isinstance(value, bool):
             raise ValueError("the value can only be bool type")
         self._active = value
+
+    @property
+    def running(self):
+        return self._running
+
+    @running.setter
+    def running(self, value):
+        if not isinstance(value, bool):
+            raise ValueError("the value can only be bool type")
+        self._running = value
 
     @property
     def check(self):

@@ -1,6 +1,8 @@
+import os
 import time
 import psutil
 import math
+import signal
 import subprocess
 import numpy as np
 import multiprocessing as mp
@@ -219,8 +221,19 @@ class Runtime:
 
         return command
 
+    def check_arrived_job(self):
+        for job_id, job in self.workload_dict.items():
+            if job.arrive and not job.active:
+                self.logger.info(f"the job {job_id} arrives and is active now")
+                self.active_queue.append(job_id)
+                job.active = True
+                self.workload_dict[job_id] = job
+
     def run_job(self, job_id, resource_unit):
         self.running_queue.append(job_id)
+        job = self.workload_dict[job_id]
+        job.running = True
+        self.workload_dict[job_id] = job
         self.logger.info(f"== Start to run {job_id} for epoch {self.job_epoch_dict[job_id]} ==")
 
         job_output_id = job_id + "-" + str(self.job_epoch_dict[job_id])
@@ -231,17 +244,10 @@ class Runtime:
         time.sleep(1)
         subp = subprocess.Popen(job_cmd,
                                 stdout=stdout_file,
-                                stderr=stderr_file)
+                                stderr=stderr_file,
+                                start_new_session=True)
 
         return subp, stdout_file, stderr_file
-
-    def check_arrived_job(self):
-        for job_id, job in self.workload_dict.items():
-            if job.arrive and not job.active:
-                self.logger.info(f"the job {job_id} arrives and is active now")
-                self.active_queue.append(job_id)
-                job.active = True
-                self.workload_dict[job_id] = job
 
     def process_active_queue(self):
         # check available cpu cores
@@ -298,13 +304,15 @@ class Runtime:
             job = self.workload_dict[job_id]
 
             if job.check:
+                self.logger.info(f"Job {job_id} hits time window")
                 out_file.close()
                 err_file.close()
                 job_proc.terminate()
+                os.killpg(job_proc.pid, signal.SIGTERM)
 
                 job.check = False
+                job.running = False
                 job.reset_scheduling_window_progress()
-                self.workload_dict[job_id] = job
                 self.available_cpu_core += self.job_resource_dict[job_id]
                 self.job_resource_dict[job_id] = 0
 
@@ -312,7 +320,9 @@ class Runtime:
                 self.check_queue.append(job_id)
                 self.running_queue.remove(job_id)
             else:
-                self.logger.info(f"Job {job_id} are running, not hitting time window")
+                self.logger.info(f"Job {job_id} is running, not hitting time window")
+
+            self.workload_dict[job_id] = job
 
     def collect_results(self):
         for job_id in self.check_queue:
@@ -473,6 +483,7 @@ class Runtime:
 
                 # check the progress within a unit of time window
                 self.check_progress()
+                # review check queue
                 self.logger.info(f"** Check Queue ** {self.check_queue}")
                 # collect results
                 self.collect_results()
