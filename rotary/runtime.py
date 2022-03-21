@@ -1,8 +1,6 @@
-import os
 import time
 import psutil
 import math
-import signal
 import subprocess
 import numpy as np
 import multiprocessing as mp
@@ -17,8 +15,7 @@ from common.constants import (QueryRuntimeConstants,
                               WorkloadConstants,
                               agg_schema_fetcher,
                               query_memory_fetcher)
-from common.file_utils import (read_curstep_from_file,
-                               read_appid_from_file,
+from common.file_utils import (read_appid_from_file,
                                read_aggresult_from_file)
 
 
@@ -92,13 +89,6 @@ class Runtime:
         self.job_epoch_dict = dict()
 
         """
-        The dict for counting the job steps (current step)
-        key: job_id
-        value: the count of current steps 
-        """
-        self.job_step_dict = dict()
-
-        """
         The dict for storing the aggregation results
         key: job_id
         value: a dict to store the each schema results for the running epoch (when the job is selected to run)
@@ -154,7 +144,6 @@ class Runtime:
         #######################################################
 
         for job_id, job_item in self.workload_dict.items():
-            self.job_step_dict[job_id] = 0
             self.job_resource_dict[job_id] = 0
             self.job_epoch_dict[job_id] = 0
             self.job_estimate_progress[job_id] = 0.0
@@ -189,57 +178,60 @@ class Runtime:
 
     @staticmethod
     def generate_job_cmd(res_unit, job_name):
-        java_opt = "spark.executor.extraJavaOptions=-Xms" + str(
-            query_memory_fetcher(job_name)) + " -XX:+UseParallelGC -XX:+UseParallelOldGC"
+        command = list()
 
-        command = ('/tank/hdfs/ruiliu/rotary-aqp/spark/bin/spark-submit' +
-                   f' --total-executor-cores {res_unit}' +
-                   f' --executor-memory {QueryRuntimeConstants.MAX_MEMORY}' +
-                   f' --class {QueryRuntimeConstants.ENTRY_CLASS}' +
-                   f' --master {QueryRuntimeConstants.MASTER}' +
-                   f' --conf "{java_opt}"' +
-                   f' {QueryRuntimeConstants.ENTRY_JAR}' +
-                   f' {QueryRuntimeConstants.BOOTSTRAP_SERVER}' +
-                   f' {job_name}' +
-                   f' {QueryRuntimeConstants.BATCH_NUM}' +
-                   f' {QueryRuntimeConstants.SHUFFLE_NUM}' +
-                   f' {QueryRuntimeConstants.STAT_DIR}' +
-                   f' {QueryRuntimeConstants.TPCH_STATIC_DIR}' +
-                   f' {QueryRuntimeConstants.SCALE_FACTOR}' +
-                   f' {QueryRuntimeConstants.HDFS_ROOT}' +
-                   f' {QueryRuntimeConstants.EXECUTION_MDOE}' +
-                   f' {QueryRuntimeConstants.INPUT_PARTITION}' +
-                   f' {QueryRuntimeConstants.CONSTRAINT}' +
-                   f' {QueryRuntimeConstants.LARGEDATASET}' +
-                   f' {QueryRuntimeConstants.IOLAP}' +
-                   f' {QueryRuntimeConstants.INC_PERCENTAGE}' +
-                   f' {QueryRuntimeConstants.COST_BIAS}' +
-                   f' {QueryRuntimeConstants.MAX_STEP}' +
-                   f' {QueryRuntimeConstants.SAMPLE_TIME}' +
-                   f' {QueryRuntimeConstants.SAMPLE_RATIO}' +
-                   f' {QueryRuntimeConstants.TRIGGER_INTERVAL}' +
-                   f' {QueryRuntimeConstants.AGGREGATION_INTERVAL}' +
-                   f' {QueryRuntimeConstants.CHECKPOINT_PATH}' +
-                   f' {QueryRuntimeConstants.CBO_ENABLE}')
+        max_mem = query_memory_fetcher(job_name)
+        java_opt = "spark.executor.extraJavaOptions=-Xms" + str(max_mem) + "G -XX:+UseParallelGC -XX:+UseParallelOldGC"
+        command.append("/tank/hdfs/ruiliu/rotary-aqp/spark/bin/spark-submit")
+        command.append("--master")
+        command.append(QueryRuntimeConstants.MASTER)
+        command.append("--class")
+        command.append(QueryRuntimeConstants.ENTRY_CLASS)
+        command.append("--total-executor-cores")
+        command.append(f"{res_unit}")
+        command.append("--executor-memory")
+        command.append(f"{max_mem}G")
+        command.append("--conf")
+        command.append(f"{java_opt}")
+        command.append(f"{QueryRuntimeConstants.ENTRY_JAR}")
+        command.append(f"{QueryRuntimeConstants.BOOTSTRAP_SERVER}")
+        command.append(f"{job_name}")
+        command.append(f"{QueryRuntimeConstants.BATCH_NUM}")
+        command.append(f"{QueryRuntimeConstants.SHUFFLE_NUM}")
+        command.append(f"{QueryRuntimeConstants.STAT_DIR}")
+        command.append(f"{QueryRuntimeConstants.TPCH_STATIC_DIR}")
+        command.append(f"{QueryRuntimeConstants.SCALE_FACTOR}")
+        command.append(f"{QueryRuntimeConstants.HDFS_ROOT}")
+        command.append(f"{QueryRuntimeConstants.EXECUTION_MDOE}")
+        command.append(f"{QueryRuntimeConstants.INPUT_PARTITION}")
+        command.append(f"{QueryRuntimeConstants.CONSTRAINT}")
+        command.append(f"{QueryRuntimeConstants.LARGEDATASET}")
+        command.append(f"{QueryRuntimeConstants.IOLAP}")
+        command.append(f"{QueryRuntimeConstants.INC_PERCENTAGE}")
+        command.append(f"{QueryRuntimeConstants.COST_BIAS}")
+        command.append(f"{QueryRuntimeConstants.MAX_STEP}")
+        command.append(f"{QueryRuntimeConstants.SAMPLE_TIME}")
+        command.append(f"{QueryRuntimeConstants.SAMPLE_RATIO}")
+        command.append(f"{QueryRuntimeConstants.TRIGGER_INTERVAL}")
+        command.append(f"{QueryRuntimeConstants.AGGREGATION_INTERVAL}")
+        command.append(f"{QueryRuntimeConstants.CHECKPOINT_PATH}")
+        command.append(f"{QueryRuntimeConstants.CBO_ENABLE}")
 
         return command
 
     def run_job(self, job_id, resource_unit):
         self.running_queue.append(job_id)
-        self.generate_job_cmd(resource_unit, job_id)
-        self.logger.info(f"=== Start to run {job_id} for epoch {self.job_epoch_dict[job_id]} ===")
+        self.logger.info(f"== Start to run {job_id} for epoch {self.job_epoch_dict[job_id]} ==")
 
         job_output_id = job_id + "-" + str(self.job_epoch_dict[job_id])
         stdout_file = open(QueryRuntimeConstants.STDOUT_PATH + "/" + job_output_id + ".stdout", "w+")
         stderr_file = open(QueryRuntimeConstants.STDERR_PATH + '/' + job_output_id + '.stderr', "w+")
 
         job_cmd = self.generate_job_cmd(resource_unit, job_id)
+        time.sleep(1)
         subp = subprocess.Popen(job_cmd,
-                                bufsize=0,
                                 stdout=stdout_file,
-                                stderr=stderr_file,
-                                shell=True,
-                                start_new_session=True)
+                                stderr=stderr_file)
 
         return subp, stdout_file, stderr_file
 
@@ -309,7 +301,6 @@ class Runtime:
                 out_file.close()
                 err_file.close()
                 job_proc.terminate()
-                os.killpg(job_proc.pid, signal.SIGTERM)
 
                 job.check = False
                 job.reset_scheduling_window_progress()
@@ -327,15 +318,17 @@ class Runtime:
 
     def collect_results(self):
         for job_id in self.check_queue:
-            output_file = QueryRuntimeConstants.STDOUT_PATH + "/" + job_id + "-" + str(self.job_epoch_dict[job_id]) + ".stdout"
-            output_path = Path(output_file)
+            job_epoch = str(self.job_epoch_dict[job_id])
+            shell_output = QueryRuntimeConstants.STDOUT_PATH + "/" + job_id + "-" + job_epoch + ".stdout"
+            app_id = read_appid_from_file(shell_output)
+            app_stdout_file = QueryRuntimeConstants.SPARK_WORK_PATH + '/' + app_id + '/0/stdout'
+            app_stdout_path = Path(app_stdout_file)
 
-            if output_path.is_file():
+            if app_stdout_path.is_file():
                 agg_schema_list = agg_schema_fetcher(job_id)
-                current_agg_results_dict = read_aggresult_from_file(output_file, agg_schema_list)
+                current_agg_results_dict = read_aggresult_from_file(app_stdout_path, agg_schema_list)
 
                 # extract and store the agg result and time
-                self.job_step_dict[job_id] = read_curstep_from_file(output_file)
                 for schema_name in agg_schema_list:
                     # store agg result
                     self.job_agg_result_dict[job_id][schema_name].append(current_agg_results_dict[schema_name][0])
@@ -379,7 +372,9 @@ class Runtime:
             self.workload_dict[job_id] = job
 
     def compute_progress_next_epoch(self, job_id):
-        app_id = read_appid_from_file(job_id + '.stdout')
+        job_epoch = str(self.job_epoch_dict[job_id])
+        shell_output = QueryRuntimeConstants.STDOUT_PATH + "/" + job_id + "-" + job_epoch + ".stdout"
+        app_id = read_appid_from_file(shell_output)
 
         app_stdout_file = QueryRuntimeConstants.SPARK_WORK_PATH + '/' + app_id + '/0/stdout'
         agg_schema_list = agg_schema_fetcher(job_id)
@@ -418,9 +413,6 @@ class Runtime:
         if self.scheduler_name == "rotary" or self.scheduler_name == "relaqs":
             # compute the estimated progress of jobs in the active queue
             for job_id in self.active_queue:
-                job_output_id = job_id + "-" + str(self.job_epoch_dict[job_id])
-                job_stdout_file = QueryRuntimeConstants.STDOUT_PATH + "/" + job_output_id + ".stdout"
-                self.job_step_dict[job_id] = read_curstep_from_file(job_stdout_file)
                 self.job_estimate_progress[job_id] = self.compute_progress_next_epoch(job_id)
 
             for k, v in sorted(self.job_estimate_progress.items(), key=lambda x: x[1], reverse=True):
@@ -471,7 +463,7 @@ class Runtime:
                 # show the running jobs
                 self.logger.info(f"** Running Queue {self.running_queue} **")
                 # let the jobs run for a time window
-                time.sleep(self.schedule_time_window)
+                # time.sleep(self.schedule_time_window)
                 # make the time elapse for schedule_time_window
                 self.time_elapse(self.schedule_time_window)
 
@@ -490,4 +482,5 @@ class Runtime:
                 self.rank_job_next_epoch()
 
             else:
+                time.sleep(1)
                 self.time_elapse(1)

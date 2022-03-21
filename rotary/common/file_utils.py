@@ -34,7 +34,6 @@ def read_aggresult_from_file(file_path, target_schema_list):
         value: [current agg result/value, current time]
     """
     agg_result_dict = dict()
-    # agg_indicator_list = [0] * len(target_schema_list)
 
     for schema_name in target_schema_list:
         agg_result_dict[schema_name] = [0.0, 0]
@@ -46,17 +45,15 @@ def read_aggresult_from_file(file_path, target_schema_list):
             agg_list = line.strip().split('|')
             agg_schema = agg_list[1]
             agg_result = float(agg_list[2])
-            agg_current_time = int(agg_list[3])
+            agg_start_time = int(agg_list[3])
+            agg_current_time = int(agg_list[4])
 
             if agg_schema in target_schema_list:
                 if agg_current_time > agg_result_dict[agg_schema][1]:
                     agg_result_dict[agg_schema][0] = agg_result
                     agg_result_dict[agg_schema][1] = agg_current_time
                     # agg_indicator_list[target_schema_list.index(agg_schema)] = 1
-            '''
-            if 0 not in agg_indicator_list:
-                return agg_result_dict
-            '''
+
     return agg_result_dict
 
 
