@@ -23,6 +23,10 @@ class EnvelopBounder:
     def get_estimated_accuracy(self):
         if len(self.agg_list) < self._seq_length:
             return 0
+
+        if self._upper_bound == 0:
+            return 0
+
         return self._lower_bound / self._upper_bound
 
     @property

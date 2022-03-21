@@ -274,6 +274,8 @@ class Runtime:
                             self.available_cpu_core -= 2
                             self.job_process_dict[job_id] = (subp, out_file, err_file)
                             self.active_queue.remove(job_id)
+                        else:
+                            self.logger.info(f"Job {job_id} cannot start since there is no enough memory")
                 else:
                     for job_id in self.priority_queue:
                         if available_mem > query_memory_fetcher(job_id):
@@ -283,6 +285,8 @@ class Runtime:
                             self.available_cpu_core -= 2
                             self.job_process_dict[job_id] = (subp, out_file, err_file)
                             self.active_queue.remove(job_id)
+                        else:
+                            self.logger.info(f"Job {job_id} cannot start since there is no enough memory")
 
             for job_id in self.active_queue:
                 if available_mem > query_memory_fetcher(job_id):
@@ -292,6 +296,8 @@ class Runtime:
                     self.available_cpu_core -= 1
                     self.job_process_dict[job_id] = (subp, out_file, err_file)
                     self.active_queue.remove(job_id)
+                else:
+                    self.logger.info(f"Job {job_id} cannot start since there is no enough memory")
 
         # less resources than active jobs
         else:
