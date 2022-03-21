@@ -223,7 +223,7 @@ class Runtime:
 
     def check_arrived_job(self):
         for job_id, job in self.workload_dict.items():
-            if job.arrive and not job.active:
+            if job.arrive and not job.active and not job.complete_attain and not job.complete_unattain:
                 self.logger.info(f"the job {job_id} arrives and is active now")
                 self.active_queue.append(job_id)
                 job.active = True
@@ -293,6 +293,18 @@ class Runtime:
                     self.job_process_dict[job_id] = (subp, out_file, err_file)
                     self.active_queue.remove(job_id)
 
+        # less resources than active jobs
+        else:
+            for jidx in np.arange(self.available_cpu_core):
+                job_id = self.active_queue[jidx]
+                if available_mem > query_memory_fetcher(job_id):
+                    subp, out_file, err_file = self.run_job(job_id, resource_unit=1)
+                    available_mem = available_mem - query_memory_fetcher(job_id)
+                    self.job_resource_dict[job_id] = 1
+                    self.available_cpu_core -= 1
+                    self.job_process_dict[job_id] = (subp, out_file, err_file)
+                    self.active_queue.remove(job_id)
+
     def time_elapse(self, time_period):
         # the time unit is second
         for job_id, job in self.workload_dict.items():
@@ -312,6 +324,7 @@ class Runtime:
 
                 job.check = False
                 job.running = False
+                job.active = True
                 job.reset_scheduling_window_progress()
                 self.available_cpu_core += self.job_resource_dict[job_id]
                 self.job_resource_dict[job_id] = 0
@@ -320,7 +333,8 @@ class Runtime:
                 self.check_queue.append(job_id)
                 self.running_queue.remove(job_id)
             else:
-                self.logger.info(f"Job {job_id} is running, not hitting time window")
+                if job.running:
+                    self.logger.info(f"Job {job_id} is running, not hitting time window")
 
             self.workload_dict[job_id] = job
 
@@ -366,12 +380,14 @@ class Runtime:
 
             if job.accuracy_threshold < job_average_estimated_accuracy:
                 job.complete_attain = True
+                job.active = False
                 self.logger.info(f"the job {job_id} is completed at {self.job_epoch_dict[job_id]} and attained")
                 self.complete_attain_set.add(job_id)
                 self.active_queue.remove(job_id)
                 self.check_queue.remove(job_id)
             elif job.time_elapse >= job.deadline:
                 job.complete_unattain = True
+                job.active = False
                 self.logger.info(f"the job {job_id} is completed at at {self.job_epoch_dict[job_id]} but not attained")
                 self.complete_unattain_set.add(job_id)
                 self.active_queue.remove(job_id)

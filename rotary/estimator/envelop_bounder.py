@@ -17,11 +17,8 @@ class EnvelopBounder:
         # add the latest item to the current agg_list
         self.agg_list.append(agg_result)
 
-        if self._lower_bound > agg_result:
-            self._lower_bound = agg_result
-
-        if self._upper_bound < agg_result:
-            self._upper_bound = agg_result
+        self._upper_bound = max(self.agg_list)
+        self._lower_bound = min(self.agg_list)
 
     def get_estimated_accuracy(self):
         if len(self.agg_list) < self._seq_length:
