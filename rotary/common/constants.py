@@ -1,6 +1,6 @@
 
 class WorkloadConstants:
-    WORKLOAD_SIZE = 30
+    WORKLOAD_SIZE = 20
 
     # the parameter used to generate arrival time. Expected number of events occurring in a fixed-time interval
     ARRIVAL_LAMBDA = 4
@@ -18,26 +18,26 @@ class WorkloadConstants:
     # the queries cost 5-10 GB when scale factor is 1
     WORKLOAD_LIGHT = ["q2", "q4", "q6", "q10", "q11", "q12", "q13", "q14", "q15", "q16", "q19", "q22"]
     # the deadline list for workload_light, time unit second
-    DEADLINE_LIGHT = [60, 120, 180, 240, 300]
+    DEADLINE_LIGHT = [240, 300, 360, 420, 480, 540]
     # the percentage of light workload
     LIGHT_RATIO = 0.6
 
     # the queries cost 15-30 GB when scale factor is 1
     WORKLOAD_MEDIUM = ["q3", "q5", "q8", "q17", "q20"]
     # the deadline list for workload_medium, time unit second
-    DEADLINE_MEDIUM = [240, 300, 360, 480, 540, 600]
+    DEADLINE_MEDIUM = [540, 660, 780, 900, 1020, 1140]
     # the percentage of medium workload
     MEDIUM_RATIO = 0.3
 
     # the queries cost over 30 GB when scale factor is 1
     WORKLOAD_HEAVY = ["q7", "q9", "q18"]
     # the deadline list for workload_heavy, time unit second
-    DEADLINE_HEAVY = [600, 1200, 1800, 2400, 3000, 3600]
+    DEADLINE_HEAVY = [1200, 1800, 2400, 3000, 3600]
     # the percentage of heavy workload
     HEAVY_RATIO = 0.1
 
     # accuracy threshold for the jobs in the workload
-    ACCURACY_OBJECTIVE = [0.7, 0.75, 0.8, 0.85, 0.9, 0.95]
+    ACCURACY_OBJECTIVE = [0.6, 0.65, 0.7, 0.75, 0.8, 0.85, 0.9, 0.95]
 
 
 class MemoryConstants:

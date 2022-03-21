@@ -159,7 +159,7 @@ class Runtime:
             for schema_name in agg_schema_fetcher(job_id):
                 self.job_agg_result_dict[job_id][schema_name] = list()
                 self.job_agg_time_dict[job_id][schema_name] = list()
-                self.job_envelop_dict[job_id][schema_name] = EnvelopBounder(seq_length=4)
+                self.job_envelop_dict[job_id][schema_name] = EnvelopBounder(seq_length=3)
 
             # create an estimator for each job
             if self.scheduler_name == "rotary":
@@ -348,7 +348,6 @@ class Runtime:
             agg_schema_list = agg_schema_fetcher(job_id)
             for schema_name in agg_schema_list:
                 envelop_func: EnvelopBounder = self.job_envelop_dict[job_id][schema_name]
-                self.logger.info(f"{schema_name}: {envelop_func.agg_list}")
                 job_estimated_accuracy = envelop_func.get_estimated_accuracy()
                 schema_estimate_agg_sum += job_estimated_accuracy
             job_average_estimated_accuracy = schema_estimate_agg_sum / len(agg_schema_list)
@@ -464,7 +463,7 @@ class Runtime:
                 # show the running jobs
                 self.logger.info(f"** Running Queue {self.running_queue} **")
                 # let the jobs run for a time window plus checkpoint read overhead
-                time.sleep(self.schedule_time_window + 60)
+                time.sleep(self.schedule_time_window + 45)
                 # make the time elapse for schedule_time_window
                 self.time_elapse(self.schedule_time_window)
 
