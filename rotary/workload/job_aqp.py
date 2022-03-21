@@ -10,7 +10,9 @@ class JobAQP:
         self._schedule_window_progress = sch_window
 
         # count the time since the job is arrived
-        self._time_elapse = 0
+        self._overall_time = 0
+        self._wait_time = 0
+        self._run_time = 0
 
         # if the job has arrived
         self._arrive = False
@@ -41,12 +43,12 @@ class JobAQP:
                 return
 
         if self.running:
-            self.time_elapse += time_elapse
+            self.run_time += time_elapse
             self.schedule_window_progress -= time_elapse
             if self.schedule_window_progress <= 0:
                 self.check = True
         else:
-            self.time_elapse += time_elapse
+            self.wait_time += time_elapse
 
     def reset_scheduling_window_progress(self):
         self.schedule_window_progress = self.schedule_window
@@ -104,12 +106,29 @@ class JobAQP:
         self._schedule_window_progress = value
 
     @property
-    def time_elapse(self):
-        return self._time_elapse
+    def overall_time(self):
+        self._overall_time = self.run_time + self.wait_time
+        return self._overall_time
 
-    @time_elapse.setter
-    def time_elapse(self, value):
-        self._time_elapse = value
+    @overall_time.setter
+    def overall_time(self, value):
+        self._overall_time = value
+
+    @property
+    def run_time(self):
+        return self._run_time
+
+    @run_time.setter
+    def run_time(self, value):
+        self._run_time = value
+
+    @property
+    def wait_time(self):
+        return self._wait_time
+
+    @wait_time.setter
+    def wait_time(self, value):
+        self._wait_time = value
 
     @property
     def arrive(self):

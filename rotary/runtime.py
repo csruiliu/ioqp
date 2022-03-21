@@ -106,6 +106,12 @@ class Runtime:
         """
         self.job_agg_time_dict = dict()
 
+        # the list stores the summary results of each job
+        self.final_result_msg = list()
+
+        # the list stores the accuracy of each job over epochs
+        self.job_overall_agg_list = dict()
+
         #######################################################
         # data structure for rotary and relaqs
         #######################################################
@@ -156,6 +162,7 @@ class Runtime:
             self.job_agg_result_dict[job_id] = dict()
             self.job_agg_time_dict[job_id] = dict()
             self.job_envelop_dict[job_id] = dict()
+            self.job_overall_agg_list[job_id] = list()
 
             # init lists for all schemas for each job
             for schema_name in agg_schema_fetcher(job_id):
@@ -382,24 +389,34 @@ class Runtime:
                 schema_estimate_agg_sum += job_estimated_accuracy
             job_average_estimated_accuracy = schema_estimate_agg_sum / len(agg_schema_list)
 
+            self.job_overall_agg_list[job_id].append(job_average_estimated_accuracy)
+
             self.logger.info(f"Job {job_id} estimated accuracy {job_average_estimated_accuracy}")
 
             if job.accuracy_threshold < job_average_estimated_accuracy:
                 job.complete_attain = True
                 job.active = False
-                self.logger.info(f"the job {job_id} is completed at {self.job_epoch_dict[job_id]} and attained")
+                final_msg = (f"Job {job_id} is completed at {self.job_epoch_dict[job_id]} and attained, " +
+                             f"running time:{job.run_time}, wait time:{job.wait_time}" +
+                             f"accuracy track: {self.job_overall_agg_list}")
+                self.logger.info(final_msg)
+                self.final_result_msg.append(final_msg)
                 self.complete_attain_set.add(job_id)
                 self.active_queue.remove(job_id)
                 self.check_queue.remove(job_id)
-            elif job.time_elapse >= job.deadline:
+            elif job.overall_time >= job.deadline:
                 job.complete_unattain = True
                 job.active = False
-                self.logger.info(f"the job {job_id} is completed at at {self.job_epoch_dict[job_id]} but not attained")
+                final_msg = (f"Job {job_id} is completed at {self.job_epoch_dict[job_id]} and attained, " +
+                             f"running time:{job.run_time}, wait time:{job.wait_time}" +
+                             f"accuracy track: {self.job_overall_agg_list}")
+                self.logger.info(final_msg)
+                self.final_result_msg.append(final_msg)
                 self.complete_unattain_set.add(job_id)
                 self.active_queue.remove(job_id)
                 self.check_queue.remove(job_id)
             else:
-                self.logger.info(f"the job {job_id} stay in active, has run {job.time_elapse} seconds")
+                self.logger.info(f"the job {job_id} stay in active, has run {job.overall_time} seconds")
 
             self.workload_dict[job_id] = job
 
@@ -475,6 +492,10 @@ class Runtime:
         else:
             raise ValueError("The scheduler is not supported")
 
+    def present_final_results(self):
+        for i in self.final_result_msg:
+            self.logger.info(self.final_result_msg[i])
+
     def run(self):
         # if STDOUT_PATH or STDERR_PATH doesn't exist, create them then
         if not Path(QueryRuntimeConstants.STDOUT_PATH).is_dir():
@@ -495,7 +516,7 @@ class Runtime:
                 # show the running jobs
                 self.logger.info(f"** Running Queue {self.running_queue} **")
                 # let the jobs run for a time window plus checkpoint read overhead
-                time.sleep(self.schedule_time_window + 45)
+                time.sleep(self.schedule_time_window + 60)
                 # make the time elapse for schedule_time_window
                 self.time_elapse(self.schedule_time_window)
 
@@ -517,3 +538,5 @@ class Runtime:
             else:
                 time.sleep(1)
                 self.time_elapse(1)
+
+        self.present_final_results()
