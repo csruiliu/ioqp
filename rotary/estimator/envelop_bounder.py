@@ -10,17 +10,18 @@ class EnvelopBounder:
         self._agg_list = list()
 
     def input_agg_result(self, agg_result):
-        if len(self.agg_list) > self._seq_length:
+        if len(self.agg_list) >= self._seq_length:
             # remove the first item in the current agg_list
             self.agg_list.pop(0)
-            # add the latest item to the current agg_list
-            self.agg_list.append(agg_result)
 
-            if self._lower_bound > agg_result:
-                self._lower_bound = agg_result
+        # add the latest item to the current agg_list
+        self.agg_list.append(agg_result)
 
-            if self._upper_bound < agg_result:
-                self._upper_bound = agg_result
+        if self._lower_bound > agg_result:
+            self._lower_bound = agg_result
+
+        if self._upper_bound < agg_result:
+            self._upper_bound = agg_result
 
     def get_estimated_accuracy(self):
         if len(self.agg_list) < self._seq_length:

@@ -348,7 +348,7 @@ class Runtime:
             agg_schema_list = agg_schema_fetcher(job_id)
             for schema_name in agg_schema_list:
                 envelop_func: EnvelopBounder = self.job_envelop_dict[job_id][schema_name]
-                self.logger.info(envelop_func.agg_list)
+                self.logger.info(f"{schema_name}: {envelop_func.agg_list}")
                 job_estimated_accuracy = envelop_func.get_estimated_accuracy()
                 schema_estimate_agg_sum += job_estimated_accuracy
             job_average_estimated_accuracy = schema_estimate_agg_sum / len(agg_schema_list)
@@ -454,7 +454,7 @@ class Runtime:
         while len(self.complete_attain_set) + len(self.complete_unattain_set) != self.workload_size:
             self.check_arrived_job()
 
-            if self.active_queue:
+            if self.active_queue or self.running_queue:
                 self.logger.info("#####################################################################")
                 self.logger.info(f"** Active Queue ** {self.active_queue}")
                 self.logger.info(f"** Priority Queue ** {self.priority_queue}")
