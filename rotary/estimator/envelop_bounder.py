@@ -7,11 +7,13 @@ class EnvelopBounder:
         self._lower_bound = np.inf
         self._seq_length = seq_length
 
-        self.agg_list = list()
+        self._agg_list = list()
 
     def input_agg_result(self, agg_result):
         if len(self.agg_list) > self._seq_length:
+            # remove the first item in the current agg_list
             self.agg_list.pop(0)
+            # add the latest item to the current agg_list
             self.agg_list.append(agg_result)
 
             if self._lower_bound > agg_result:
@@ -24,6 +26,10 @@ class EnvelopBounder:
         if len(self.agg_list) < self._seq_length:
             return 0
         return self._lower_bound / self._upper_bound
+
+    @property
+    def agg_list(self):
+        return self._agg_list
 
     @property
     def upper_bound(self):

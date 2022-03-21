@@ -307,8 +307,6 @@ class Runtime:
                 self.workload_dict[job_id] = job
                 self.available_cpu_core += self.job_resource_dict[job_id]
                 self.job_resource_dict[job_id] = 0
-                # finish an epoch so add 1
-                self.job_epoch_dict[job_id] += 1
 
                 self.active_queue.append(job_id)
                 self.check_queue.append(job_id)
@@ -319,6 +317,8 @@ class Runtime:
     def collect_results(self):
         for job_id in self.check_queue:
             job_epoch = str(self.job_epoch_dict[job_id])
+            # finish an epoch and collect results so add 1
+            self.job_epoch_dict[job_id] += 1
             shell_output = QueryRuntimeConstants.STDOUT_PATH + "/" + job_id + "-" + job_epoch + ".stdout"
             app_id = read_appid_from_file(shell_output)
             app_stdout_file = QueryRuntimeConstants.SPARK_WORK_PATH + '/' + app_id + '/0/stdout'
@@ -336,7 +336,7 @@ class Runtime:
                     self.job_agg_time_dict[job_id][schema_name].append(current_agg_results_dict[schema_name][1])
                     # update envelop function
                     schema_envelop_function: EnvelopBounder = self.job_envelop_dict[job_id][schema_name]
-                    schema_envelop_function.input_agg_result(current_agg_results_dict[0])
+                    schema_envelop_function.input_agg_result(current_agg_results_dict[schema_name][0])
                     self.job_envelop_dict[job_id][schema_name] = schema_envelop_function
 
     def check_completeness(self):
@@ -348,6 +348,7 @@ class Runtime:
             agg_schema_list = agg_schema_fetcher(job_id)
             for schema_name in agg_schema_list:
                 envelop_func: EnvelopBounder = self.job_envelop_dict[job_id][schema_name]
+                self.logger.info(envelop_func.agg_list)
                 job_estimated_accuracy = envelop_func.get_estimated_accuracy()
                 schema_estimate_agg_sum += job_estimated_accuracy
             job_average_estimated_accuracy = schema_estimate_agg_sum / len(agg_schema_list)
@@ -462,8 +463,8 @@ class Runtime:
                 self.process_active_queue()
                 # show the running jobs
                 self.logger.info(f"** Running Queue {self.running_queue} **")
-                # let the jobs run for a time window
-                # time.sleep(self.schedule_time_window)
+                # let the jobs run for a time window plus checkpoint read overhead
+                time.sleep(self.schedule_time_window + 60)
                 # make the time elapse for schedule_time_window
                 self.time_elapse(self.schedule_time_window)
 
