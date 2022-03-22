@@ -2,6 +2,7 @@ import os
 import time
 import psutil
 import math
+import copy
 import signal
 import subprocess
 import numpy as np
@@ -265,6 +266,8 @@ class Runtime:
         # check available memory
         available_mem = psutil.virtual_memory().available / math.pow(1024, 3)
 
+        active_queue_copy = copy.deepcopy(self.active_queue)
+
         # more resources than active jobs
         if self.available_cpu_core >= len(self.active_queue):
             extra_cores = self.available_cpu_core - len(self.active_queue)
@@ -281,6 +284,7 @@ class Runtime:
                             self.available_cpu_core -= 2
                             self.job_process_dict[job_id] = (subp, out_file, err_file)
                             self.active_queue.remove(job_id)
+                            active_queue_copy.remove(job_id)
                         else:
                             self.logger.info(f"Job {job_id} cannot start since there is no enough memory")
                 else:
@@ -292,6 +296,7 @@ class Runtime:
                             self.available_cpu_core -= 2
                             self.job_process_dict[job_id] = (subp, out_file, err_file)
                             self.active_queue.remove(job_id)
+                            active_queue_copy.remove(job_id)
                         else:
                             self.logger.info(f"Job {job_id} cannot start since there is no enough memory")
 
@@ -302,7 +307,7 @@ class Runtime:
                     self.job_resource_dict[job_id] = 1
                     self.available_cpu_core -= 1
                     self.job_process_dict[job_id] = (subp, out_file, err_file)
-                    self.active_queue.remove(job_id)
+                    active_queue_copy.remove(job_id)
                 else:
                     self.logger.info(f"Job {job_id} cannot start since there is no enough memory")
 
@@ -316,7 +321,11 @@ class Runtime:
                     self.job_resource_dict[job_id] = 1
                     self.available_cpu_core -= 1
                     self.job_process_dict[job_id] = (subp, out_file, err_file)
-                    self.active_queue.remove(job_id)
+                    active_queue_copy.remove(job_id)
+                else:
+                    self.logger.info(f"Job {job_id} cannot start since there is no enough memory")
+
+        self.active_queue = active_queue_copy.copy()
 
     def time_elapse(self, time_period):
         # the time unit is second
