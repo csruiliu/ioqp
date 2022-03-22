@@ -111,7 +111,7 @@ class Runtime:
         self.final_result_msg = list()
 
         # the list stores the accuracy of each job over epochs
-        self.job_overall_agg_list = dict()
+        self.job_overall_agg_dict = dict()
 
         #######################################################
         # data structure for rotary and relaqs
@@ -163,7 +163,7 @@ class Runtime:
             self.job_agg_result_dict[job_id] = dict()
             self.job_agg_time_dict[job_id] = dict()
             self.job_envelop_dict[job_id] = dict()
-            self.job_overall_agg_list[job_id] = list()
+            self.job_overall_agg_dict[job_id] = list()
 
             # init lists for all schemas for each job
             for schema_name in agg_schema_fetcher(job_id):
@@ -341,7 +341,7 @@ class Runtime:
                 self.logger.info(f"Job {job_id} hits time window")
                 out_file.close()
                 err_file.close()
-                job_proc.terminate()
+                # job_proc.terminate()
                 os.killpg(job_proc.pid, signal.SIGTERM)
 
                 job.check = False
@@ -398,7 +398,7 @@ class Runtime:
                 schema_estimate_agg_sum += job_estimated_accuracy
             job_average_estimated_accuracy = schema_estimate_agg_sum / len(agg_schema_list)
 
-            self.job_overall_agg_list[job_id].append(job_average_estimated_accuracy)
+            self.job_overall_agg_dict[job_id].append(job_average_estimated_accuracy)
 
             self.logger.info(f"Job {job_id} estimated accuracy {job_average_estimated_accuracy}")
 
@@ -407,7 +407,7 @@ class Runtime:
                 job.active = False
                 final_msg = (f"Job {job_id} is completed at {self.job_epoch_dict[job_id]} and attained, " +
                              f"running time:{job.run_time}, wait time:{job.wait_time}, " +
-                             f"accuracy track: {self.job_overall_agg_list}")
+                             f"accuracy track: {self.job_overall_agg_dict[job_id]}")
                 self.logger.info(final_msg)
                 self.final_result_msg.append(final_msg)
                 self.complete_attain_set.add(job_id)
@@ -418,7 +418,7 @@ class Runtime:
                 job.active = False
                 final_msg = (f"Job {job_id} is completed at {self.job_epoch_dict[job_id]} and attained, " +
                              f"running time:{job.run_time}, wait time:{job.wait_time}, " +
-                             f"accuracy track: {self.job_overall_agg_list}")
+                             f"accuracy track: {self.job_overall_agg_dict[job_id]}")
                 self.logger.info(final_msg)
                 self.final_result_msg.append(final_msg)
                 self.complete_unattain_set.add(job_id)
