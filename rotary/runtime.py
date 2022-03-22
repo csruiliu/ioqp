@@ -528,9 +528,9 @@ class Runtime:
                 # show the running jobs
                 self.logger.info(f"** Running Queue {self.running_queue} **")
                 # let the jobs run for a time window plus checkpoint read overhead
-                time.sleep(self.schedule_time_window)
+                time.sleep(self.check_time_window)
                 # make the time elapse for schedule_time_window
-                self.time_elapse(self.schedule_time_window)
+                self.time_elapse(self.check_time_window)
 
                 # reset the check queue and priority queue for each epoch
                 self.priority_queue.clear()
