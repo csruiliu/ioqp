@@ -406,7 +406,7 @@ class Runtime:
                 job.complete_attain = True
                 job.active = False
                 final_msg = (f"Job {job_id} is completed at {self.job_epoch_dict[job_id]} and attained, " +
-                             f"running time:{job.run_time}, wait time:{job.wait_time}" +
+                             f"running time:{job.run_time}, wait time:{job.wait_time}, " +
                              f"accuracy track: {self.job_overall_agg_list}")
                 self.logger.info(final_msg)
                 self.final_result_msg.append(final_msg)
@@ -417,7 +417,7 @@ class Runtime:
                 job.complete_unattain = True
                 job.active = False
                 final_msg = (f"Job {job_id} is completed at {self.job_epoch_dict[job_id]} and attained, " +
-                             f"running time:{job.run_time}, wait time:{job.wait_time}" +
+                             f"running time:{job.run_time}, wait time:{job.wait_time}, " +
                              f"accuracy track: {self.job_overall_agg_list}")
                 self.logger.info(final_msg)
                 self.final_result_msg.append(final_msg)
@@ -502,8 +502,8 @@ class Runtime:
             raise ValueError("The scheduler is not supported")
 
     def present_final_results(self):
-        for i in self.final_result_msg:
-            self.logger.info(self.final_result_msg[i])
+        for msg in self.final_result_msg:
+            self.logger.info(msg)
 
     def run(self):
         # if STDOUT_PATH or STDERR_PATH doesn't exist, create them then
@@ -513,10 +513,10 @@ class Runtime:
             Path(QueryRuntimeConstants.STDERR_PATH).mkdir()
 
         while len(self.complete_attain_set) + len(self.complete_unattain_set) != self.workload_size:
+            self.logger.info("#####################################################################")
             self.check_arrived_job()
 
             if self.active_queue or self.running_queue:
-                self.logger.info("#####################################################################")
                 self.logger.info(f"** Active Queue ** {self.active_queue}")
                 self.logger.info(f"** Priority Queue ** {self.priority_queue}")
 
