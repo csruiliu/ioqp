@@ -8,6 +8,12 @@ class WorkloadConstants:
     # period of scheduling time window (second)
     SCH_ROUND_PERIOD = 60
 
+    # period of checking period (second)
+    CHECK_PERIOD = 60
+
+    # period of checkpoint offset (second)
+    CKPT_PERIOD = 60
+
     # queries used in relaqs
     WORKLOAD_RELAQS = ["q1", "q3", "q5", "q6", "q11", "q16", "q19"]
 

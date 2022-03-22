@@ -50,8 +50,8 @@ class JobAQP:
         else:
             self.wait_time += time_elapse
 
-    def reset_scheduling_window_progress(self):
-        self.schedule_window_progress = self.schedule_window
+    def reset_scheduling_window_progress(self, ckpt_offset=0):
+        self.schedule_window_progress = self.schedule_window + ckpt_offset
 
     @property
     def job_id(self):

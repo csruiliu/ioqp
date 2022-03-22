@@ -29,10 +29,13 @@ class Runtime:
 
         self.workload_dict = workload_dict
         self.workload_size = len(workload_dict)
-        self.available_cpu_core = mp.cpu_count() - 2
+        self.available_cpu_core = mp.cpu_count() // 2 - 2
 
         self.num_worker = QueryRuntimeConstants.NUM_WORKER
         self.schedule_time_window = WorkloadConstants.SCH_ROUND_PERIOD
+        self.check_time_window = WorkloadConstants.CHECK_PERIOD
+        self.ckpt_offset = WorkloadConstants.CKPT_PERIOD
+
         self.scheduler_name = scheduler_name
         # batch size used for relaqs scheduler
         self.batch_size = QueryRuntimeConstants.MAX_STEP // QueryRuntimeConstants.BATCH_NUM
@@ -239,8 +242,7 @@ class Runtime:
 
     def run_job(self, job_id, resource_unit):
         self.running_queue.append(job_id)
-        job = self.workload_dict[job_id]
-        job.running = True
+        job: JobAQP = self.workload_dict[job_id]
         self.workload_dict[job_id] = job
         self.logger.info(f"== Start to run {job_id} for epoch {self.job_epoch_dict[job_id]} ==")
 
@@ -347,7 +349,8 @@ class Runtime:
                 job.check = False
                 job.running = False
                 job.active = True
-                job.reset_scheduling_window_progress()
+                # reset the job scheduling time window plus checkpoint offset
+                job.reset_scheduling_window_progress(self.ckpt_offset)
                 self.available_cpu_core += self.job_resource_dict[job_id]
                 self.job_resource_dict[job_id] = 0
 
@@ -525,7 +528,7 @@ class Runtime:
                 # show the running jobs
                 self.logger.info(f"** Running Queue {self.running_queue} **")
                 # let the jobs run for a time window plus checkpoint read overhead
-                time.sleep(self.schedule_time_window + 60)
+                time.sleep(self.schedule_time_window)
                 # make the time elapse for schedule_time_window
                 self.time_elapse(self.schedule_time_window)
 
@@ -545,6 +548,7 @@ class Runtime:
                 self.rank_job_next_epoch()
 
             else:
+                self.logger.info("No job arrives")
                 time.sleep(1)
                 self.time_elapse(1)
 
