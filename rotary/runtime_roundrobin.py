@@ -128,6 +128,7 @@ class RoundRobinRuntime:
     def run_job(self, job_id, resource_unit):
         self.running_queue.append(job_id)
         job: JobAQP = self.workload_dict[job_id]
+        job.running = True
         self.workload_dict[job_id] = job
         self.logger.info(f"== Start to run {job_id} for epoch {self.job_epoch_dict[job_id]} ==")
 
