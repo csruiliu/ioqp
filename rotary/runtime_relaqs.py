@@ -7,6 +7,7 @@ import numpy as np
 import multiprocessing as mp
 from pathlib import Path
 
+from estimator.relaqs_estimator import ReLAQSEstimator
 from estimator.envelop_bounder import EnvelopBounder
 from workload.job_aqp import JobAQP
 from common.loggers import get_logger_instance
@@ -15,7 +16,7 @@ from common.file_utils import read_appid_from_file, read_aggresult_from_file
 from common.query_utils import generate_job_cmd, agg_schema_fetcher
 
 
-class RoundRobinRuntime:
+class ReLAQSRuntime:
     def __init__(self, workload_dict):
         self.workload_dict = workload_dict
         self.workload_size = len(workload_dict)
@@ -24,6 +25,7 @@ class RoundRobinRuntime:
         self.num_worker = QueryRuntimeConstants.NUM_WORKER
         self.schedule_time_window = WorkloadConstants.SCH_ROUND_PERIOD
         self.ckpt_offset = WorkloadConstants.CKPT_PERIOD
+        self.batch_size = QueryRuntimeConstants.MAX_STEP // QueryRuntimeConstants.BATCH_NUM
 
         # create a logger
         self.logger = get_logger_instance()
@@ -34,6 +36,9 @@ class RoundRobinRuntime:
 
         # the list stores the jobs that are active but haven't completed, sorted by their arrival time
         self.active_queue = list()
+
+        # the list stores the jobs for extra resources and is refreshed every epoch
+        self.priority_queue = list()
 
         # the list stores the jobs for progress checking, it is updated for each basic schedule time unit
         self.check_queue = list()
@@ -99,12 +104,31 @@ class RoundRobinRuntime:
         self.job_overall_agg_dict = dict()
 
         #######################################################
+        # data structure for relaqs
+        #######################################################
+
+        """
+        The dict for estimator of each job 
+        key: job_id 
+        value: estimator instance for each job   
+        """
+        self.job_estimator_dict = dict()
+
+        """
+        The dict to maintain estimated progress for next epoch for each job
+        key: job_id
+        value: the estimated progress for next epoch
+        """
+        self.job_estimate_progress = dict()
+
+        #######################################################
         # initialization data structures
         #######################################################
 
         for job_id, job_item in self.workload_dict.items():
             self.job_resource_dict[job_id] = 0
             self.job_epoch_dict[job_id] = 0
+            self.job_estimate_progress[job_id] = 0.0
 
             self.job_agg_result_dict[job_id] = dict()
             self.job_agg_time_dict[job_id] = dict()
@@ -116,6 +140,12 @@ class RoundRobinRuntime:
                 self.job_agg_result_dict[job_id][schema_name] = list()
                 self.job_agg_time_dict[job_id][schema_name] = list()
                 self.job_envelop_dict[job_id][schema_name] = EnvelopBounder(seq_length=3)
+
+            self.job_estimator_dict[job_id] = ReLAQSEstimator(job_id,
+                                                              agg_schema_fetcher(job_id),
+                                                              self.schedule_time_window,
+                                                              self.batch_size,
+                                                              self.num_worker)
 
     def check_arrived_job(self):
         for job_id, job in self.workload_dict.items():
@@ -154,6 +184,29 @@ class RoundRobinRuntime:
 
         # more resources than active jobs
         if self.available_cpu_core >= len(self.active_queue):
+            extra_cores = self.available_cpu_core - len(self.active_queue)
+
+            # check if the job in the priority queue, if so provide 2 cores otherwise 1
+            if self.priority_queue:
+                if len(self.priority_queue) > extra_cores:
+                    for jidx in np.arange(extra_cores):
+                        job_id = self.priority_queue[jidx]
+                        subp, out_file, err_file = self.run_job(job_id, resource_unit=2)
+                        self.job_resource_dict[job_id] = 2
+                        self.available_cpu_core -= 2
+                        self.job_process_dict[job_id] = (subp, out_file, err_file)
+                        self.active_queue.remove(job_id)
+                        active_queue_copy.remove(job_id)
+
+                else:
+                    for job_id in self.priority_queue:
+                        subp, out_file, err_file = self.run_job(job_id, resource_unit=2)
+                        self.job_resource_dict[job_id] = 2
+                        self.available_cpu_core -= 2
+                        self.job_process_dict[job_id] = (subp, out_file, err_file)
+                        self.active_queue.remove(job_id)
+                        active_queue_copy.remove(job_id)
+
             for job_id in self.active_queue:
                 subp, out_file, err_file = self.run_job(job_id, resource_unit=1)
                 self.job_resource_dict[job_id] = 1
@@ -276,6 +329,51 @@ class RoundRobinRuntime:
 
             self.workload_dict[job_id] = job
 
+    def compute_progress_next_epoch(self, job_id):
+        job_epoch = str(self.job_epoch_dict[job_id])
+        shell_output = QueryRuntimeConstants.STDOUT_PATH + "/" + job_id + "-" + job_epoch + ".stdout"
+        app_id = read_appid_from_file(shell_output)
+
+        app_stdout_file = QueryRuntimeConstants.SPARK_WORK_PATH + '/' + app_id + '/0/stdout'
+        agg_schema_list = agg_schema_fetcher(job_id)
+
+        job_estimator: ReLAQSEstimator = self.job_estimator_dict[job_id]
+
+        job_overall_progress = 0
+
+        job_parameter_dict = dict()
+        job_parameter_dict['job_id'] = job_id
+        job_parameter_dict['batch_size'] = self.batch_size
+        job_parameter_dict['scale_factor'] = QueryRuntimeConstants.SCALE_FACTOR
+        job_parameter_dict['num_worker'] = QueryRuntimeConstants.NUM_WORKER
+        job_parameter_dict['agg_interval'] = QueryRuntimeConstants.AGGREGATION_INTERVAL
+
+        for schema_name in agg_schema_list:
+            agg_results_dict = read_aggresult_from_file(app_stdout_file, agg_schema_list)
+            agg_schema_result = agg_results_dict.get(schema_name)[0]
+            agg_schema_current_time = agg_results_dict.get(schema_name)[1]
+
+            job_estimator.epoch_time = agg_schema_current_time
+            job_estimator.input_agg_schema_results(agg_schema_result)
+
+            schema_progress_estimate = job_estimator.predict_progress_next_epoch(schema_name)
+
+            job_overall_progress += schema_progress_estimate
+
+        return job_overall_progress / len(agg_schema_list)
+
+    def rank_job_next_epoch(self):
+        # compute the estimated progress of jobs in the active queue
+        for job_id in self.active_queue:
+            self.job_estimate_progress[job_id] = self.compute_progress_next_epoch(job_id)
+
+        for k, v in sorted(self.job_estimate_progress.items(), key=lambda x: x[1], reverse=True):
+            self.priority_queue.append(k)
+
+    def present_final_results(self):
+        for msg in self.final_result_msg:
+            self.logger.info(msg)
+
     def run(self):
         # if STDOUT_PATH or STDERR_PATH doesn't exist, create them then
         if not Path(QueryRuntimeConstants.STDOUT_PATH).is_dir():
@@ -289,6 +387,7 @@ class RoundRobinRuntime:
 
             if self.active_queue or self.running_queue:
                 self.logger.info(f"** Active Queue ** {self.active_queue}")
+                self.logger.info(f"** Priority Queue ** {self.priority_queue}")
 
                 # start to process arriving jobs
                 self.process_active_queue()
@@ -299,7 +398,8 @@ class RoundRobinRuntime:
                 # make the time elapse for schedule_time_window
                 self.time_elapse(self.schedule_time_window)
 
-                # reset the check queue for each epoch
+                # reset the check queue and priority queue for each epoch
+                self.priority_queue.clear()
                 self.check_queue.clear()
 
                 # check the progress within a unit of time window
@@ -310,11 +410,12 @@ class RoundRobinRuntime:
                 self.collect_results()
                 # check the job completeness
                 self.check_completeness()
+                # rank the jobs for next scheduling epoch
+                self.rank_job_next_epoch()
 
             else:
                 self.logger.info("No job arrives")
                 time.sleep(1)
                 self.time_elapse(1)
 
-        for msg in self.final_result_msg:
-            self.logger.info(msg)
+        self.present_final_results()

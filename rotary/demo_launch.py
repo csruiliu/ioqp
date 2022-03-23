@@ -1,7 +1,9 @@
 import argparse
 
 from runtime_rotary import RotaryRuntime
-from runtime_baseline import BaselineRuntime
+from runtime_roundrobin import RoundRobinRuntime
+from runtime_relaqs import ReLAQSRuntime
+from runtime_heuristic import HeuristicRuntime
 from workload.workload_builder import WorkloadBuilder
 from common.constants import WorkloadConstants
 from common.query_utils import query_memory_fetcher
@@ -53,8 +55,12 @@ def main():
 
     if scheduler == "rotary":
         runtime_engine = RotaryRuntime(aqp_workload_dict)
+    elif scheduler == "roundrobin":
+        runtime_engine = RoundRobinRuntime(aqp_workload_dict)
+    elif scheduler == "relaqs":
+        runtime_engine = ReLAQSRuntime(aqp_workload_dict)
     else:
-        runtime_engine = BaselineRuntime(aqp_workload_dict, scheduler_name=scheduler)
+        runtime_engine = HeuristicRuntime(aqp_workload_dict, scheduler)
 
     runtime_engine.run()
 

@@ -1,7 +1,5 @@
 import os
 import time
-import psutil
-import math
 import copy
 import signal
 import subprocess
@@ -18,7 +16,7 @@ from common.file_utils import read_appid_from_file, read_aggresult_from_file
 from common.query_utils import generate_job_cmd, agg_schema_fetcher
 
 
-class BaselineRuntime:
+class HeuristicRuntime:
     def __init__(self, workload_dict, scheduler_name):
         self.workload_dict = workload_dict
         self.workload_size = len(workload_dict)
@@ -29,8 +27,6 @@ class BaselineRuntime:
         self.ckpt_offset = WorkloadConstants.CKPT_PERIOD
 
         self.scheduler_name = scheduler_name
-        # batch size used for relaqs scheduler
-        self.batch_size = QueryRuntimeConstants.MAX_STEP // QueryRuntimeConstants.BATCH_NUM
 
         # create a logger
         self.logger = get_logger_instance()
@@ -109,24 +105,6 @@ class BaselineRuntime:
         self.job_overall_agg_dict = dict()
 
         #######################################################
-        # data structure for relaqs
-        #######################################################
-
-        """
-        The dict for estimator of each job 
-        key: job_id 
-        value: estimator instance for each job   
-        """
-        self.job_estimator_dict = dict()
-
-        """
-        The dict to maintain estimated progress for next epoch for each job
-        key: job_id
-        value: the estimated progress for next epoch
-        """
-        self.job_estimate_progress = dict()
-
-        #######################################################
         # data structure for laf
         #######################################################
         """
@@ -150,7 +128,6 @@ class BaselineRuntime:
         for job_id, job_item in self.workload_dict.items():
             self.job_resource_dict[job_id] = 0
             self.job_epoch_dict[job_id] = 0
-            self.job_estimate_progress[job_id] = 0.0
 
             # init time left to deadline for each job
             self.job_time_left[job_id] = job_item.deadline
@@ -165,15 +142,6 @@ class BaselineRuntime:
                 self.job_agg_result_dict[job_id][schema_name] = list()
                 self.job_agg_time_dict[job_id][schema_name] = list()
                 self.job_envelop_dict[job_id][schema_name] = EnvelopBounder(seq_length=3)
-
-            if self.scheduler_name == "relaqs":
-                self.job_estimator_dict[job_id] = ReLAQSEstimator(job_id,
-                                                                  agg_schema_fetcher(job_id),
-                                                                  self.schedule_time_window,
-                                                                  self.batch_size,
-                                                                  self.num_worker)
-            else:
-                self.logger.info("The scheduler does not need estimation")
 
     def check_arrived_job(self):
         for job_id, job in self.workload_dict.items():
@@ -263,7 +231,7 @@ class BaselineRuntime:
     def check_progress(self):
         for job_id, (job_proc, out_file, err_file) in self.job_process_dict.items():
             job = self.workload_dict[job_id]
-
+            
             if job.check:
                 self.logger.info(f"Job {job_id} hits time window")
                 out_file.close()
@@ -275,7 +243,7 @@ class BaselineRuntime:
                 job.running = False
                 job.active = True
                 # reset the job scheduling time window plus checkpoint offset
-                job.reset_scheduling_window_progress(self.ckpt_offset)
+                job.reset_scheduling_window_progress()
                 self.available_cpu_core += self.job_resource_dict[job_id]
                 self.job_resource_dict[job_id] = 0
 
@@ -357,49 +325,8 @@ class BaselineRuntime:
 
             self.workload_dict[job_id] = job
 
-    def compute_progress_next_epoch(self, job_id):
-        job_epoch = str(self.job_epoch_dict[job_id])
-        shell_output = QueryRuntimeConstants.STDOUT_PATH + "/" + job_id + "-" + job_epoch + ".stdout"
-        app_id = read_appid_from_file(shell_output)
-
-        app_stdout_file = QueryRuntimeConstants.SPARK_WORK_PATH + '/' + app_id + '/0/stdout'
-        agg_schema_list = agg_schema_fetcher(job_id)
-
-        job_estimator: ReLAQSEstimator = self.job_estimator_dict[job_id]
-
-        job_overall_progress = 0
-
-        job_parameter_dict = dict()
-        job_parameter_dict['job_id'] = job_id
-        job_parameter_dict['batch_size'] = self.batch_size
-        job_parameter_dict['scale_factor'] = QueryRuntimeConstants.SCALE_FACTOR
-        job_parameter_dict['num_worker'] = QueryRuntimeConstants.NUM_WORKER
-        job_parameter_dict['agg_interval'] = QueryRuntimeConstants.AGGREGATION_INTERVAL
-
-        for schema_name in agg_schema_list:
-            agg_results_dict = read_aggresult_from_file(app_stdout_file, agg_schema_list)
-            agg_schema_result = agg_results_dict.get(schema_name)[0]
-            agg_schema_current_time = agg_results_dict.get(schema_name)[1]
-
-            job_estimator.epoch_time = agg_schema_current_time
-            job_estimator.input_agg_schema_results(agg_schema_result)
-
-            schema_progress_estimate = job_estimator.predict_progress_next_epoch(schema_name)
-
-            job_overall_progress += schema_progress_estimate
-
-        return job_overall_progress / len(agg_schema_list)
-
     def rank_job_next_epoch(self):
-        if self.scheduler_name == "relaqs":
-            # compute the estimated progress of jobs in the active queue
-            for job_id in self.active_queue:
-                self.job_estimate_progress[job_id] = self.compute_progress_next_epoch(job_id)
-
-            for k, v in sorted(self.job_estimate_progress.items(), key=lambda x: x[1], reverse=True):
-                self.priority_queue.append(k)
-
-        elif self.scheduler_name == "laf":
+        if self.scheduler_name == "laf":
             job_mask_id_list = [0] * self.workload_size
             for job_in in self.active_queue:
                 job_mask_id_list[self.job_accuracy_rank.index(job_in)] = 1
@@ -408,7 +335,7 @@ class BaselineRuntime:
                 if job_mask == 1:
                     self.priority_queue.append(self.job_accuracy_rank[job_idx])
 
-        elif self.scheduler_name == "edf":
+        else:
             for job_id in self.active_queue:
                 job = self.workload_dict[job_id]
                 job_time_left = job.deadline - job.time_elapse
@@ -416,17 +343,6 @@ class BaselineRuntime:
 
             for k, v in sorted(self.job_time_left.items(), key=lambda x: x[1]):
                 self.priority_queue.append(k)
-
-        elif self.scheduler_name == "roundrobin":
-            for job_id in self.active_queue:
-                self.priority_queue.append(job_id)
-
-        else:
-            raise ValueError("The scheduler is not supported")
-
-    def present_final_results(self):
-        for msg in self.final_result_msg:
-            self.logger.info(msg)
 
     def run(self):
         # if STDOUT_PATH or STDERR_PATH doesn't exist, create them then
@@ -472,4 +388,5 @@ class BaselineRuntime:
                 time.sleep(1)
                 self.time_elapse(1)
 
-        self.present_final_results()
+        for msg in self.final_result_msg:
+            self.logger.info(msg)
