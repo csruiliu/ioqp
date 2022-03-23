@@ -450,7 +450,7 @@ class BaselineRuntime:
                 # let the jobs run for a time window plus checkpoint read overhead
                 time.sleep(self.schedule_time_window + self.ckpt_offset)
                 # make the time elapse for schedule_time_window
-                self.time_elapse(self.schedule_time_window + self.ckpt_offset)
+                self.time_elapse(self.schedule_time_window)
 
                 # reset the check queue and priority queue for each epoch
                 self.priority_queue.clear()

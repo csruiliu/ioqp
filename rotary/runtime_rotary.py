@@ -427,7 +427,7 @@ class RotaryRuntime:
                 # show the running jobs
                 self.logger.info(f"** Running Queue {self.running_queue} **")
                 # let the jobs run for a time window plus checkpoint read overhead
-                time.sleep(self.check_time_window)
+                time.sleep(self.check_time_window + self.ckpt_offset)
                 # make the time elapse for schedule_time_window
                 self.time_elapse(self.check_time_window)
 
