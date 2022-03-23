@@ -1,14 +1,17 @@
 import argparse
 
-from runtime import Runtime
+from runtime_rotary import RotaryRuntime
+from runtime_baseline import BaselineRuntime
 from workload.workload_builder import WorkloadBuilder
-from common.constants import WorkloadConstants, query_memory_fetcher
+from common.constants import WorkloadConstants
+from common.query_utils import query_memory_fetcher
 
 
 def arg_config():
     parser = argparse.ArgumentParser()
     parser.add_argument("-s", "--scheduler", action="store", type=str, default="rotary",
-                        choices=["rotary", "relaqs", "laf", "edf", "roundrobin"], help="the scheduler mechanism")
+                        choices=["rotary", "relaqs", "laf", "edf", "roundrobin"],
+                        help="the scheduler mechanism")
     args = parser.parse_args()
 
     return vars(args)
@@ -34,6 +37,7 @@ def main():
 
     aqp_workload_dict = workload_builder.generate_workload_aqp(WorkloadConstants.ARRIVAL_LAMBDA,
                                                                WorkloadConstants.SCH_ROUND_PERIOD,
+                                                               scheduler,
                                                                random_seed=42)
 
     for job_id, job in aqp_workload_dict.items():
@@ -47,10 +51,12 @@ def main():
               f"complete_unattain={job.complete_attain}, "
               f"complete_attain={job.complete_attain}")
 
-    runtime_engine = Runtime(aqp_workload_dict, scheduler)
+    if scheduler == "rotary":
+        runtime_engine = RotaryRuntime(aqp_workload_dict)
+    else:
+        runtime_engine = BaselineRuntime(aqp_workload_dict, scheduler_name=scheduler)
 
     runtime_engine.run()
-    # runtime_engine.test()
 
 
 if __name__ == "__main__":

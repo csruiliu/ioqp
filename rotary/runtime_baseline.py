@@ -9,31 +9,23 @@ import numpy as np
 import multiprocessing as mp
 from pathlib import Path
 
-from estimator.rotary_estimator import RotaryEstimator
 from estimator.relaqs_estimator import ReLAQSEstimator
 from estimator.envelop_bounder import EnvelopBounder
 from workload.job_aqp import JobAQP
 from common.loggers import get_logger_instance
-from common.constants import (QueryRuntimeConstants,
-                              WorkloadConstants,
-                              agg_schema_fetcher,
-                              query_memory_fetcher)
-from common.file_utils import (read_appid_from_file,
-                               read_aggresult_from_file)
+from common.constants import QueryRuntimeConstants, WorkloadConstants
+from common.file_utils import read_appid_from_file, read_aggresult_from_file
+from common.query_utils import generate_job_cmd, agg_schema_fetcher
 
 
-class Runtime:
-    def __init__(self,
-                 workload_dict,
-                 scheduler_name):
-
+class BaselineRuntime:
+    def __init__(self, workload_dict, scheduler_name):
         self.workload_dict = workload_dict
         self.workload_size = len(workload_dict)
         self.available_cpu_core = mp.cpu_count() // 2 - 2
 
         self.num_worker = QueryRuntimeConstants.NUM_WORKER
         self.schedule_time_window = WorkloadConstants.SCH_ROUND_PERIOD
-        self.check_time_window = WorkloadConstants.CHECK_PERIOD
         self.ckpt_offset = WorkloadConstants.CKPT_PERIOD
 
         self.scheduler_name = scheduler_name
@@ -117,7 +109,7 @@ class Runtime:
         self.job_overall_agg_dict = dict()
 
         #######################################################
-        # data structure for rotary and relaqs
+        # data structure for relaqs
         #######################################################
 
         """
@@ -174,13 +166,7 @@ class Runtime:
                 self.job_agg_time_dict[job_id][schema_name] = list()
                 self.job_envelop_dict[job_id][schema_name] = EnvelopBounder(seq_length=3)
 
-            # create an estimator for each job
-            if self.scheduler_name == "rotary":
-                rotary_estimator = RotaryEstimator(job_id, agg_schema_fetcher(job_id), self.schedule_time_window)
-                rotary_estimator.import_knowledge_archive(QueryRuntimeConstants.ROTARY_KNOWLEDGEBASE_PATH,
-                                                          WorkloadConstants.WORKLOAD_FULL)
-                self.job_estimator_dict[job_id] = rotary_estimator
-            elif self.scheduler_name == "relaqs":
+            if self.scheduler_name == "relaqs":
                 self.job_estimator_dict[job_id] = ReLAQSEstimator(job_id,
                                                                   agg_schema_fetcher(job_id),
                                                                   self.schedule_time_window,
@@ -188,49 +174,6 @@ class Runtime:
                                                                   self.num_worker)
             else:
                 self.logger.info("The scheduler does not need estimation")
-
-    @staticmethod
-    def generate_job_cmd(res_unit, job_name):
-        command = list()
-
-        max_mem = query_memory_fetcher(job_name)
-        java_opt = "spark.executor.extraJavaOptions=-Xms" + str(max_mem) + "G -XX:+UseParallelGC -XX:+UseParallelOldGC"
-        command.append("/tank/hdfs/ruiliu/rotary-aqp/spark/bin/spark-submit")
-        command.append("--master")
-        command.append(QueryRuntimeConstants.MASTER)
-        command.append("--class")
-        command.append(QueryRuntimeConstants.ENTRY_CLASS)
-        command.append("--total-executor-cores")
-        command.append(f"{res_unit}")
-        command.append("--executor-memory")
-        command.append(f"{max_mem}G")
-        command.append("--conf")
-        command.append(f"{java_opt}")
-        command.append(f"{QueryRuntimeConstants.ENTRY_JAR}")
-        command.append(f"{QueryRuntimeConstants.BOOTSTRAP_SERVER}")
-        command.append(f"{job_name}")
-        command.append(f"{QueryRuntimeConstants.BATCH_NUM}")
-        command.append(f"{QueryRuntimeConstants.SHUFFLE_NUM}")
-        command.append(f"{QueryRuntimeConstants.STAT_DIR}")
-        command.append(f"{QueryRuntimeConstants.TPCH_STATIC_DIR}")
-        command.append(f"{QueryRuntimeConstants.SCALE_FACTOR}")
-        command.append(f"{QueryRuntimeConstants.HDFS_ROOT}")
-        command.append(f"{QueryRuntimeConstants.EXECUTION_MDOE}")
-        command.append(f"{QueryRuntimeConstants.INPUT_PARTITION}")
-        command.append(f"{QueryRuntimeConstants.CONSTRAINT}")
-        command.append(f"{QueryRuntimeConstants.LARGEDATASET}")
-        command.append(f"{QueryRuntimeConstants.IOLAP}")
-        command.append(f"{QueryRuntimeConstants.INC_PERCENTAGE}")
-        command.append(f"{QueryRuntimeConstants.COST_BIAS}")
-        command.append(f"{QueryRuntimeConstants.MAX_STEP}")
-        command.append(f"{QueryRuntimeConstants.SAMPLE_TIME}")
-        command.append(f"{QueryRuntimeConstants.SAMPLE_RATIO}")
-        command.append(f"{QueryRuntimeConstants.TRIGGER_INTERVAL}")
-        command.append(f"{QueryRuntimeConstants.AGGREGATION_INTERVAL}")
-        command.append(f"{QueryRuntimeConstants.CHECKPOINT_PATH}")
-        command.append(f"{QueryRuntimeConstants.CBO_ENABLE}")
-
-        return command
 
     def check_arrived_job(self):
         for job_id, job in self.workload_dict.items():
@@ -250,7 +193,7 @@ class Runtime:
         stdout_file = open(QueryRuntimeConstants.STDOUT_PATH + "/" + job_output_id + ".stdout", "w+")
         stderr_file = open(QueryRuntimeConstants.STDERR_PATH + '/' + job_output_id + '.stderr', "w+")
 
-        job_cmd = self.generate_job_cmd(resource_unit, job_id)
+        job_cmd = generate_job_cmd(resource_unit, job_id)
         time.sleep(1)
         subp = subprocess.Popen(job_cmd,
                                 stdout=stdout_file,
@@ -265,9 +208,6 @@ class Runtime:
             self.logger.info("no available cpu resources for allocation")
             return
 
-        # check available memory
-        available_mem = psutil.virtual_memory().available / math.pow(1024, 3)
-
         active_queue_copy = copy.deepcopy(self.active_queue)
 
         # more resources than active jobs
@@ -279,53 +219,38 @@ class Runtime:
                 if len(self.priority_queue) > extra_cores:
                     for jidx in np.arange(extra_cores):
                         job_id = self.priority_queue[jidx]
-                        if available_mem > query_memory_fetcher(job_id):
-                            subp, out_file, err_file = self.run_job(job_id, resource_unit=2)
-                            available_mem = available_mem - query_memory_fetcher(job_id)
-                            self.job_resource_dict[job_id] = 2
-                            self.available_cpu_core -= 2
-                            self.job_process_dict[job_id] = (subp, out_file, err_file)
-                            self.active_queue.remove(job_id)
-                            active_queue_copy.remove(job_id)
-                        else:
-                            self.logger.info(f"Job {job_id} cannot start since there is no enough memory")
+                        subp, out_file, err_file = self.run_job(job_id, resource_unit=2)
+                        self.job_resource_dict[job_id] = 2
+                        self.available_cpu_core -= 2
+                        self.job_process_dict[job_id] = (subp, out_file, err_file)
+                        self.active_queue.remove(job_id)
+                        active_queue_copy.remove(job_id)
+
                 else:
                     for job_id in self.priority_queue:
-                        if available_mem > query_memory_fetcher(job_id):
-                            subp, out_file, err_file = self.run_job(job_id, resource_unit=2)
-                            available_mem = available_mem - query_memory_fetcher(job_id)
-                            self.job_resource_dict[job_id] = 2
-                            self.available_cpu_core -= 2
-                            self.job_process_dict[job_id] = (subp, out_file, err_file)
-                            self.active_queue.remove(job_id)
-                            active_queue_copy.remove(job_id)
-                        else:
-                            self.logger.info(f"Job {job_id} cannot start since there is no enough memory")
+                        subp, out_file, err_file = self.run_job(job_id, resource_unit=2)
+                        self.job_resource_dict[job_id] = 2
+                        self.available_cpu_core -= 2
+                        self.job_process_dict[job_id] = (subp, out_file, err_file)
+                        self.active_queue.remove(job_id)
+                        active_queue_copy.remove(job_id)
 
             for job_id in self.active_queue:
-                if available_mem > query_memory_fetcher(job_id):
-                    subp, out_file, err_file = self.run_job(job_id, resource_unit=1)
-                    available_mem = available_mem - query_memory_fetcher(job_id)
-                    self.job_resource_dict[job_id] = 1
-                    self.available_cpu_core -= 1
-                    self.job_process_dict[job_id] = (subp, out_file, err_file)
-                    active_queue_copy.remove(job_id)
-                else:
-                    self.logger.info(f"Job {job_id} cannot start since there is no enough memory")
+                subp, out_file, err_file = self.run_job(job_id, resource_unit=1)
+                self.job_resource_dict[job_id] = 1
+                self.available_cpu_core -= 1
+                self.job_process_dict[job_id] = (subp, out_file, err_file)
+                active_queue_copy.remove(job_id)
 
         # less resources than active jobs
         else:
             for jidx in np.arange(self.available_cpu_core):
                 job_id = self.active_queue[jidx]
-                if available_mem > query_memory_fetcher(job_id):
-                    subp, out_file, err_file = self.run_job(job_id, resource_unit=1)
-                    available_mem = available_mem - query_memory_fetcher(job_id)
-                    self.job_resource_dict[job_id] = 1
-                    self.available_cpu_core -= 1
-                    self.job_process_dict[job_id] = (subp, out_file, err_file)
-                    active_queue_copy.remove(job_id)
-                else:
-                    self.logger.info(f"Job {job_id} cannot start since there is no enough memory")
+                subp, out_file, err_file = self.run_job(job_id, resource_unit=1)
+                self.job_resource_dict[job_id] = 1
+                self.available_cpu_core -= 1
+                self.job_process_dict[job_id] = (subp, out_file, err_file)
+                active_queue_copy.remove(job_id)
 
         self.active_queue = active_queue_copy.copy()
 
@@ -440,7 +365,7 @@ class Runtime:
         app_stdout_file = QueryRuntimeConstants.SPARK_WORK_PATH + '/' + app_id + '/0/stdout'
         agg_schema_list = agg_schema_fetcher(job_id)
 
-        job_estimator = self.job_estimator_dict[job_id]
+        job_estimator: ReLAQSEstimator = self.job_estimator_dict[job_id]
 
         job_overall_progress = 0
 
@@ -459,19 +384,14 @@ class Runtime:
             job_estimator.epoch_time = agg_schema_current_time
             job_estimator.input_agg_schema_results(agg_schema_result)
 
-            if self.scheduler_name == "rotary":
-                # estimator for rotary
-                schema_progress_estimate = job_estimator.predict_progress_next_epoch(job_parameter_dict, schema_name)
-            else:
-                # estimator for relaqs
-                schema_progress_estimate = job_estimator.predict_progress_next_epoch(schema_name)
+            schema_progress_estimate = job_estimator.predict_progress_next_epoch(schema_name)
 
             job_overall_progress += schema_progress_estimate
 
         return job_overall_progress / len(agg_schema_list)
 
     def rank_job_next_epoch(self):
-        if self.scheduler_name == "rotary" or self.scheduler_name == "relaqs":
+        if self.scheduler_name == "relaqs":
             # compute the estimated progress of jobs in the active queue
             for job_id in self.active_queue:
                 self.job_estimate_progress[job_id] = self.compute_progress_next_epoch(job_id)
@@ -528,9 +448,9 @@ class Runtime:
                 # show the running jobs
                 self.logger.info(f"** Running Queue {self.running_queue} **")
                 # let the jobs run for a time window plus checkpoint read overhead
-                time.sleep(self.check_time_window)
+                time.sleep(self.schedule_time_window + self.ckpt_offset)
                 # make the time elapse for schedule_time_window
-                self.time_elapse(self.check_time_window)
+                self.time_elapse(self.schedule_time_window + self.ckpt_offset)
 
                 # reset the check queue and priority queue for each epoch
                 self.priority_queue.clear()

@@ -30,7 +30,7 @@ class WorkloadBuilder:
         self.accuracy_objective_list = accuracy_objective_list
         self.memory_fetcher = memory_fetcher
 
-    def generate_workload_aqp(self, arrival_lamda, sch_time_scalar, random_seed):
+    def generate_workload_aqp(self, arrival_lamda, sch_time_scalar, sch_name, random_seed):
         num_light_job = int(self.workload_size * self.light_ratio)
         num_medium_job = int(self.workload_size * self.medium_ratio)
         num_heavy_job = int(self.workload_size * self.heavy_ratio)
@@ -77,7 +77,10 @@ class WorkloadBuilder:
             query_id = query_id_list[i]
             job_id = query_id + '_' + str(i)
 
-            sch_period = self.memory_fetcher(query_id) / 5 * sch_time_scalar
+            if sch_name == "rotary":
+                sch_period = self.memory_fetcher(query_id) / 5 * sch_time_scalar
+            else:
+                sch_period = sch_time_scalar
 
             job = JobAQP(job_id,
                          arrival_time_list[i] * 60,
