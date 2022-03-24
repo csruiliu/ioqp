@@ -308,7 +308,7 @@ class ReLAQSRuntime:
                 job.active = False
                 final_msg = (f"Job {job_id} is completed at {self.job_epoch_dict[job_id]} and attained, " +
                              f"running time:{job.run_time}, wait time:{job.wait_time}, " +
-                             f"accuracy track: {self.job_overall_agg_dict[job_id]}")
+                             f"ckpt time:{job.checkpoint_time}, accuracy track: {self.job_overall_agg_dict[job_id]}")
                 self.logger.info(final_msg)
                 self.final_result_msg.append(final_msg)
                 self.complete_attain_set.add(job_id)
@@ -319,7 +319,7 @@ class ReLAQSRuntime:
                 job.active = False
                 final_msg = (f"Job {job_id} is completed at {self.job_epoch_dict[job_id]} and attained, " +
                              f"running time:{job.run_time}, wait time:{job.wait_time}, " +
-                             f"accuracy track: {self.job_overall_agg_dict[job_id]}")
+                             f"ckpt time:{job.checkpoint_time}, accuracy track: {self.job_overall_agg_dict[job_id]}")
                 self.logger.info(final_msg)
                 self.final_result_msg.append(final_msg)
                 self.complete_unattain_set.add(job_id)
@@ -395,7 +395,7 @@ class ReLAQSRuntime:
                 # show the running jobs
                 self.logger.info(f"** Running Queue {self.running_queue} **")
                 # let the jobs run for a time window plus checkpoint read overhead
-                time.sleep(self.schedule_time_window + self.ckpt_offset)
+                time.sleep(self.schedule_time_window)
                 # make the time elapse for schedule_time_window
                 self.time_elapse(self.schedule_time_window)
 

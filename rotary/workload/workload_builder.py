@@ -78,7 +78,12 @@ class WorkloadBuilder:
             job_id = query_id + '_' + str(i)
 
             if sch_name == "rotary":
-                sch_period = self.memory_fetcher(query_id) / 5 * sch_time_scalar
+                if self.memory_fetcher(query_id) <= 10:
+                    sch_period = sch_time_scalar
+                elif self.memory_fetcher(query_id) <= 30:
+                    sch_period = 2 * sch_time_scalar
+                else:
+                    sch_period = 3 * sch_time_scalar
             else:
                 sch_period = sch_time_scalar
 

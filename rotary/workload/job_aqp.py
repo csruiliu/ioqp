@@ -13,6 +13,7 @@ class JobAQP:
         self._overall_time = 0
         self._wait_time = 0
         self._run_time = 0
+        self._checkpoint_time = 0
 
         # if the job has arrived
         self._arrive = False
@@ -52,6 +53,7 @@ class JobAQP:
 
     def reset_scheduling_window_progress(self, ckpt_offset=0):
         self.schedule_window_progress = self.schedule_window + ckpt_offset
+        self.checkpoint_time += ckpt_offset
 
     @property
     def job_id(self):
@@ -129,6 +131,14 @@ class JobAQP:
     @wait_time.setter
     def wait_time(self, value):
         self._wait_time = value
+
+    @property
+    def checkpoint_time(self):
+        return self._checkpoint_time
+
+    @checkpoint_time.setter
+    def checkpoint_time(self, value):
+        self._checkpoint_time = value
 
     @property
     def arrive(self):
