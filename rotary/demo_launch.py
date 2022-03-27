@@ -22,7 +22,7 @@ def arg_config():
 def main():
     args = arg_config()
 
-    scheduler = args["scheduler"]
+    scheduler_name = args["scheduler"]
 
     workload_builder = WorkloadBuilder(WorkloadConstants.WORKLOAD_SIZE,
                                        WorkloadConstants.WORKLOAD_LIGHT,
@@ -39,7 +39,7 @@ def main():
 
     aqp_workload_dict = workload_builder.generate_workload_aqp(WorkloadConstants.ARRIVAL_LAMBDA,
                                                                WorkloadConstants.SCH_ROUND_PERIOD,
-                                                               scheduler,
+                                                               scheduler_name,
                                                                random_seed=42)
 
     for job_id, job in aqp_workload_dict.items():
@@ -53,14 +53,14 @@ def main():
               f"complete_unattain={job.complete_attain}, "
               f"complete_attain={job.complete_attain}")
 
-    if scheduler == "rotary":
+    if scheduler_name == "rotary":
         runtime_engine = RotaryRuntime(aqp_workload_dict)
-    elif scheduler == "roundrobin":
+    elif scheduler_name == "roundrobin":
         runtime_engine = RoundRobinRuntime(aqp_workload_dict)
-    elif scheduler == "relaqs":
+    elif scheduler_name == "relaqs":
         runtime_engine = ReLAQSRuntime(aqp_workload_dict)
     else:
-        runtime_engine = HeuristicRuntime(aqp_workload_dict, scheduler)
+        runtime_engine = HeuristicRuntime(aqp_workload_dict, scheduler_name)
 
     runtime_engine.run()
 
