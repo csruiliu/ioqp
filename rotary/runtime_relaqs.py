@@ -330,7 +330,7 @@ class ReLAQSRuntime:
             else:
                 self.logger.info(f"the job {job_id} stay in active, " +
                                  f"has run {job.run_time} seconds, " +
-                                 f"including {job.checkpoint_time} checkpoint time")
+                                 f"including {job.checkpoint_time - self.ckpt_offset} checkpoint time")
 
             self.workload_dict[job_id] = job
 

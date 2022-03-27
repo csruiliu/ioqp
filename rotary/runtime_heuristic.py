@@ -325,7 +325,7 @@ class HeuristicRuntime:
             else:
                 self.logger.info(f"the job {job_id} stay in active, " +
                                  f"has run {job.run_time} seconds, " +
-                                 f"including {job.checkpoint_time} checkpoint time")
+                                 f"including {job.checkpoint_time - self.ckpt_offset} checkpoint time")
 
             self.workload_dict[job_id] = job
 
@@ -335,7 +335,7 @@ class HeuristicRuntime:
             for job_in in self.active_queue:
                 job_mask_id_list[self.job_accuracy_rank.index(job_in)] = 1
 
-            for job_mask, job_idx in enumerate(job_mask_id_list):
+            for job_idx, job_mask in enumerate(job_mask_id_list):
                 if job_mask == 1:
                     self.priority_queue.append(self.job_accuracy_rank[job_idx])
 
