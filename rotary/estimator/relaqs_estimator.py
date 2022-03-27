@@ -49,26 +49,24 @@ class ReLAQSEstimator:
         opt, cov = curve_fit(self.func_runtime, x, y)
         return opt, cov
 
-    def input_agg_schema_results(self, input_dict):
-        for schema_name, schema_value in input_dict.items():
-            self.agg_results_dict[schema_name].append(schema_value[0])
-            self.agg_runtime_dict[schema_name].append(self._epoch_time)
-        self.update_progress()
+    def input_agg_schema_results(self, schema_name, agg_schema_result):
+        self.agg_results_dict[schema_name].append(agg_schema_result)
+        self.agg_runtime_dict[schema_name].append(self.epoch_time)
+        self.update_schema_progress(schema_name)
 
-    def update_progress(self):
-        for schema_name in self.schema_list:
-            if len(self.agg_results_dict[schema_name]) < 2:
-                self.agg_progress_dict[schema_name].append(0)
+    def update_schema_progress(self, schema_name):
+        if len(self.agg_results_dict[schema_name]) < 2:
+            self.agg_progress_dict[schema_name].append(0)
+        else:
+            cur_difference = (self.agg_results_dict[schema_name][-1] - self.agg_results_dict[schema_name][-2])
+            max_difference = self.find_max_difference_pair(self.agg_results_dict[schema_name])
+
+            if max_difference == 0:
+                cur_progress = 0
             else:
-                cur_difference = (self.agg_results_dict[schema_name][-1] - self.agg_results_dict[schema_name][-2])
-                max_difference = self.find_max_difference_pair(self.agg_results_dict[schema_name])
+                cur_progress = cur_difference / max_difference
 
-                if max_difference == 0:
-                    cur_progress = 0
-                else:
-                    cur_progress = cur_difference / max_difference
-
-                self.agg_progress_dict[schema_name].append(cur_progress)
+            self.agg_progress_dict[schema_name].append(cur_progress)
 
     def predict_progress_next_epoch(self, schema_name):
         epoch_list = self.agg_runtime_dict[schema_name]
@@ -76,7 +74,7 @@ class ReLAQSEstimator:
 
         popt, pcov = self.fit_progress(np.asarray(epoch_list), np.asarray(progress_list))
 
-        progress_estimation = self.func_progress((self._epoch_time + self.schedule_slot), popt[0], popt[1])
+        progress_estimation = self.func_progress((self.epoch_time + self.schedule_slot), popt[0], popt[1])
 
         return progress_estimation
 

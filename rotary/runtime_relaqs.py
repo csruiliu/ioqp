@@ -357,7 +357,7 @@ class ReLAQSRuntime:
             agg_schema_current_time = agg_results_dict.get(schema_name)[1]
 
             job_estimator.epoch_time = agg_schema_current_time
-            job_estimator.input_agg_schema_results(agg_schema_result)
+            job_estimator.input_agg_schema_results(schema_name, agg_schema_result)
 
             schema_progress_estimate = job_estimator.predict_progress_next_epoch(schema_name)
 
