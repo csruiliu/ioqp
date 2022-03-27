@@ -109,7 +109,7 @@ class JobAQP:
 
     @property
     def overall_time(self):
-        self._overall_time = self.run_time + self.wait_time
+        self._overall_time = self.run_time + self.wait_time - self.checkpoint_time
         return self._overall_time
 
     @overall_time.setter
