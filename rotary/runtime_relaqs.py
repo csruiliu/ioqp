@@ -248,7 +248,7 @@ class ReLAQSRuntime:
                 job.running = False
                 job.active = True
                 # reset the job scheduling time window plus checkpoint offset
-                job.reset_scheduling_window_progress()
+                job.reset_scheduling_window_progress(self.ckpt_offset)
                 self.available_cpu_core += self.job_resource_dict[job_id]
                 self.job_resource_dict[job_id] = 0
 
