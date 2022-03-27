@@ -255,7 +255,8 @@ class RoundRobinRuntime:
                 job.active = False
                 final_msg = (f"Job {job_id} is completed at {self.job_epoch_dict[job_id]} and attained, " +
                              f"running time:{job.run_time}, wait time:{job.wait_time}, " +
-                             f"ckpt time:{job.checkpoint_time}, accuracy track: {self.job_overall_agg_dict[job_id]}")
+                             f"checkpoint time:{job.checkpoint_time - self.ckpt_offset}, " +
+                             f"accuracy track:{self.job_overall_agg_dict[job_id]}")
                 self.logger.info(final_msg)
                 self.final_result_msg.append(final_msg)
                 self.complete_attain_set.add(job_id)
@@ -264,9 +265,10 @@ class RoundRobinRuntime:
             elif job.overall_time >= job.deadline:
                 job.complete_unattain = True
                 job.active = False
-                final_msg = (f"Job {job_id} is completed at {self.job_epoch_dict[job_id]} and attained, " +
+                final_msg = (f"Job {job_id} is completed at {self.job_epoch_dict[job_id]} but not attained, " +
                              f"running time:{job.run_time}, wait time:{job.wait_time}, " +
-                             f"ckpt time:{job.checkpoint_time}, accuracy track: {self.job_overall_agg_dict[job_id]}")
+                             f"checkpoint time:{job.checkpoint_time - self.ckpt_offset}, " +
+                             f"accuracy track:{self.job_overall_agg_dict[job_id]}")
                 self.logger.info(final_msg)
                 self.final_result_msg.append(final_msg)
                 self.complete_unattain_set.add(job_id)
@@ -275,7 +277,7 @@ class RoundRobinRuntime:
             else:
                 self.logger.info(f"the job {job_id} stay in active, " +
                                  f"has run {job.run_time} seconds, " +
-                                 f"including {job.checkpoint_time} checkpoint time")
+                                 f"including {job.checkpoint_time - self.ckpt_offset} checkpoint time")
 
             self.workload_dict[job_id] = job
 
