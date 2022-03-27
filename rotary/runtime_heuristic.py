@@ -155,7 +155,7 @@ class HeuristicRuntime:
         job: JobAQP = self.workload_dict[job_id]
         job.running = True
         self.workload_dict[job_id] = job
-        self.logger.info(f"== Start to run {job_id} for epoch {self.job_epoch_dict[job_id]} ==")
+        self.logger.info(f"== Run {job_id} for epoch {self.job_epoch_dict[job_id]} with {resource_unit} core ==")
 
         job_output_id = job_id + "-" + str(self.job_epoch_dict[job_id])
         stdout_file = open(QueryRuntimeConstants.STDOUT_PATH + "/" + job_output_id + ".stdout", "w+")
@@ -259,8 +259,6 @@ class HeuristicRuntime:
     def collect_results(self):
         for job_id in self.check_queue:
             job_epoch = str(self.job_epoch_dict[job_id])
-            # finish an epoch and collect results so add 1
-            self.job_epoch_dict[job_id] += 1
             shell_output = QueryRuntimeConstants.STDOUT_PATH + "/" + job_id + "-" + job_epoch + ".stdout"
             app_id = read_appid_from_file(shell_output)
             app_stdout_file = QueryRuntimeConstants.SPARK_WORK_PATH + '/' + app_id + '/0/stdout'
@@ -334,7 +332,6 @@ class HeuristicRuntime:
             job_mask_id_list = [0] * self.workload_size
             for job_in in self.active_queue:
                 job_mask_id_list[self.job_accuracy_rank.index(job_in)] = 1
-
             for job_idx, job_mask in enumerate(job_mask_id_list):
                 if job_mask == 1:
                     self.priority_queue.append(self.job_accuracy_rank[job_idx])
@@ -342,11 +339,12 @@ class HeuristicRuntime:
         else:
             for job_id in self.active_queue:
                 job = self.workload_dict[job_id]
-                job_time_left = job.deadline - job.time_elapse
+                job_time_left = job.deadline - job.overall_time
                 self.job_time_left[job_id] = job_time_left
 
             for k, v in sorted(self.job_time_left.items(), key=lambda x: x[1]):
-                self.priority_queue.append(k)
+                if k in self.active_queue:
+                    self.priority_queue.append(k)
 
     def run(self):
         # if STDOUT_PATH or STDERR_PATH doesn't exist, create them then
@@ -386,6 +384,9 @@ class HeuristicRuntime:
                 self.check_completeness()
                 # rank the jobs for next scheduling epoch
                 self.rank_job_next_epoch()
+
+                for job_id in self.check_queue:
+                    self.job_epoch_dict[job_id] += 1
 
             else:
                 self.logger.info("No job arrives")

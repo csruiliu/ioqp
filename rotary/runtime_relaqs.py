@@ -160,7 +160,7 @@ class ReLAQSRuntime:
         job: JobAQP = self.workload_dict[job_id]
         job.running = True
         self.workload_dict[job_id] = job
-        self.logger.info(f"== Start to run {job_id} for epoch {self.job_epoch_dict[job_id]} ==")
+        self.logger.info(f"== Run {job_id} for epoch {self.job_epoch_dict[job_id]} with {resource_unit} core ==")
 
         job_output_id = job_id + "-" + str(self.job_epoch_dict[job_id])
         stdout_file = open(QueryRuntimeConstants.STDOUT_PATH + "/" + job_output_id + ".stdout", "w+")
@@ -264,8 +264,6 @@ class ReLAQSRuntime:
     def collect_results(self):
         for job_id in self.check_queue:
             job_epoch = str(self.job_epoch_dict[job_id])
-            # finish an epoch and collect results so add 1
-            self.job_epoch_dict[job_id] += 1
             shell_output = QueryRuntimeConstants.STDOUT_PATH + "/" + job_id + "-" + job_epoch + ".stdout"
             app_id = read_appid_from_file(shell_output)
             app_stdout_file = QueryRuntimeConstants.SPARK_WORK_PATH + '/' + app_id + '/0/stdout'
@@ -417,6 +415,9 @@ class ReLAQSRuntime:
                 self.check_completeness()
                 # rank the jobs for next scheduling epoch
                 self.rank_job_next_epoch()
+
+                for job_id in self.check_queue:
+                    self.job_epoch_dict[job_id] += 1
 
             else:
                 self.logger.info("No job arrives")
