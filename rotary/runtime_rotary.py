@@ -366,7 +366,9 @@ class RotaryRuntime:
                 self.active_queue.remove(job_id)
                 self.check_queue.remove(job_id)
             else:
-                self.logger.info(f"the job {job_id} stay in active, has run {job.overall_time} seconds")
+                self.logger.info(f"the job {job_id} stay in active, " +
+                                 f"has run {job.run_time} seconds, " +
+                                 f"including {job.checkpoint_time} checkpoint time")
 
             self.workload_dict[job_id] = job
 
