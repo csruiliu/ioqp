@@ -2,6 +2,9 @@
 class WorkloadConstants:
     WORKLOAD_SIZE = 20
 
+    # the random seed used for generating
+    RANDOM_SEED = 42
+
     # the parameter used to generate arrival time. Expected number of events occurring in a fixed-time interval
     ARRIVAL_LAMBDA = 4
 

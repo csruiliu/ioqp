@@ -40,7 +40,7 @@ def main():
     aqp_workload_dict = workload_builder.generate_workload_aqp(WorkloadConstants.ARRIVAL_LAMBDA,
                                                                WorkloadConstants.SCH_ROUND_PERIOD,
                                                                scheduler_name,
-                                                               random_seed=42)
+                                                               WorkloadConstants.RANDOM_SEED)
 
     for job_id, job in aqp_workload_dict.items():
         print(f"job: job_id={job_id}, "
