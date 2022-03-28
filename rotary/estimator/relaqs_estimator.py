@@ -1,4 +1,3 @@
-import json
 import numpy as np
 from scipy.optimize import curve_fit
 
@@ -42,7 +41,7 @@ class ReLAQSEstimator:
         return a * (x * self.batch_size / self.num_worker) + b
 
     def fit_progress(self, x, y):
-        opt, cov = curve_fit(self.func_progress, x, y)
+        opt, cov = curve_fit(self.func_progress, x, y, maxfev=1000)
         return opt, cov
 
     def fit_runtime(self, x, y):
@@ -72,7 +71,12 @@ class ReLAQSEstimator:
         epoch_list = self.agg_runtime_dict[schema_name]
         progress_list = self.agg_progress_dict[schema_name]
 
-        popt, pcov = self.fit_progress(np.asarray(epoch_list), np.asarray(progress_list))
+        if len(progress_list) < 2:
+            return 0
+        try:
+            popt, pcov = self.fit_progress(np.asarray(epoch_list), np.asarray(progress_list))
+        except RuntimeError:
+            return 0
 
         progress_estimation = self.func_progress((self.epoch_time + self.schedule_slot), popt[0], popt[1])
 

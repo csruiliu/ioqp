@@ -371,7 +371,8 @@ class ReLAQSRuntime:
             self.job_estimate_progress[job_id] = self.compute_progress_next_epoch(job_id)
 
         for k, v in sorted(self.job_estimate_progress.items(), key=lambda x: x[1], reverse=True):
-            self.priority_queue.append(k)
+            if k in self.active_queue:
+                self.priority_queue.append(k)
 
     def present_final_results(self):
         for msg in self.final_result_msg:
