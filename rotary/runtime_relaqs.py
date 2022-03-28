@@ -335,11 +335,17 @@ class ReLAQSRuntime:
     def compute_progress_next_epoch(self, job_id):
         job_epoch = str(self.job_epoch_dict[job_id])
         shell_output = QueryRuntimeConstants.STDOUT_PATH + "/" + job_id + "-" + job_epoch + ".stdout"
+        shell_output_path = Path(shell_output)
+        if not shell_output_path.is_file():
+            return 0
+
         app_id = read_appid_from_file(shell_output)
-
         app_stdout_file = QueryRuntimeConstants.SPARK_WORK_PATH + '/' + app_id + '/0/stdout'
-        agg_schema_list = agg_schema_fetcher(job_id)
+        app_stdout_file_path = Path(app_stdout_file)
+        if not app_stdout_file_path:
+            return 0
 
+        agg_schema_list = agg_schema_fetcher(job_id)
         job_estimator: ReLAQSEstimator = self.job_estimator_dict[job_id]
 
         job_overall_progress = 0

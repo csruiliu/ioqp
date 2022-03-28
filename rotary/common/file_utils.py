@@ -24,6 +24,7 @@ def read_appid_from_file(file_path):
         if 'APPID' in line:
             application_id = line.split(':')[1]
             return application_id.strip()
+    return None
 
 
 def read_aggresult_from_file(file_path, target_schema_list):
