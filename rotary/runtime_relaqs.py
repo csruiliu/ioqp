@@ -342,7 +342,7 @@ class ReLAQSRuntime:
         app_id = read_appid_from_file(shell_output)
         app_stdout_file = QueryRuntimeConstants.SPARK_WORK_PATH + '/' + app_id + '/0/stdout'
         app_stdout_file_path = Path(app_stdout_file)
-        if not app_stdout_file_path:
+        if not app_stdout_file_path.is_file():
             return 0
 
         agg_schema_list = agg_schema_fetcher(job_id)
