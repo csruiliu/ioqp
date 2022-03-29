@@ -1,6 +1,6 @@
 
 class WorkloadConstants:
-    WORKLOAD_SIZE = 20
+    WORKLOAD_SIZE = 30
 
     # the random seed used for generating
     RANDOM_SEED = 42
@@ -29,7 +29,7 @@ class WorkloadConstants:
     # the deadline list for workload_light, time unit second
     DEADLINE_LIGHT = [480, 540, 600, 660, 720, 780]
     # the percentage of light workload
-    LIGHT_RATIO = 0.6
+    LIGHT_RATIO = 0.4
 
     # the queries cost 15-30 GB when scale factor is 1
     WORKLOAD_MEDIUM = ["q3", "q5", "q8", "q17", "q20"]
@@ -43,7 +43,7 @@ class WorkloadConstants:
     # the deadline list for workload_heavy, time unit second
     DEADLINE_HEAVY = [1440, 1620, 1800, 1980, 2160, 2340]
     # the percentage of heavy workload
-    HEAVY_RATIO = 0.1
+    HEAVY_RATIO = 0.3
 
     # accuracy threshold for the jobs in the workload
     ACCURACY_OBJECTIVE = [0.55, 0.6, 0.65, 0.7, 0.75, 0.8, 0.85, 0.9, 0.95]
