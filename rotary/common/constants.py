@@ -27,7 +27,7 @@ class WorkloadConstants:
     # the queries cost 5-10 GB when scale factor is 1
     WORKLOAD_LIGHT = ["q2", "q4", "q6", "q10", "q11", "q12", "q13", "q14", "q15", "q16", "q19", "q22"]
     # the deadline list for workload_light, time unit second
-    DEADLINE_LIGHT = [480, 540, 600, 660, 720, 780]
+    DEADLINE_LIGHT = [480, 540, 600, 660, 720, 780, 840]
     # the percentage of light workload
     LIGHT_RATIO = 0.4
 
