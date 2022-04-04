@@ -25,23 +25,23 @@ class WorkloadConstants:
                      "q13", "q14", "q15", "q16", "q17", "q18", "q19", "q20", "q21", "q22"]
 
     # the queries cost 5-10 GB when scale factor is 1
-    WORKLOAD_LIGHT = ["q2", "q4", "q6", "q10", "q11", "q12", "q13", "q14", "q15", "q16", "q19", "q22"]
+    WORKLOAD_LIGHT = ["q1", "q2", "q4", "q6", "q10", "q11", "q12", "q13", "q14", "q15", "q16", "q19", "q22"]
     # the deadline list for workload_light, time unit second
-    DEADLINE_LIGHT = [480, 540, 600, 660, 720, 780, 840]
+    DEADLINE_LIGHT = [480, 540, 600, 660, 720, 780, 840, 900]
     # the percentage of light workload
     LIGHT_RATIO = 0.4
 
     # the queries cost 15-30 GB when scale factor is 1
     WORKLOAD_MEDIUM = ["q3", "q5", "q8", "q17", "q20"]
     # the deadline list for workload_medium, time unit second
-    DEADLINE_MEDIUM = [960, 1080, 1200, 1320, 1440, 1560]
+    DEADLINE_MEDIUM = [1320, 1440, 1560, 1690, 1800, 1920, 2040, 2160]
     # the percentage of medium workload
     MEDIUM_RATIO = 0.3
 
     # the queries cost over 30 GB when scale factor is 1
-    WORKLOAD_HEAVY = ["q7", "q9", "q18"]
+    WORKLOAD_HEAVY = ["q7", "q9", "q18", "q21"]
     # the deadline list for workload_heavy, time unit second
-    DEADLINE_HEAVY = [1440, 1620, 1800, 1980, 2160, 2340]
+    DEADLINE_HEAVY = [1800, 1980, 2160, 2340, 2520, 2700, 2880, 3060]
     # the percentage of heavy workload
     HEAVY_RATIO = 0.3
 
