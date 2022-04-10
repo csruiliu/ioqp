@@ -1,3 +1,3 @@
 # Rotary-AQP
 
-Rotary-AQP is a prototype system based on [InQP](https://github.com/totemtang/inqp) and [iOLAP](https://github.com/amplab/iolap). Specifically, this is a modification of InQP but with more functions according to the inspiration of iOLAP.
+Rotary-AQP is a resource arbitration system for Approximate Query Processing (AQP). Specifically, it is a modification of [InQP](https://github.com/totemtang/inqp) which supports multi-tenant environments.
