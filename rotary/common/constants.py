@@ -21,7 +21,7 @@ class WorkloadConstants:
     WORKLOAD_RELAQS = ["q1", "q3", "q5", "q6", "q11", "q16", "q19"]
 
     # all queries in tpch
-    WORKLOAD_FULL = ["q1", "q2", "q3", "q4", "q5", "q6", "q7", "q8" "q9", "q10", "q11", "q12",
+    WORKLOAD_FULL = ["q2", "q3", "q4", "q5", "q6", "q7", "q8" "q9", "q10", "q11", "q12",
                      "q13", "q14", "q15", "q16", "q17", "q18", "q19", "q20", "q21", "q22"]
 
     # the queries cost 5-10 GB when scale factor is 1
@@ -39,7 +39,7 @@ class WorkloadConstants:
     MEDIUM_RATIO = 0.3
 
     # the queries cost over 30 GB when scale factor is 1
-    WORKLOAD_HEAVY = ["q7", "q9", "q18", "q21"]
+    WORKLOAD_HEAVY = ["q7", "q9", "q18"]
     # the deadline list for workload_heavy, time unit second
     DEADLINE_HEAVY = [1440, 1620, 1800, 1980, 2160, 2340, 2520, 2700, 2880, 3060]
     # the percentage of heavy workload
