@@ -14,6 +14,9 @@ class WorkloadConstants:
     # period of checking period (second)
     CHECK_PERIOD = 60
 
+    # epoch of checking period
+    CHECK_EPOCH = 1
+
     # period of checkpoint offset (second)
     CKPT_PERIOD = 60
 
