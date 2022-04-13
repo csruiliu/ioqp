@@ -118,7 +118,7 @@ object TPCHSchema {
   val avroNationSchema = SchemaConverters.toAvroType(nationSchema)
   val avroRegionSchema = SchemaConverters.toAvroType(regionSchema)
 
-  var datadir = "/home/totemtang/slothdb/slothdb_testsuite/datadir/tpchdata"
+  var datadir = "XXXXX"
   private def supplierPath = if (!largeDataset) datadir + "/supplier" else datadir + "/supplier_large"
   private def partPath = if (!largeDataset) datadir + "/part" else datadir + "/part_large"
   private def partsuppPath = if (!largeDataset) datadir + "/partsupp" else datadir + "/partsupp_large"
