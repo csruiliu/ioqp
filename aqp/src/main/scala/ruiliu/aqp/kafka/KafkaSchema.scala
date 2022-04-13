@@ -36,7 +36,4 @@ object KafkaSchema {
   val regionschema = new StructType().add("r_id", "int")
                                     .add("r_name", "string")
 
-  val userPath = "/home/totemtang/MiddleGround/spark/middle-ground/testdata/user"
-  val nationPath = "/home/totemtang/MiddleGround/spark/middle-ground/testdata/nation"
-  val regionPath = "/home/totemtang/MiddleGround/spark/middle-ground/testdata/region"
 }

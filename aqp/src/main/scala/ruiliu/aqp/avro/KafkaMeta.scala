@@ -27,7 +27,6 @@ object KafkaMeta {
   val userschema = new StructType().add("u_id", "int")
                                     .add("u_name", "string")
                                     .add("u_n_id", "int")
-  val userPath = "/home/totemtang/slothdb/slothdb_testsuite/datadir/testdata/user"
 
   val userAvroSchema = SchemaConverters.toAvroType(userschema)
 }
