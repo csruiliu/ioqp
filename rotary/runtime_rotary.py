@@ -14,7 +14,7 @@ from estimator.envelop_bounder import EnvelopBounder
 from workload.job_aqp import JobAQP
 from common.loggers import get_logger_instance
 from common.constants import QueryRuntimeConstants, WorkloadConstants
-from common.file_utils import read_appid_from_file, read_aggresult_from_file
+from common.file_utils import read_appid_from_file, read_aggresult_from_file, check_batch_from_file
 from common.query_utils import generate_job_cmd, agg_schema_fetcher, query_memory_fetcher
 
 
@@ -29,6 +29,8 @@ class RotaryRuntime:
         self.schedule_time_window = WorkloadConstants.SCH_ROUND_PERIOD
         self.check_time_window = WorkloadConstants.CHECK_PERIOD
         self.ckpt_offset = WorkloadConstants.CKPT_PERIOD
+        self.current_batch = 0
+        self.batch_epoch = WorkloadConstants.CHECK_EPOCH
 
         # create a logger
         self.logger = get_logger_instance()
@@ -48,6 +50,9 @@ class RotaryRuntime:
 
         # for debug, the list stores the jobs are running for the current epoch
         self.running_queue = list()
+
+        # the list track the batch id
+        self.batch_list = list()
 
         # the list stores the jobs that have been completed and attained the objective
         self.complete_attain_set = set()
@@ -271,6 +276,17 @@ class RotaryRuntime:
         # the time unit is second
         for job_id, job in self.workload_dict.items():
             job.move_forward(time_period)
+            job_epoch = str(self.job_epoch_dict[job_id])
+            shell_output = QueryRuntimeConstants.STDOUT_PATH + "/" + job_id + "-" + job_epoch + ".stdout"
+            batch_id = check_batch_from_file(shell_output)
+            if batch_id == self.current_batch + 1:
+                self.batch_list.append(batch_id)
+                self.batch_epoch -= 1
+                if self.batch_epoch == 0:
+                    job.check = True
+                    self.batch_epoch = WorkloadConstants.CHECK_EPOCH
+                self.current_batch = batch_id
+
             self.workload_dict[job_id] = job
 
     def check_progress(self):
@@ -278,7 +294,7 @@ class RotaryRuntime:
             job = self.workload_dict[job_id]
 
             if job.check:
-                self.logger.info(f"Job {job_id} hits time window")
+                self.logger.info(f"Job {job_id} hits epoch")
                 out_file.close()
                 err_file.close()
                 # job_proc.terminate()

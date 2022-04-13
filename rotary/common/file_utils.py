@@ -27,6 +27,14 @@ def read_appid_from_file(file_path):
     return None
 
 
+def check_batch_from_file(file_path):
+    for line in open(file_path).readlines():
+        if 'Batch:' in line:
+            batch_id = line.split(': ')[1]
+            return int(batch_id.strip())
+    return -1
+
+
 def read_aggresult_from_file(file_path, target_schema_list):
     """
         get latest agg results from stdout file according to the target schema list

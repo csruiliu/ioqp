@@ -45,9 +45,9 @@ class JobAQP:
 
         if self.running:
             self.run_time += time_elapse
-            self.schedule_window_progress -= time_elapse
-            if self.schedule_window_progress <= 0:
-                self.check = True
+            # self.schedule_window_progress -= time_elapse
+            # if self.schedule_window_progress <= 0:
+            #    self.check = True
         else:
             self.wait_time += time_elapse
 

@@ -38,7 +38,7 @@ def main():
                                        query_memory_fetcher)
 
     aqp_workload_dict = workload_builder.generate_workload_aqp(WorkloadConstants.ARRIVAL_LAMBDA,
-                                                               WorkloadConstants.SCH_ROUND_PERIOD,
+                                                               WorkloadConstants.CHECK_EPOCH,
                                                                scheduler_name,
                                                                WorkloadConstants.RANDOM_SEED)
 
