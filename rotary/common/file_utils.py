@@ -35,6 +35,14 @@ def check_batch_from_file(file_path):
     return -1
 
 
+def read_memory_consumption_from_file(file_path):
+    for line in open(file_path).readlines():
+        if 'Memory Consumption:' in line:
+            memory_consumption = line.split(': ')[1]
+            return int(memory_consumption.strip())
+    return -1
+
+
 def read_aggresult_from_file(file_path, target_schema_list):
     """
         get latest agg results from stdout file according to the target schema list

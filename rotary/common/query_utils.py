@@ -1,52 +1,5 @@
 from .constants import MemoryConstants, TPCHAGGConstants, QueryRuntimeConstants
-
-
-def query_memory_fetcher(job_id):
-    query_id = job_id.split("_")[0]
-    if query_id == "q1":
-        return MemoryConstants.Q1
-    elif query_id == "q2":
-        return MemoryConstants.Q2
-    elif query_id == "q3":
-        return MemoryConstants.Q3
-    elif query_id == "q4":
-        return MemoryConstants.Q4
-    elif query_id == "q5":
-        return MemoryConstants.Q5
-    elif query_id == "q6":
-        return MemoryConstants.Q6
-    elif query_id == "q7":
-        return MemoryConstants.Q7
-    elif query_id == "q8":
-        return MemoryConstants.Q8
-    elif query_id == "q9":
-        return MemoryConstants.Q9
-    elif query_id == "q10":
-        return MemoryConstants.Q10
-    elif query_id == "q11":
-        return MemoryConstants.Q11
-    elif query_id == "q12":
-        return MemoryConstants.Q12
-    elif query_id == "q13":
-        return MemoryConstants.Q13
-    elif query_id == "q14":
-        return MemoryConstants.Q14
-    elif query_id == "q15":
-        return MemoryConstants.Q15
-    elif query_id == "q16":
-        return MemoryConstants.Q16
-    elif query_id == "q17":
-        return MemoryConstants.Q17
-    elif query_id == "q18":
-        return MemoryConstants.Q18
-    elif query_id == "q19":
-        return MemoryConstants.Q19
-    elif query_id == "q20":
-        return MemoryConstants.Q20
-    elif query_id == "q21":
-        return MemoryConstants.Q21
-    elif query_id == "q22":
-        return MemoryConstants.Q22
+from .file_utils import read_memory_consumption_from_file
 
 
 def agg_schema_fetcher(job_id):
@@ -97,6 +50,12 @@ def agg_schema_fetcher(job_id):
         return TPCHAGGConstants.Q22_AGG_COL
     else:
         raise ValueError('The query is not supported')
+
+
+def query_memory_fetcher(job_id):
+    file_path = QueryRuntimeConstants.STDOUT_PATH + "/" + job_id + "-memory.stdout"
+    memory = read_memory_consumption_from_file(file_path)
+    return memory
 
 
 def generate_job_cmd(res_unit, job_name):
