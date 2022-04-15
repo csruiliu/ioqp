@@ -1,9 +1,4 @@
-# Preemption Scheduler for iOQP 
+# Rotary-AQP # 
 
-## Problem Statement ##
-
-### AQP Job ###
-
-Each job has an accuracy threshold and a deadline
-
+Rotary-AQP is a resource arbitration system for Approximate Query Processing (AQP).
 
