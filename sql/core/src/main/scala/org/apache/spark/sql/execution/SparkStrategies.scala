@@ -18,7 +18,7 @@
 package org.apache.spark.sql.execution
 
 import org.apache.spark.rdd.RDD
-import org.apache.spark.sql.{execution, AnalysisException, SlothDBContext, Strategy}
+import org.apache.spark.sql.{execution, AnalysisException, XXXXDBContext, Strategy}
 import org.apache.spark.sql.catalyst.InternalRow
 import org.apache.spark.sql.catalyst.encoders.RowEncoder
 import org.apache.spark.sql.catalyst.expressions._
@@ -331,8 +331,8 @@ abstract class SparkStrategies extends QueryPlanner[SparkPlan] {
 
         val stateVersion = conf.getConf(SQLConf.STREAMING_AGGREGATION_STATE_FORMAT_VERSION)
 
-        if (SlothDBContext.enable_slothdb) {
-          aggregate.AggUtils.planSlothAggregation(
+        if (XXXXDBContext.enable_XXXXdb) {
+          aggregate.AggUtils.planXXXXAggregation(
             namedGroupingExpressions,
             aggregateExpressions.map(expr => expr.asInstanceOf[AggregateExpression]),
             rewrittenResultExpressions,
@@ -358,7 +358,7 @@ abstract class SparkStrategies extends QueryPlanner[SparkPlan] {
   object StreamingDeduplicationStrategy extends Strategy {
     override def apply(plan: LogicalPlan): Seq[SparkPlan] = plan match {
       case Deduplicate(keys, child) if child.isStreaming =>
-        if (SlothDBContext.enable_slothdb) SlothDeduplicateExec(keys, planLater(child)) :: Nil
+        if (XXXXDBContext.enable_XXXXdb) XXXXDeduplicateExec(keys, planLater(child)) :: Nil
         else StreamingDeduplicateExec(keys, planLater(child)) :: Nil
 
       case _ => Nil
@@ -394,14 +394,14 @@ abstract class SparkStrategies extends QueryPlanner[SparkPlan] {
         case ExtractEquiJoinKeys(joinType, leftKeys, rightKeys, condition, left, right)
           if left.isStreaming && right.isStreaming =>
 
-          if (SlothDBContext.enable_slothdb) {
+          if (XXXXDBContext.enable_XXXXdb) {
             if (joinType != Cross) {
-              new SlothSymmetricHashJoinExec(
+              new XXXXSymmetricHashJoinExec(
                 leftKeys, rightKeys, joinType, condition,
                 planLater(left), planLater(right)) :: Nil
             }
             else {
-              new SlothThetaJoinExec(
+              new XXXXThetaJoinExec(
                 leftKeys, rightKeys, joinType, condition, planLater(left), planLater(right)) :: Nil
             }
           }
@@ -411,19 +411,19 @@ abstract class SparkStrategies extends QueryPlanner[SparkPlan] {
           }
 
         case ExtractEquiJoinKeys(joinType, leftKeys, rightKeys, condition, left, right)
-          if SlothDBContext.enable_slothdb && (!left.isStreaming || !right.isStreaming) =>
+          if XXXXDBContext.enable_XXXXdb && (!left.isStreaming || !right.isStreaming) =>
 
           var keepLeft: Boolean = true
           if (!right.isStreaming) keepLeft = false
 
-          new SlothSimpleHashJoinExec(
+          new XXXXSimpleHashJoinExec(
             leftKeys, rightKeys, joinType, condition, keepLeft,
             planLater(left), planLater(right)) :: Nil
 
         case Join(left, right, joinType, condition) if left.isStreaming && right.isStreaming =>
 
-          if (SlothDBContext.enable_slothdb && joinType == Cross) {
-            new SlothThetaJoinExec(
+          if (XXXXDBContext.enable_XXXXdb && joinType == Cross) {
+            new XXXXThetaJoinExec(
               Seq.empty, Seq.empty, joinType, condition, planLater(left), planLater(right)) :: Nil
           }
           else {
@@ -643,20 +643,20 @@ abstract class SparkStrategies extends QueryPlanner[SparkPlan] {
       case logical.Sort(sortExprs, global, child) =>
         execution.SortExec(sortExprs, global, planLater(child)) :: Nil
       case logical.Project(projectList, child) =>
-        if (SlothDBContext.enable_slothdb) {
-         execution.SlothProjectExec(projectList, planLater(child)) :: Nil
+        if (XXXXDBContext.enable_XXXXdb) {
+         execution.XXXXProjectExec(projectList, planLater(child)) :: Nil
         } else {
           execution.ProjectExec(projectList, planLater(child)) :: Nil
         }
       case logical.Filter(condition, child) =>
-        if (SlothDBContext.enable_slothdb) {
-          execution.SlothFilterExec(condition, planLater(child)) :: Nil
+        if (XXXXDBContext.enable_XXXXdb) {
+          execution.XXXXFilterExec(condition, planLater(child)) :: Nil
         } else {
           execution.FilterExec(condition, planLater(child)) :: Nil
         }
       case f: logical.TypedFilter =>
-        if (SlothDBContext.enable_slothdb) {
-          execution.SlothFilterExec(f.typedCondition(f.deserializer), planLater(f.child)) :: Nil
+        if (XXXXDBContext.enable_XXXXdb) {
+          execution.XXXXFilterExec(f.typedCondition(f.deserializer), planLater(f.child)) :: Nil
         } else {
           execution.FilterExec(f.typedCondition(f.deserializer), planLater(f.child)) :: Nil
         }

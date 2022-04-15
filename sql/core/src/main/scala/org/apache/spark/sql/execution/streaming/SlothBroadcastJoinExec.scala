@@ -29,7 +29,7 @@ import org.apache.spark.sql.execution.streaming.state._
 import org.apache.spark.sql.internal.SessionState
 import org.apache.spark.util.{CompletionIterator, SerializableConfiguration}
 
-case class SlothBroadcastJoinExec(
+case class XXXXBroadcastJoinExec(
     leftKeys: Seq[Expression],
     rightKeys: Seq[Expression],
     joinType: JoinType,

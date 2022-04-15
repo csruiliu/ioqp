@@ -21,7 +21,7 @@ import scala.collection.mutable.ListBuffer
 
 import org.apache.spark.sql.catalyst.expressions.Attribute
 
-object SlothUtils {
+object XXXXUtils {
 
   def attrExist(attr: Attribute, attrSet: Seq[Attribute]): Boolean = {
     attrSet.exists(thisAttr => thisAttr.semanticEquals(attr))

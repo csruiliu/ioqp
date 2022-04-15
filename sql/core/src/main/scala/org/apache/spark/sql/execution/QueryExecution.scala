@@ -27,14 +27,14 @@ import org.apache.spark.sql.catalyst.InternalRow
 import org.apache.spark.sql.catalyst.analysis.UnsupportedOperationChecker
 import org.apache.spark.sql.catalyst.expressions.{Attribute, NamedExpression}
 import org.apache.spark.sql.catalyst.plans.logical.{LogicalPlan, ReturnAnswer}
-import org.apache.spark.sql.catalyst.plans.physical.{HashPartitioning, SlothBroadcastDistribution}
+import org.apache.spark.sql.catalyst.plans.physical.{HashPartitioning, XXXXBroadcastDistribution}
 import org.apache.spark.sql.catalyst.rules.Rule
 import org.apache.spark.sql.catalyst.util.DateTimeUtils
-import org.apache.spark.sql.execution.aggregate.{SlothFinalAggExec, SlothHashAggregateExec}
+import org.apache.spark.sql.execution.aggregate.{XXXXFinalAggExec, XXXXHashAggregateExec}
 import org.apache.spark.sql.execution.command.{DescribeTableCommand, ExecutedCommandExec, ShowTablesCommand}
 import org.apache.spark.sql.execution.datasources.v2.{DataSourceV2ScanExec, WriteToDataSourceV2Exec}
 import org.apache.spark.sql.execution.exchange.{EnsureRequirements, ReuseExchange, ShuffleExchangeExec}
-import org.apache.spark.sql.execution.streaming.{MicroBatchExecution, SlothSimpleHashJoinExec, SlothSymmetricHashJoinExec, SlothThetaJoinExec}
+import org.apache.spark.sql.execution.streaming.{MicroBatchExecution, XXXXSimpleHashJoinExec, XXXXSymmetricHashJoinExec, XXXXThetaJoinExec}
 import org.apache.spark.sql.internal.SQLConf
 import org.apache.spark.sql.types.{BinaryType, DateType, DecimalType, TimestampType, _}
 import org.apache.spark.util.Utils
@@ -82,11 +82,11 @@ class QueryExecution(val sparkSession: SparkSession, val logical: LogicalPlan) {
   private def optimizeProjJoinPattern(plan: SparkPlan): Unit = {
     plan match {
       case projPlan: ProjectExec if projPlan.children.nonEmpty =>
-        if (projPlan.child.isInstanceOf[SlothSymmetricHashJoinExec]) {
-          val joinPlan = projPlan.child.asInstanceOf[SlothSymmetricHashJoinExec]
+        if (projPlan.child.isInstanceOf[XXXXSymmetricHashJoinExec]) {
+          val joinPlan = projPlan.child.asInstanceOf[XXXXSymmetricHashJoinExec]
           joinPlan.setPropagateUpdate(projPlan.output)
-        } else if (projPlan.child.isInstanceOf[SlothThetaJoinExec]) {
-          val joinPlan = projPlan.child.asInstanceOf[SlothThetaJoinExec]
+        } else if (projPlan.child.isInstanceOf[XXXXThetaJoinExec]) {
+          val joinPlan = projPlan.child.asInstanceOf[XXXXThetaJoinExec]
           joinPlan.setPropagateUpdate(projPlan.output)
         }
       case _ =>
@@ -96,8 +96,8 @@ class QueryExecution(val sparkSession: SparkSession, val logical: LogicalPlan) {
 
   private def markDeltaOutput(plan: SparkPlan): Unit = {
     plan match {
-      case _: SlothSymmetricHashJoinExec | _: SlothThetaJoinExec =>
-      case aggPlan: SlothHashAggregateExec =>
+      case _: XXXXSymmetricHashJoinExec | _: XXXXThetaJoinExec =>
+      case aggPlan: XXXXHashAggregateExec =>
         aggPlan.setDeltaOutput(false)
       case _ =>
         plan.children.foreach(child => markDeltaOutput(child))
@@ -126,14 +126,14 @@ class QueryExecution(val sparkSession: SparkSession, val logical: LogicalPlan) {
 
   private def updatePartitioningforThetaJoin(plan: SparkPlan): Unit = {
     plan match {
-      case thetaJoin: SlothThetaJoinExec =>
+      case thetaJoin: XXXXThetaJoinExec =>
         require(thetaJoin.right.isInstanceOf[ShuffleExchangeExec],
           "Right child of ThetaJoin needs to be ShuffleExechangeExec")
         val left = thetaJoin.left
         val right = thetaJoin.right.asInstanceOf[ShuffleExchangeExec]
-        val slothBroadCast = new SlothBroadcastDistribution()
-        val slothNumPartitions = findValidNumPartition(left)
-        right.withNewPartitioning(slothBroadCast.createPartitioning(slothNumPartitions))
+        val XXXXBroadCast = new XXXXBroadcastDistribution()
+        val XXXXNumPartitions = findValidNumPartition(left)
+        right.withNewPartitioning(XXXXBroadCast.createPartitioning(XXXXNumPartitions))
       case _ =>
     }
     plan.children.foreach(child => updatePartitioningforThetaJoin(child))
@@ -141,7 +141,7 @@ class QueryExecution(val sparkSession: SparkSession, val logical: LogicalPlan) {
 
   private def setUpdateOutput(plan: SparkPlan, updateAttrs: Seq[Attribute]): Unit = {
     if (plan == null || plan.isInstanceOf[ShuffleExchangeExec]) return
-    if (!SlothUtils.attrIntersect(plan.output, updateAttrs).isEmpty) {
+    if (!XXXXUtils.attrIntersect(plan.output, updateAttrs).isEmpty) {
       plan.setUpdateOutput(false)
       plan.children.foreach(child => setUpdateOutput(child, updateAttrs))
     }
@@ -151,15 +151,15 @@ class QueryExecution(val sparkSession: SparkSession, val logical: LogicalPlan) {
     if (plan == null) return Seq()
 
     plan match {
-      case thetaJoinExec: SlothThetaJoinExec =>
-        SlothUtils.attrUnion(getUpdateAttributes(thetaJoinExec.left),
+      case thetaJoinExec: XXXXThetaJoinExec =>
+        XXXXUtils.attrUnion(getUpdateAttributes(thetaJoinExec.left),
           getUpdateAttributes(thetaJoinExec.right))
 
-      case equalJoinExec: SlothSymmetricHashJoinExec =>
-        SlothUtils.attrUnion(getUpdateAttributes(equalJoinExec.left),
+      case equalJoinExec: XXXXSymmetricHashJoinExec =>
+        XXXXUtils.attrUnion(getUpdateAttributes(equalJoinExec.left),
           getUpdateAttributes(equalJoinExec.right))
 
-      case aggExec: SlothFinalAggExec =>
+      case aggExec: XXXXFinalAggExec =>
         aggExec.findUpdateAttributes()
 
       case shuffleExec: ShuffleExchangeExec
@@ -168,11 +168,11 @@ class QueryExecution(val sparkSession: SparkSession, val logical: LogicalPlan) {
           .expressions.map(_.asInstanceOf[NamedExpression].toAttribute)
         val retUpdateAttrs = getUpdateAttributes(plan.children(0))
         setUpdateOutput(shuffleExec.children(0),
-          SlothUtils.attrIntersect(partAttrs, retUpdateAttrs))
+          XXXXUtils.attrIntersect(partAttrs, retUpdateAttrs))
         retUpdateAttrs
 
       case projExec: ProjectExec =>
-        SlothUtils.attrIntersect(getUpdateAttributes(plan.children(0)), projExec.output)
+        XXXXUtils.attrIntersect(getUpdateAttributes(plan.children(0)), projExec.output)
 
       case _ => // FilterExec, DataSourceV2Scan, HashAggFinal, Sort
         if (plan.children != null && !plan.children.isEmpty) {
@@ -181,7 +181,7 @@ class QueryExecution(val sparkSession: SparkSession, val logical: LogicalPlan) {
     }
   }
 
-  private def projEqual(projA: SlothProjectExec, projB: SlothProjectExec): Boolean = {
+  private def projEqual(projA: XXXXProjectExec, projB: XXXXProjectExec): Boolean = {
     val childA = projA.child.output
     val childB = projB.child.output
     val outputA = projA.projectList
@@ -191,13 +191,13 @@ class QueryExecution(val sparkSession: SparkSession, val logical: LogicalPlan) {
       !outputA.zip(outputB).exists(pair => !pair._1.semanticEquals(pair._2)))
   }
 
-  private def findProj(proj: SlothProjectExec, microExec: MicroBatchExecution): Long = {
+  private def findProj(proj: XXXXProjectExec, microExec: MicroBatchExecution): Long = {
     val pair = microExec.projArray.find(pair => projEqual(pair._1, proj))
     if (pair.isDefined) pair.get._2
     else -1
   }
 
-  private def assignProjId(runId: UUID, proj: SlothProjectExec,
+  private def assignProjId(runId: UUID, proj: XXXXProjectExec,
                            microExec: MicroBatchExecution): Unit = {
     val curProjId = findProj(proj, microExec)
     // New one, first run
@@ -213,13 +213,13 @@ class QueryExecution(val sparkSession: SparkSession, val logical: LogicalPlan) {
 
   private def setAllProjId(runId: UUID, plan: SparkPlan, microExec: MicroBatchExecution): Unit = {
     if (plan == null) return
-    if (plan.isInstanceOf[SlothProjectExec]) {
-      assignProjId(runId, plan.asInstanceOf[SlothProjectExec], microExec)
+    if (plan.isInstanceOf[XXXXProjectExec]) {
+      assignProjId(runId, plan.asInstanceOf[XXXXProjectExec], microExec)
     }
     plan.children.foreach(plan => setAllProjId(runId, plan, microExec))
   }
 
-  private def filterEqual(filterA: SlothFilterExec, filterB: SlothFilterExec): Boolean = {
+  private def filterEqual(filterA: XXXXFilterExec, filterB: XXXXFilterExec): Boolean = {
     val childA = filterA.child.output
     val childB = filterB.child.output
     val conditionA = filterA.condition
@@ -229,13 +229,13 @@ class QueryExecution(val sparkSession: SparkSession, val logical: LogicalPlan) {
       conditionA.semanticEquals(conditionB))
   }
 
-  private def findFilter(filter: SlothFilterExec, microExec: MicroBatchExecution): Long = {
+  private def findFilter(filter: XXXXFilterExec, microExec: MicroBatchExecution): Long = {
     val pair = microExec.filterArray.find(pair => filterEqual(pair._1, filter))
     if (pair.isDefined) pair.get._2
     else -1
   }
 
-  private def assignFilterId(runId: UUID, filter: SlothFilterExec,
+  private def assignFilterId(runId: UUID, filter: XXXXFilterExec,
                            microExec: MicroBatchExecution): Unit = {
     val curFilterId = findFilter(filter, microExec)
     // New one, first run
@@ -251,15 +251,15 @@ class QueryExecution(val sparkSession: SparkSession, val logical: LogicalPlan) {
 
   private def setAllFilterId(runId: UUID, plan: SparkPlan, microExec: MicroBatchExecution): Unit = {
     if (plan == null) return
-    if (plan.isInstanceOf[SlothFilterExec]) {
-      assignFilterId(runId, plan.asInstanceOf[SlothFilterExec], microExec)
+    if (plan.isInstanceOf[XXXXFilterExec]) {
+      assignFilterId(runId, plan.asInstanceOf[XXXXFilterExec], microExec)
     }
     plan.children.foreach(plan => setAllFilterId(runId, plan, microExec))
   }
 
-  private def findAgg(plan: SparkPlan): SlothHashAggregateExec = {
+  private def findAgg(plan: SparkPlan): XXXXHashAggregateExec = {
     plan match {
-      case aggPlan: SlothHashAggregateExec =>
+      case aggPlan: XXXXHashAggregateExec =>
         return aggPlan
       case _ =>
         findAgg(plan.children(0))
@@ -269,9 +269,9 @@ class QueryExecution(val sparkSession: SparkSession, val logical: LogicalPlan) {
   private def setFinalAggId(plan: SparkPlan, finalAggStartId: Long): Unit = {
     if (plan == null) return
     plan match {
-      case slothFinalAggExec: SlothFinalAggExec =>
-        val stateInfo = findAgg(slothFinalAggExec).stateInfo.get
-        slothFinalAggExec.setId(stateInfo.operatorId + finalAggStartId,
+      case XXXXFinalAggExec: XXXXFinalAggExec =>
+        val stateInfo = findAgg(XXXXFinalAggExec).stateInfo.get
+        XXXXFinalAggExec.setId(stateInfo.operatorId + finalAggStartId,
           stateInfo.queryRunId)
       case _ =>
     }
@@ -289,13 +289,13 @@ class QueryExecution(val sparkSession: SparkSession, val logical: LogicalPlan) {
     val childCost = plan.children.map(getPerOpStartUpTime).sum
 
     plan match {
-      case _: SlothHashAggregateExec =>
+      case _: XXXXHashAggregateExec =>
         childCost + aggStartupTime
-      case _: SlothSymmetricHashJoinExec =>
+      case _: XXXXSymmetricHashJoinExec =>
         childCost + joinStartupTime
-      case _: SlothThetaJoinExec =>
+      case _: XXXXThetaJoinExec =>
         childCost + joinStartupTime
-      case _: SlothFilterExec =>
+      case _: XXXXFilterExec =>
         childCost + filterStartupTime
       case _: DataSourceV2ScanExec =>
         childCost + sourceStartupTime
@@ -318,7 +318,7 @@ class QueryExecution(val sparkSession: SparkSession, val logical: LogicalPlan) {
   private def setFirstBatch(plan: SparkPlan, isFirstBatch: Boolean): Unit = {
     if (plan == null) return
     plan match {
-      case simpleJoin: SlothSimpleHashJoinExec =>
+      case simpleJoin: XXXXSimpleHashJoinExec =>
         simpleJoin.setIsFirstBatch(isFirstBatch)
       case _ =>
     }
@@ -328,28 +328,28 @@ class QueryExecution(val sparkSession: SparkSession, val logical: LogicalPlan) {
   def setRepairMode(plan: SparkPlan, repairMode: Boolean): Unit = {
     if (plan == null) return
     plan match {
-      case slothHash: SlothHashAggregateExec =>
-        slothHash.setRepairMode(repairMode)
+      case XXXXHash: XXXXHashAggregateExec =>
+        XXXXHash.setRepairMode(repairMode)
       case _ =>
     }
     plan.children.foreach(child => setRepairMode(child, repairMode))
   }
 
-  // Several optimization techniques by SlothDB
-  def slothdbOptimization(runId: UUID, microExec: MicroBatchExecution): Unit = {
-    // SlothDB: Set delta output for the last aggregate
+  // Several optimization techniques by XXXXDB
+  def XXXXdbOptimization(runId: UUID, microExec: MicroBatchExecution): Unit = {
+    // XXXXDB: Set delta output for the last aggregate
     // TODO: this assumes sort operator, if exists,
     // TODO: is at the end of a query plan preceded by an aggregate
     // TODO: and the sort operator always recomputes
     markDeltaOutput(executedPlan)
 
-    // SlothDB: Set whether we need to propogate updates from join operators
+    // XXXXDB: Set whether we need to propogate updates from join operators
     // This is based on the observation where if the projected output columns
     // do not have overlap with the non-key columns from child operators,
     // we do not need to propagate the updates
     optimizeProjJoinPattern(executedPlan)
 
-    // SlothDB
+    // XXXXDB
     updatePartitioningforThetaJoin(executedPlan)
 
     // Output Update
@@ -371,7 +371,7 @@ class QueryExecution(val sparkSession: SparkSession, val logical: LogicalPlan) {
     setFirstBatch(executedPlan, microExec.currentBatchId == 0)
 
     // Set repair mode
-    // val repairConf = sparkSession.conf.get(SQLConf.SLOTHDB_ENABLE_INCREMENTABILITY)
+    // val repairConf = sparkSession.conf.get(SQLConf.XXXXDB_ENABLE_INCREMENTABILITY)
     // if (repairConf.isDefined && repairConf.get) {
     //   setRepairMode(executedPlan, microExec.currentBatchId == 0 || microExec.isLastBatch)
     // } else {

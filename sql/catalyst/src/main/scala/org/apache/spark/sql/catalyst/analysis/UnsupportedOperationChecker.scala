@@ -342,7 +342,7 @@ object UnsupportedOperationChecker {
     }
   }
 
-  def checkForSlothDB(plan: LogicalPlan, outputMode: OutputMode): Unit = {
+  def checkForXXXXDB(plan: LogicalPlan, outputMode: OutputMode): Unit = {
 
   }
 

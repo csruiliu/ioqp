@@ -29,14 +29,14 @@ import org.apache.spark.sql.execution.streaming.StreamingSymmetricHashJoinHelper
 import org.apache.spark.sql.types.{IntegerType, LongType, StructField, StructType}
 import org.apache.spark.util.NextIterator
 
-class SlothThetaJoinStateManager (
+class XXXXThetaJoinStateManager (
     val joinSide: JoinSide,
     inputValueAttributes: Seq[Attribute],
     var stateInfo: Option[StatefulOperatorStateInfo],
     var storeConf: StateStoreConf,
     var hadoopConf: Configuration) extends Logging {
 
-  import SlothThetaJoinStateManager._
+  import XXXXThetaJoinStateManager._
 
   private var stateSize: Long = 0;
 
@@ -400,7 +400,7 @@ class SlothThetaJoinStateManager (
   }
 }
 
-object SlothThetaJoinStateManager {
+object XXXXThetaJoinStateManager {
 
   def allStateStoreNames(joinSides: JoinSide*): Seq[String] = {
     val allStateStoreTypes: Seq[StateStoreType] =

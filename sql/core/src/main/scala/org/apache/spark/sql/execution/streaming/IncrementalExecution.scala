@@ -27,7 +27,7 @@ import org.apache.spark.sql.catalyst.plans.logical._
 import org.apache.spark.sql.catalyst.plans.physical.{AllTuples, ClusteredDistribution, HashPartitioning, SinglePartition}
 import org.apache.spark.sql.catalyst.rules.Rule
 import org.apache.spark.sql.execution._
-import org.apache.spark.sql.execution.aggregate.{SlothFinalAggExec, SlothHashAggregateExec}
+import org.apache.spark.sql.execution.aggregate.{XXXXFinalAggExec, XXXXHashAggregateExec}
 import org.apache.spark.sql.execution.exchange.ShuffleExchangeExec
 import org.apache.spark.sql.internal.SQLConf
 import org.apache.spark.sql.streaming.OutputMode
@@ -147,24 +147,24 @@ class IncrementalExecution(
           stateInfo = Some(nextStatefulOperationStateInfo),
           outputMode = Some(outputMode))
 
-      case slothAgg: SlothHashAggregateExec =>
+      case XXXXAgg: XXXXHashAggregateExec =>
         val aggStateInfo = nextStatefulOperationStateInfo
-        slothAgg.copy(
+        XXXXAgg.copy(
           eventTimeWatermark = Some(offsetSeqMetadata.batchWatermarkMs),
           stateInfo = Some(aggStateInfo)
         )
 
-      case slothJoin: SlothSymmetricHashJoinExec =>
-        slothJoin.copy(
+      case XXXXJoin: XXXXSymmetricHashJoinExec =>
+        XXXXJoin.copy(
            stateInfo = Some(nextStatefulOperationStateInfo),
           eventTimeWatermark = Some(offsetSeqMetadata.batchWatermarkMs),
           stateWatermarkPredicates =
             StreamingSymmetricHashJoinHelper.getStateWatermarkPredicates(
-              slothJoin.left.output, slothJoin.right.output,
-              slothJoin.leftKeys, slothJoin.rightKeys,
-              slothJoin.condition.full, Some(offsetSeqMetadata.batchWatermarkMs)))
+              XXXXJoin.left.output, XXXXJoin.right.output,
+              XXXXJoin.leftKeys, XXXXJoin.rightKeys,
+              XXXXJoin.condition.full, Some(offsetSeqMetadata.batchWatermarkMs)))
 
-      case simpleJoin: SlothSimpleHashJoinExec =>
+      case simpleJoin: XXXXSimpleHashJoinExec =>
         simpleJoin.copy(
           stateInfo = Some(nextStatefulOperationStateInfo),
           eventTimeWatermark = Some(offsetSeqMetadata.batchWatermarkMs),
@@ -174,18 +174,18 @@ class IncrementalExecution(
               simpleJoin.leftKeys, simpleJoin.rightKeys,
               simpleJoin.condition.full, Some(offsetSeqMetadata.batchWatermarkMs)))
 
-      case slothThetaJoin: SlothThetaJoinExec =>
-        slothThetaJoin.copy(
+      case XXXXThetaJoin: XXXXThetaJoinExec =>
+        XXXXThetaJoin.copy(
            stateInfo = Some(nextStatefulOperationStateInfo),
           eventTimeWatermark = Some(offsetSeqMetadata.batchWatermarkMs),
           stateWatermarkPredicates =
             StreamingSymmetricHashJoinHelper.getStateWatermarkPredicates(
-              slothThetaJoin.left.output, slothThetaJoin.right.output,
-              slothThetaJoin.leftKeys, slothThetaJoin.rightKeys,
-              slothThetaJoin.condition.full, Some(offsetSeqMetadata.batchWatermarkMs)))
+              XXXXThetaJoin.left.output, XXXXThetaJoin.right.output,
+              XXXXThetaJoin.leftKeys, XXXXThetaJoin.rightKeys,
+              XXXXThetaJoin.condition.full, Some(offsetSeqMetadata.batchWatermarkMs)))
 
-      case SlothDeduplicateExec(keys, child, None, None) =>
-        SlothDeduplicateExec(
+      case XXXXDeduplicateExec(keys, child, None, None) =>
+        XXXXDeduplicateExec(
           keys,
           child,
           Some(nextStatefulOperationStateInfo),

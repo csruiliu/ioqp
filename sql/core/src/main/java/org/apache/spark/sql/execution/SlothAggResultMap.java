@@ -36,7 +36,7 @@ import org.apache.spark.unsafe.map.BytesToBytesMap;
  *
  * This map supports a maximum of 2 billion keys.
  */
-public final class SlothAggResultMap {
+public final class XXXXAggResultMap {
 
   /**
    * An empty aggregation buffer, encoded in UnsafeRow format. When inserting a new key into the
@@ -100,7 +100,7 @@ public final class SlothAggResultMap {
    * @param initialCapacity the initial capacity of the map (a sizing hint to avoid re-hashing).
    * @param pageSizeBytes the data page size, in bytes; limits the maximum record size.
    */
-  public SlothAggResultMap(
+  public XXXXAggResultMap(
       InternalRow emptyAggregationBuffer,
       StructType aggregationBufferSchema,
       StructType groupingKeySchema,

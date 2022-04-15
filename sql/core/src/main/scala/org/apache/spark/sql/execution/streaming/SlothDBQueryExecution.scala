@@ -21,17 +21,17 @@ package org.apache.spark.sql.execution.streaming
 import scala.collection.mutable
 
 import org.apache.spark.sql.execution.SparkPlan
-import org.apache.spark.sql.execution.aggregate.SlothHashAggregateExec
+import org.apache.spark.sql.execution.aggregate.XXXXHashAggregateExec
 import org.apache.spark.sql.execution.datasources.v2.DataSourceV2ScanExec
 import org.apache.spark.sql.sources.v2.reader.streaming.MicroBatchReader
 
-class SlothDBQueryExecution(plan: SparkPlan) {
+class XXXXDBQueryExecution(plan: SparkPlan) {
 
-  // private val sourceToMeta: mutable.HashMap[MicroBatchReader, SlothSourceMetaData] =
+  // private val sourceToMeta: mutable.HashMap[MicroBatchReader, XXXXSourceMetaData] =
   //   mutable.HashMap.empty
 
   // private val aggtoMeta:
-  //   mutable.ArrayBuffer[Tuple2[SlothHashAggregateExec, SlothSourceMetaData]] =
+  //   mutable.ArrayBuffer[Tuple2[XXXXHashAggregateExec, XXXXSourceMetaData]] =
   //   mutable.ArrayBuffer.empty
 
   // def updateIncrementability(newPlan: SparkPlan): Unit = {
@@ -52,16 +52,16 @@ class SlothDBQueryExecution(plan: SparkPlan) {
   //   false
   // }
 
-  // private def buildIncPlan(plan: SparkPlan): SlothIncPlan = {
+  // private def buildIncPlan(plan: SparkPlan): XXXXIncPlan = {
   //   plan match {
-  //     case hashJoin: SlothThetaJoinExec =>
+  //     case hashJoin: XXXXThetaJoinExec =>
   //       val rawPlan = hashJoin.copy()
   //       val children = plan.children.map(child => buildIncPlan(child))
-  //       new SlothIncPlan(rawPlan, children)
+  //       new XXXXIncPlan(rawPlan, children)
   //   }
   // }
 
-  // private class SlothSourceMetaData {
+  // private class XXXXSourceMetaData {
   //   private var incrementability: Double = _
   //   private var offsetPerBatch: Offset = _
   //   private var delayedOffset: Offset = _
@@ -76,8 +76,8 @@ class SlothDBQueryExecution(plan: SparkPlan) {
   //   }
   // }
 
-  // private class SlothIncPlan (plan: SparkPlan,
-  //                             children: Seq[SlothIncPlan]) {
+  // private class XXXXIncPlan (plan: SparkPlan,
+  //                             children: Seq[XXXXIncPlan]) {
   // }
 
 }

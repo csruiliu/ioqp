@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.apache.spark.sql.execution.aggregate.SlothAgg
+package org.apache.spark.sql.execution.aggregate.XXXXAgg
 
 import org.apache.hadoop.conf.Configuration
 
@@ -27,7 +27,7 @@ import org.apache.spark.sql.execution.streaming.StatefulOperatorStateInfo
 import org.apache.spark.sql.execution.streaming.state._
 import org.apache.spark.sql.types._
 
-class SlothAggResultStore(
+class XXXXAggResultStore(
     groupExpressions: Seq[NamedExpression],
     aggBufferAttributes: Seq[Attribute],
     var stateInfo: Option[StatefulOperatorStateInfo],

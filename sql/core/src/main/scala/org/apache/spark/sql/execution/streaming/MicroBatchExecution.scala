@@ -24,11 +24,11 @@ import scala.collection.JavaConverters._
 import scala.collection.mutable
 import scala.collection.mutable.{Map => MutableMap}
 
-import org.apache.spark.sql.{Dataset, SlothDBContext, SlothDBCostModel, SparkSession}
+import org.apache.spark.sql.{Dataset, XXXXDBContext, XXXXDBCostModel, SparkSession}
 import org.apache.spark.sql.catalyst.encoders.RowEncoder
 import org.apache.spark.sql.catalyst.expressions.{Alias, CurrentBatchTimestamp, CurrentDate, CurrentTimestamp}
 import org.apache.spark.sql.catalyst.plans.logical.{LocalRelation, LogicalPlan, Project}
-import org.apache.spark.sql.execution.{SlothFilterExec, SlothProjectExec, SQLExecution}
+import org.apache.spark.sql.execution.{XXXXFilterExec, XXXXProjectExec, SQLExecution}
 import org.apache.spark.sql.execution.datasources.v2.{StreamingDataSourceV2Relation, WriteToDataSourceV2}
 import org.apache.spark.sql.execution.streaming.sources.MicroBatchWriter
 import org.apache.spark.sql.internal.SQLConf
@@ -53,7 +53,7 @@ class MicroBatchExecution(
     sparkSession, name, checkpointRoot, analyzedPlan, sink,
     trigger, triggerClock, outputMode, deleteCheckpointOnStop) {
 
-  import SlothDBContext._
+  import XXXXDBContext._
 
   @volatile protected var sources: Seq[BaseStreamingSource] = Seq.empty
 
@@ -68,18 +68,18 @@ class MicroBatchExecution(
 
   private var watermarkTracker: WatermarkTracker = _
 
-  // SlothDB: Adding Projection Id
-  val projArray = new mutable.ArrayBuffer[Tuple2[SlothProjectExec, Long]]()
+  // XXXXDB: Adding Projection Id
+  val projArray = new mutable.ArrayBuffer[Tuple2[XXXXProjectExec, Long]]()
   var projId = 100
   var isLastBatch: Boolean = _
 
-  val filterArray = new mutable.ArrayBuffer[Tuple2[SlothFilterExec, Long]]()
+  val filterArray = new mutable.ArrayBuffer[Tuple2[XXXXFilterExec, Long]]()
   var filterId = 200
 
   var finalAggStartId = 300
 
-  // SlothDB: Cost model
-  val slothCostModel = new SlothDBCostModel()
+  // XXXXDB: Cost model
+  val XXXXCostModel = new XXXXDBCostModel()
 
   override lazy val logicalPlan: LogicalPlan = {
     assert(queryExecutionThread eq Thread.currentThread,
@@ -174,17 +174,17 @@ class MicroBatchExecution(
     }).toMap
   }
 
-  private def reportSlothOverhead(maxStep: Int, overhead: Double): Unit = {
+  private def reportXXXXOverhead(maxStep: Int, overhead: Double): Unit = {
     var overheadFile: String = null
     try {
-      val dir = slothdbStatDir
+      val dir = XXXXdbStatDir
       if (dir != null) {
-        overheadFile = dir + "/slothoverhead.stat"
+        overheadFile = dir + "/XXXXoverhead.stat"
         val constraint =
-          if (sparkSession.conf.get(SQLConf.SLOTHDB_LATENCY_CONSTRAINT).isDefined) {
-            sparkSession.conf.get(SQLConf.SLOTHDB_LATENCY_CONSTRAINT).get
-          } else if (sparkSession.conf.get(SQLConf.SLOTHDB_RESOURCE_CONSTRAINT).isDefined) {
-            sparkSession.conf.get(SQLConf.SLOTHDB_RESOURCE_CONSTRAINT).get
+          if (sparkSession.conf.get(SQLConf.XXXXDB_LATENCY_CONSTRAINT).isDefined) {
+            sparkSession.conf.get(SQLConf.XXXXDB_LATENCY_CONSTRAINT).get
+          } else if (sparkSession.conf.get(SQLConf.XXXXDB_RESOURCE_CONSTRAINT).isDefined) {
+            sparkSession.conf.get(SQLConf.XXXXDB_RESOURCE_CONSTRAINT).get
           } else {
             -1
           }
@@ -197,7 +197,7 @@ class MicroBatchExecution(
       }
     } catch {
       case _: NoSuchElementException =>
-        logInfo("SlothDB Stats Dir is not set")
+        logInfo("XXXXDB Stats Dir is not set")
       case _: IOException =>
         logError(s"Writing ${overheadFile} error")
     }
@@ -211,61 +211,61 @@ class MicroBatchExecution(
     val noDataBatchesEnabled =
       sparkSessionForStream.sessionState.conf.streamingNoDataMicroBatchesEnabled
 
-    if (enable_slothdb) {
-      execution_mode = sparkSession.conf.get(SQLConf.SLOTHDB_EXECUTION_MODE).getOrElse(-1)
+    if (enable_XXXXdb) {
+      execution_mode = sparkSession.conf.get(SQLConf.XXXXDB_EXECUTION_MODE).getOrElse(-1)
 
-      if (execution_mode != SLOTHTRAINING) {
+      if (execution_mode != XXXXTRAINING) {
         val incAware =
           if (execution_mode == INCAWARE_SUBPLAN ||
             execution_mode == INCAWARE_PATH ||
-            execution_mode == SLOTHOVERHEAD) {
+            execution_mode == XXXXOVERHEAD) {
             true
           } else {
             false
           }
 
         val mpDecompose =
-          if (execution_mode == INCAWARE_PATH || execution_mode == SLOTHOVERHEAD) true
+          if (execution_mode == INCAWARE_PATH || execution_mode == XXXXOVERHEAD) true
           else false
 
-        val costBias = sparkSession.conf.get(SQLConf.SLOTHDB_COST_MODEL_BIAS).getOrElse(1.0)
-        val maxStep = sparkSession.conf.get(SQLConf.SLOTHDB_MAX_STEP).getOrElse(100)
+        val costBias = sparkSession.conf.get(SQLConf.XXXXDB_COST_MODEL_BIAS).getOrElse(1.0)
+        val maxStep = sparkSession.conf.get(SQLConf.XXXXDB_MAX_STEP).getOrElse(100)
 
-        slothCostModel.initialize(logicalPlan,
+        XXXXCostModel.initialize(logicalPlan,
           name,
-          slothdbStatDir,
+          XXXXdbStatDir,
           sparkSession.conf.get(SQLConf.SHUFFLE_PARTITIONS.key).toInt,
           mpDecompose,
           incAware,
           costBias,
           maxStep,
-          execution_mode == SLOTHOVERHEAD)
+          execution_mode == XXXXOVERHEAD)
 
-        if (execution_mode != SLOTHINCSTAT) {
-          slothCostModel.loadEndOffsets(getFinalOffsets())
+        if (execution_mode != XXXXINCSTAT) {
+          XXXXCostModel.loadEndOffsets(getFinalOffsets())
           val start = System.nanoTime()
-          if (sparkSession.conf.get(SQLConf.SLOTHDB_LATENCY_CONSTRAINT).isDefined) {
+          if (sparkSession.conf.get(SQLConf.XXXXDB_LATENCY_CONSTRAINT).isDefined) {
             val latency_constraint =
-              sparkSession.conf.get(SQLConf.SLOTHDB_LATENCY_CONSTRAINT).get
+              sparkSession.conf.get(SQLConf.XXXXDB_LATENCY_CONSTRAINT).get
             val inc_percentage =
-              sparkSession.conf.get(SQLConf.SLOTHDB_INC_PERCENTAGE).getOrElse(1.0)
+              sparkSession.conf.get(SQLConf.XXXXDB_INC_PERCENTAGE).getOrElse(1.0)
             val sample_time =
-              sparkSession.conf.get(SQLConf.SLOTHDB_SAMPLE_TIME).getOrElse(1.0)
-            slothCostModel.genTriggerPlanForLatencyConstraint(latency_constraint,
+              sparkSession.conf.get(SQLConf.XXXXDB_SAMPLE_TIME).getOrElse(1.0)
+            XXXXCostModel.genTriggerPlanForLatencyConstraint(latency_constraint,
               inc_percentage,
               sample_time)
           } else {
             val resource_constraint =
-              sparkSession.conf.get(SQLConf.SLOTHDB_RESOURCE_CONSTRAINT).get
+              sparkSession.conf.get(SQLConf.XXXXDB_RESOURCE_CONSTRAINT).get
             val inc_percentage =
-              sparkSession.conf.get(SQLConf.SLOTHDB_INC_PERCENTAGE).getOrElse(1.0)
-            slothCostModel.genTriggerPlanForResourceConstraint(resource_constraint, inc_percentage)
+              sparkSession.conf.get(SQLConf.XXXXDB_INC_PERCENTAGE).getOrElse(1.0)
+            XXXXCostModel.genTriggerPlanForResourceConstraint(resource_constraint, inc_percentage)
           }
           val overhead = ((System.nanoTime() - start)/1000000).toDouble
           printf(s"Planning time $overhead ms\n")
-          reportSlothOverhead(maxStep, overhead)
+          reportXXXXOverhead(maxStep, overhead)
 
-          if (execution_mode == SLOTHOVERHEAD) return
+          if (execution_mode == XXXXOVERHEAD) return
         }
       }
 
@@ -316,7 +316,7 @@ class MicroBatchExecution(
         }
 
         // Must be outside reportTimeTaken so it is recorded
-        finishTrigger(currentBatchHasNewData, slothCostModel.currentStep)
+        finishTrigger(currentBatchHasNewData, XXXXCostModel.currentStep)
 
         // Signal waiting threads. Note this must be after finishTrigger() to ensure all
         // activities (progress generation, etc.) have completed before signaling.
@@ -329,8 +329,8 @@ class MicroBatchExecution(
           isCurrentBatchConstructed = false
         } else Thread.sleep(pollingDelayMs)
 
-        if (!currentBatchHasNewData && SlothDBContext.enable_slothdb) {
-          slothDBWriteStats(slothCostModel)
+        if (!currentBatchHasNewData && XXXXDBContext.enable_XXXXdb) {
+          XXXXDBWriteStats(XXXXCostModel)
           stop()
         }
       }
@@ -457,12 +457,12 @@ class MicroBatchExecution(
   private def constructNextBatch(noDataBatchesEnabled: Boolean): Boolean = withProgressLocked {
     if (isCurrentBatchConstructed) return true
 
-    // SlothDB: construct the next batch
+    // XXXXDB: construct the next batch
     val nextBatch =
       if (execution_mode == INCAWARE_SUBPLAN ||
         execution_mode == INCAWARE_PATH ||
         execution_mode == INCOBLIVIOUS) {
-        slothCostModel.constructNewData()
+        XXXXCostModel.constructNewData()
       } else {
         null
       }
@@ -673,13 +673,13 @@ class MicroBatchExecution(
         currentBatchId,
         offsetSeqMetadata)
       lastExecution.executedPlan // Force the lazy generation of execution plan
-      // SlothDB: some SlothDB optimizations
-      if (SlothDBContext.enable_slothdb) {
-        lastExecution.slothdbOptimization(runId, this)
+      // XXXXDB: some XXXXDB optimizations
+      if (XXXXDBContext.enable_XXXXdb) {
+        lastExecution.XXXXdbOptimization(runId, this)
         if (execution_mode == INCAWARE_SUBPLAN ||
             execution_mode == INCAWARE_PATH ||
             execution_mode == INCOBLIVIOUS) {
-          slothCostModel.triggerBlockingExecution(lastExecution.executedPlan)
+          XXXXCostModel.triggerBlockingExecution(lastExecution.executedPlan)
         } else {
           lastExecution.setRepairMode(lastExecution.executedPlan, true)
         }

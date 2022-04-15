@@ -24,14 +24,14 @@ import scala.concurrent.duration.Duration
 
 import org.apache.spark.{InterruptibleIterator, Partition, SparkContext, TaskContext}
 import org.apache.spark.rdd.{EmptyRDD, PartitionwiseSampledRDD, RDD}
-import org.apache.spark.sql.SlothDBCostModel._
+import org.apache.spark.sql.XXXXDBCostModel._
 import org.apache.spark.sql.catalyst.InternalRow
 import org.apache.spark.sql.catalyst.expressions._
 import org.apache.spark.sql.catalyst.expressions.codegen._
 import org.apache.spark.sql.catalyst.expressions.codegen.Predicate
 import org.apache.spark.sql.catalyst.plans.physical._
 import org.apache.spark.sql.execution.metric.SQLMetrics
-import org.apache.spark.sql.execution.streaming.{SlothRuntime, SlothRuntimeCache, SlothRuntimeOpId}
+import org.apache.spark.sql.execution.streaming.{XXXXRuntime, XXXXRuntimeCache, XXXXRuntimeOpId}
 import org.apache.spark.sql.types.LongType
 import org.apache.spark.util.{CompletionIterator, ThreadUtils}
 import org.apache.spark.util.random.{BernoulliCellSampler, PoissonSampler}
@@ -90,7 +90,7 @@ case class ProjectExec(projectList: Seq[NamedExpression], child: SparkPlan)
   override def outputPartitioning: Partitioning = child.outputPartitioning
 }
 
-case class SlothProjectExec(projectList: Seq[NamedExpression],
+case class XXXXProjectExec(projectList: Seq[NamedExpression],
                             child: SparkPlan)
   extends UnaryExecNode {
 
@@ -111,17 +111,17 @@ case class SlothProjectExec(projectList: Seq[NamedExpression],
       if (iter.isEmpty) Iterator.empty
       else {
 
-        val opRtID = new SlothRuntimeOpId(opId, queryId)
+        val opRtID = new XXXXRuntimeOpId(opId, queryId)
 
         var projRt =
           if (opId == -1) null
-          else SlothRuntimeCache.get(opRtID)
+          else XXXXRuntimeCache.get(opRtID)
         if (projRt == null) {
-          projRt = new SlothProjectRuntime(
+          projRt = new XXXXProjectRuntime(
             UnsafeProjection
               .create(projectList, child.output, subexpressionEliminationEnabled))
         }
-        val project = projRt.asInstanceOf[SlothProjectRuntime].outputProj
+        val project = projRt.asInstanceOf[XXXXProjectRuntime].outputProj
 
         project.initialize(index)
         val projIter = iter.map { inputRow =>
@@ -132,7 +132,7 @@ case class SlothProjectExec(projectList: Seq[NamedExpression],
         }
 
         def onCompletion: Unit =
-          if (opId != -1) SlothRuntimeCache.put(opRtID, projRt)
+          if (opId != -1) XXXXRuntimeCache.put(opRtID, projRt)
 
         CompletionIterator[InternalRow, Iterator[InternalRow]](
           projIter, onCompletion)
@@ -145,7 +145,7 @@ case class SlothProjectExec(projectList: Seq[NamedExpression],
   override def outputPartitioning: Partitioning = child.outputPartitioning
 }
 
-case class SlothProjectRuntime(outputProj: UnsafeProjection) extends SlothRuntime
+case class XXXXProjectRuntime(outputProj: UnsafeProjection) extends XXXXRuntime
 
 /** Physical plan for Filter. */
 case class FilterExec(condition: Expression, child: SparkPlan)
@@ -292,11 +292,11 @@ case class FilterExec(condition: Expression, child: SparkPlan)
   override def outputPartitioning: Partitioning = child.outputPartitioning
 }
 
-case class SlothFilterRuntime(predicate: Predicate) extends SlothRuntime
+case class XXXXFilterRuntime(predicate: Predicate) extends XXXXRuntime
 
-/** Physical plan for Filter. SlothDB: Added MetricsTracker */
-case class SlothFilterExec(condition: Expression, child: SparkPlan)
-  extends UnaryExecNode with PredicateHelper with SlothMetricsTracker {
+/** Physical plan for Filter. XXXXDB: Added MetricsTracker */
+case class XXXXFilterExec(condition: Expression, child: SparkPlan)
+  extends UnaryExecNode with PredicateHelper with XXXXMetricsTracker {
 
   // Split out all the IsNotNulls from condition.
   private val (notNullPreds, otherPreds) = splitConjunctivePredicates(condition).partition {
@@ -362,18 +362,18 @@ case class SlothFilterExec(condition: Expression, child: SparkPlan)
       if (iter.isEmpty) Iterator.empty
       else {
 
-        val opRtID = new SlothRuntimeOpId(opId, queryId)
+        val opRtID = new XXXXRuntimeOpId(opId, queryId)
 
         var filterRt =
           if (opId == -1) null
-          else SlothRuntimeCache.get(opRtID)
+          else XXXXRuntimeCache.get(opRtID)
         if (filterRt == null) {
           val tmpPredicate = newPredicate(condition, child.output)
           tmpPredicate.initialize(0)
-          filterRt = new SlothFilterRuntime(tmpPredicate)
+          filterRt = new XXXXFilterRuntime(tmpPredicate)
         }
 
-        val predicate = filterRt.asInstanceOf[SlothFilterRuntime].predicate
+        val predicate = filterRt.asInstanceOf[XXXXFilterRuntime].predicate
 
         var deleteRow: UnsafeRow = null
         var updateCase: Boolean = false

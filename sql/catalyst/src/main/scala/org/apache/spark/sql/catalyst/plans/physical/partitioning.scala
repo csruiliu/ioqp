@@ -151,11 +151,11 @@ case class BroadcastDistribution(mode: BroadcastMode) extends Distribution {
   }
 }
 
-case class SlothBroadcastDistribution() extends Distribution {
+case class XXXXBroadcastDistribution() extends Distribution {
   override def requiredNumPartitions: Option[Int] = None
 
   override def createPartitioning(numPartitions: Int): Partitioning = {
-    SlothBroadcastPartitioning(numPartitions)
+    XXXXBroadcastPartitioning(numPartitions)
   }
 }
 
@@ -210,7 +210,7 @@ case object SinglePartition extends Partitioning {
 
   override def satisfies0(required: Distribution): Boolean = required match {
     case _: BroadcastDistribution => false
-    case _: SlothBroadcastDistribution => false
+    case _: XXXXBroadcastDistribution => false
     case _ => true
   }
 }
@@ -336,10 +336,10 @@ case class BroadcastPartitioning(mode: BroadcastMode) extends Partitioning {
   }
 }
 
-case class SlothBroadcastPartitioning(numPartitions: Int) extends Partitioning {
+case class XXXXBroadcastPartitioning(numPartitions: Int) extends Partitioning {
 
   override def satisfies0(required: Distribution): Boolean = required match {
-    case SlothBroadcastDistribution() => true
+    case XXXXBroadcastDistribution() => true
     case _ => false
   }
 }

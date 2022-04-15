@@ -31,11 +31,11 @@ import org.apache.spark.sql.internal.SessionState
 import org.apache.spark.util.CompletionIterator
 import org.apache.spark.util.SerializableConfiguration
 
-case class SlothDeduplicateExec(keyExpressions: Seq[Attribute],
+case class XXXXDeduplicateExec(keyExpressions: Seq[Attribute],
                                 child: SparkPlan,
                                 stateInfo: Option[StatefulOperatorStateInfo] = None,
                                 eventTimeWatermark: Option[Long] = None)
-  extends UnaryExecNode with WatermarkSupport with SlothMetricsTracker {
+  extends UnaryExecNode with WatermarkSupport with XXXXMetricsTracker {
 
   private val storeConf = new StateStoreConf(sqlContext.conf)
   private val hadoopConfBcast = sparkContext.broadcast(
@@ -57,7 +57,7 @@ case class SlothDeduplicateExec(keyExpressions: Seq[Attribute],
     metrics // force lazy init at driver
 
     child.execute().mapPartitionsWithIndex((partIndex, iter) => {
-      val dedupStateManager = new SlothDeduplicateStateManager(keyExpressions,
+      val dedupStateManager = new XXXXDeduplicateStateManager(keyExpressions,
         stateInfo,
         storeConf,
         hadoopConfBcast.value.value)

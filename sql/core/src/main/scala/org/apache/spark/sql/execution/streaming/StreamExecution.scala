@@ -144,7 +144,7 @@ abstract class StreamExecution(
 
   override val runId: UUID = UUID.randomUUID
 
-  override def slothdbStatDir: String = sparkSession.conf.get(SQLConf.SLOTHDB_STAT_DIR.key)
+  override def XXXXdbStatDir: String = sparkSession.conf.get(SQLConf.XXXXDB_STAT_DIR.key)
 
   /**
    * Pretty identified string of printing in logs. Format is

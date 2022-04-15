@@ -22,27 +22,27 @@ import java.util.UUID
 
 import scala.collection.mutable
 
-abstract class SlothRuntime {}
+abstract class XXXXRuntime {}
 
-// case class SlothRuntimeOpId(var operatorId: Long, var queryRunId: UUID)
-class SlothRuntimeOpId(var operatorId: Long, var queryRunId: UUID)
+// case class XXXXRuntimeOpId(var operatorId: Long, var queryRunId: UUID)
+class XXXXRuntimeOpId(var operatorId: Long, var queryRunId: UUID)
 
-object SlothRuntimeCache {
+object XXXXRuntimeCache {
 
-  private val cachedSlothRuntime =
-    new mutable.HashMap[SlothRuntimeOpId, mutable.ArrayBuffer[SlothRuntime]]()
+  private val cachedXXXXRuntime =
+    new mutable.HashMap[XXXXRuntimeOpId, mutable.ArrayBuffer[XXXXRuntime]]()
 
-  def get(rtId: SlothRuntimeOpId): SlothRuntime = {
-    cachedSlothRuntime.synchronized {
-      val rtBuf = cachedSlothRuntime.get(rtId)
+  def get(rtId: XXXXRuntimeOpId): XXXXRuntime = {
+    cachedXXXXRuntime.synchronized {
+      val rtBuf = cachedXXXXRuntime.get(rtId)
       if (!rtBuf.isDefined || rtBuf.get.isEmpty) {
         if (!rtBuf.isDefined) {
           val curQueryId = rtId.queryRunId
-          cachedSlothRuntime.toSeq
+          cachedXXXXRuntime.toSeq
             .foreach {pair => {
               val tmpRtId = pair._1
               if (!curQueryId.equals(tmpRtId.queryRunId)) {
-                cachedSlothRuntime.remove(tmpRtId)
+                cachedXXXXRuntime.remove(tmpRtId)
               }
             }}
         }
@@ -54,13 +54,13 @@ object SlothRuntimeCache {
     }
   }
 
-  def put(rtId: SlothRuntimeOpId, slothRuntime: SlothRuntime): Unit = {
-    cachedSlothRuntime.synchronized {
-      if (!cachedSlothRuntime.get(rtId).isDefined) {
-        val buf = new mutable.ArrayBuffer[SlothRuntime]()
-        cachedSlothRuntime.put(rtId, buf)
+  def put(rtId: XXXXRuntimeOpId, XXXXRuntime: XXXXRuntime): Unit = {
+    cachedXXXXRuntime.synchronized {
+      if (!cachedXXXXRuntime.get(rtId).isDefined) {
+        val buf = new mutable.ArrayBuffer[XXXXRuntime]()
+        cachedXXXXRuntime.put(rtId, buf)
       }
-      cachedSlothRuntime.get(rtId).get.append(slothRuntime)
+      cachedXXXXRuntime.get(rtId).get.append(XXXXRuntime)
     }
   }
 }

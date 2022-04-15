@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.apache.spark.sql.execution.aggregate.SlothAgg
+package org.apache.spark.sql.execution.aggregate.XXXXAgg
 
 import scala.collection.mutable.HashMap
 
@@ -41,7 +41,7 @@ case class AggMetaData (var counter: Int,
                         var newMaxID: Long,
                         val hasChange: Array[Boolean])
 
-class SlothAggMetaMap (
+class XXXXAggMetaMap (
     groupExpressions: Seq[NamedExpression],
     nonIncExprNum: Int,
     stateInfo: Option[StatefulOperatorStateInfo],

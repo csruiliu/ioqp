@@ -22,7 +22,7 @@ import org.apache.spark.SparkConf
 import org.apache.spark.sql.{DataFrame, SparkSession}
 import org.apache.spark.sql.functions._
 import org.apache.spark.sql.internal.SQLConf
-import org.apache.spark.sql.SlothDBContext
+import org.apache.spark.sql.XXXXDBContext
 
 //noinspection ScalaStyle
 class QueryTPCH(bootstrap: String,
@@ -37,7 +37,7 @@ class QueryTPCH(bootstrap: String,
                 inputPartitions: Int,
                 constraint: String,
                 largeDataset: Boolean,
-                iOLAPConf: Int,
+                XXXXConf: Int,
                 incPercentage: String,
                 costBias: String,
                 maxStep: String,
@@ -48,21 +48,21 @@ class QueryTPCH(bootstrap: String,
                 checkpoint_path: String,
                 cbo_enable: String) {
 
-  val iOLAP_Q11_src = "/q11_config.csv"
-  val iOLAP_Q17_src = "/q17_config.csv"
-  val iOLAP_Q18_src = "/q18_config.csv"
-  val iOLAP_Q20_src = "/q20_config.csv"
-  val iOLAP_Q22_src = "/q22_config.csv"
+  val XXXX_Q11_src = "/q11_config.csv"
+  val XXXX_Q17_src = "/q17_config.csv"
+  val XXXX_Q18_src = "/q18_config.csv"
+  val XXXX_Q20_src = "/q20_config.csv"
+  val XXXX_Q22_src = "/q22_config.csv"
 
-  val iOLAP_Q11_dst = "/iOLAP/q11_config.dst"
-  val iOLAP_Q17_dst = "/iOLAP/q17_config.dst"
-  val iOLAP_Q18_dst = "/iOLAP/q18_config.dst"
-  val iOLAP_Q20_dst = "/iOLAP/q20_config.dst"
-  val iOLAP_Q22_dst = "/iOLAP/q22_config.dst"
+  val XXXX_Q11_dst = "/XXXX/q11_config.dst"
+  val XXXX_Q17_dst = "/XXXX/q17_config.dst"
+  val XXXX_Q18_dst = "/XXXX/q18_config.dst"
+  val XXXX_Q20_dst = "/XXXX/q20_config.dst"
+  val XXXX_Q22_dst = "/XXXX/q22_config.dst"
 
-  val iOLAP_OFF = 0
-  val iOLAP_ON = 1
-  val iOLAP_TRAINING = 2
+  val XXXX_OFF = 0
+  val XXXX_ON = 1
+  val XXXX_TRAINING = 2
 
   DataUtils.bootstrap = bootstrap
 
@@ -70,10 +70,10 @@ class QueryTPCH(bootstrap: String,
     inputPartitions, largeDataset, checkpoint_path)
 
   if (checkpoint_path == "none") {
-    SlothDBContext.enable_checkpoint = false
+    XXXXDBContext.enable_checkpoint = false
   }
   else {
-    SlothDBContext.enable_checkpoint = true
+    XXXXDBContext.enable_checkpoint = true
   }
 
   printf("Checkpoint Path: %s\n", TPCHSchema.checkpointPath)
@@ -82,7 +82,7 @@ class QueryTPCH(bootstrap: String,
 
   private var query_name: String = null
 
-  val enable_iOLAP: String = if (iOLAPConf == iOLAP_ON) "true" else "false"
+  val enable_XXXX: String = if (XXXXConf == XXXX_ON) "true" else "false"
 
   def execQuery(): Unit = {
     query_name = query.toLowerCase
@@ -90,20 +90,20 @@ class QueryTPCH(bootstrap: String,
     val sparkConf = new SparkConf()
       .set(SQLConf.CBO_ENABLED.key, cbo_enable)
       .set(SQLConf.SHUFFLE_PARTITIONS.key, shuffleNum)
-      .set(SQLConf.SLOTHDB_STAT_DIR.key, statDIR)
-      .set(SQLConf.SLOTHDB_EXECUTION_MODE.key, execution_mode)
-      .set(SQLConf.SLOTHDB_BATCH_NUM.key, numBatch.toString)
-      .set(SQLConf.SLOTHDB_IOLAP.key, enable_iOLAP)
-      .set(SQLConf.SLOTHDB_QUERYNAME.key, query_name)
-      .set(SQLConf.SLOTHDB_INC_PERCENTAGE.key, incPercentage)
-      .set(SQLConf.SLOTHDB_COST_MODEL_BIAS.key, costBias)
-      .set(SQLConf.SLOTHDB_MAX_STEP.key, maxStep)
-      .set(SQLConf.SLOTHDB_SAMPLE_TIME.key, sampleTime)
+      .set(SQLConf.XXXXDB_STAT_DIR.key, statDIR)
+      .set(SQLConf.XXXXDB_EXECUTION_MODE.key, execution_mode)
+      .set(SQLConf.XXXXDB_BATCH_NUM.key, numBatch.toString)
+      .set(SQLConf.XXXXDB_XXXX.key, enable_XXXX)
+      .set(SQLConf.XXXXDB_QUERYNAME.key, query_name)
+      .set(SQLConf.XXXXDB_INC_PERCENTAGE.key, incPercentage)
+      .set(SQLConf.XXXXDB_COST_MODEL_BIAS.key, costBias)
+      .set(SQLConf.XXXXDB_MAX_STEP.key, maxStep)
+      .set(SQLConf.XXXXDB_SAMPLE_TIME.key, sampleTime)
       .set("spark.port.maxRetries", "1000")
 
     val digit_constraint = constraint.toDouble
-    if (digit_constraint <= 1.0) sparkConf.set(SQLConf.SLOTHDB_LATENCY_CONSTRAINT.key, constraint)
-    else sparkConf.set(SQLConf.SLOTHDB_RESOURCE_CONSTRAINT.key, constraint)
+    if (digit_constraint <= 1.0) sparkConf.set(SQLConf.XXXXDB_LATENCY_CONSTRAINT.key, constraint)
+    else sparkConf.set(SQLConf.XXXXDB_RESOURCE_CONSTRAINT.key, constraint)
 
     // set checkpoint location
     // sparkConf.set(SQLConf.CHECKPOINT_LOCATION.key, TPCHSchema.checkpointPath + "/" + query_name)
@@ -641,7 +641,7 @@ class QueryTPCH(bootstrap: String,
 
     val subquery = execQ11_subquery(spark)
 
-    if (iOLAPConf == iOLAP_TRAINING) {
+    if (XXXXConf == XXXX_TRAINING) {
       DataUtils.writeToSink(subquery.agg(min($"small_value"), max($"small_value")), query_name)
     }
     else {
@@ -860,7 +860,7 @@ class QueryTPCH(bootstrap: String,
       .select($"l_partkey".as("agg_l_partkey"), $"avg_quantity")
     val agg_l_sampled = agg_l.sample(withReplacement = false, fraction = SR, seed = 42)
 
-    if (iOLAPConf == iOLAP_TRAINING) {
+    if (XXXXConf == XXXX_TRAINING) {
       val tmpDF = l.join(agg_l, $"l_partkey" === $"agg_l_partkey"
         and $"l_quantity" < $"avg_quantity").select($"l_partkey")
         .dropDuplicates()
@@ -869,7 +869,7 @@ class QueryTPCH(bootstrap: String,
       val result = fullP.join(tmpDF, $"p_partkey" === $"l_partkey", "left_anti")
           .select($"p_partkey")
 
-      DataUtils.writeToFile(result, query_name, hdfsRoot + iOLAP_Q17_dst)
+      DataUtils.writeToFile(result, query_name, hdfsRoot + XXXX_Q17_dst)
 
     }
     else {
@@ -913,8 +913,8 @@ class QueryTPCH(bootstrap: String,
       .select($"l_orderkey".as("agg_orderkey"))
     val agg_l_sampled = agg_l.sample(withReplacement = false, fraction = SR, seed = 42)
 
-    if (iOLAPConf == iOLAP_TRAINING) {
-       DataUtils.writeToFile(agg_l, query_name, hdfsRoot + iOLAP_Q18_dst)
+    if (XXXXConf == XXXX_TRAINING) {
+       DataUtils.writeToFile(agg_l, query_name, hdfsRoot + XXXX_Q18_dst)
     }
     else {
       val result =
@@ -1006,8 +1006,8 @@ class QueryTPCH(bootstrap: String,
       .filter($"n_name" === "CANADA")
     val n_sampled = n.sample(withReplacement = false, fraction = SR, seed = 42)
 
-    if (iOLAPConf == iOLAP_TRAINING) {
-      DataUtils.writeToFile(subquery, query_name, hdfsRoot + iOLAP_Q20_dst)
+    if (XXXXConf == XXXX_TRAINING) {
+      DataUtils.writeToFile(subquery, query_name, hdfsRoot + XXXX_Q20_dst)
     }
     else {
       val result =
@@ -1104,7 +1104,7 @@ class QueryTPCH(bootstrap: String,
     val o = DataUtils.loadStreamTable(spark, "orders", "o")
     val o_sampled = o.sample(withReplacement = false, fraction = SR, seed = 42)
 
-    if (iOLAPConf == iOLAP_TRAINING) {
+    if (XXXXConf == XXXX_TRAINING) {
       DataUtils.writeToSink(subquery1.agg(min($"avg_acctbal"), max($"avg_acctbal")), query_name)
     }
     else {
@@ -1256,7 +1256,7 @@ object QueryTPCH {
       System.err.println("Usage: QueryTPCH" +
         "<bootstrap-servers> <query> <numBatch> <number-shuffle-partition> <statistics dir>" +
         "<statistics dir> <SF> <HDFS root> <execution mode> <num of input partitions> <performance constraint>" +
-        "<large dataset> <iOLAP Config> <inc_pct> <cost model bias> <max step> <sample time>" +
+        "<large dataset> <XXXX Config> <inc_pct> <cost model bias> <max step> <sample time>" +
         "<sample rate> <trigger interval> <aggregation interval> <checkpoint> <cbo_enable>")
       System.exit(1)
     }

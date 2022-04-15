@@ -17,15 +17,15 @@
 
 package org.apache.spark.sql
 
-object SlothDBContext {
-  var enable_slothdb = true
+object XXXXDBContext {
+  var enable_XXXXdb = true
   var enable_checkpoint = true
   var execution_mode = -1
 
   val INCAWARE_PATH = 0
   val INCAWARE_SUBPLAN = 1
   val INCOBLIVIOUS = 2
-  val SLOTHINCSTAT = 3
-  val SLOTHTRAINING = 4
-  val SLOTHOVERHEAD = 5
+  val XXXXINCSTAT = 3
+  val XXXXTRAINING = 4
+  val XXXXOVERHEAD = 5
 }

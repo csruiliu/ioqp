@@ -33,7 +33,7 @@ import org.apache.spark.sql.types.StructType
 import org.apache.spark.util.SizeEstimator
 
 
-private[state] class SlothDBNoCKPTStateStoreProvider extends StateStoreProvider with Logging {
+private[state] class XXXXDBNoCKPTStateStoreProvider extends StateStoreProvider with Logging {
   // ConcurrentHashMap is used because it generates fail-safe iterators on filtering
   // - The iterator is weakly consistent with the map, i.e., iterator's data reflect the values in
   //   the map when the iterator was created
@@ -42,7 +42,7 @@ private[state] class SlothDBNoCKPTStateStoreProvider extends StateStoreProvider 
   type MapType = java.util.concurrent.ConcurrentHashMap[UnsafeRow, UnsafeRow]
 
   /** Implementation of [[StateStore]] API which is backed by a HDFS-compatible file system */
-  class SlothDBNoCKPTStateStore(val version: Long, mapToUpdate: MapType)
+  class XXXXDBNoCKPTStateStore(val version: Long, mapToUpdate: MapType)
     extends StateStore {
 
     /** Trait and classes representing the internal state of the store */
@@ -54,7 +54,7 @@ private[state] class SlothDBNoCKPTStateStoreProvider extends StateStoreProvider 
     private val newVersion = version + 1
     @volatile private var state: STATE = UPDATING
 
-    override def id: StateStoreId = SlothDBNoCKPTStateStoreProvider.this.stateStoreId
+    override def id: StateStoreId = XXXXDBNoCKPTStateStoreProvider.this.stateStoreId
 
     override def get(key: UnsafeRow): UnsafeRow = {
       mapToUpdate.get(key)
@@ -140,7 +140,7 @@ private[state] class SlothDBNoCKPTStateStoreProvider extends StateStoreProvider 
     }
 
     override def toString(): String = {
-      s"SlothDBNoCKPTStateStore[id=(op=${id.operatorId},part=${id.partitionId})"
+      s"XXXXDBNoCKPTStateStore[id=(op=${id.operatorId},part=${id.partitionId})"
     }
   }
 
@@ -158,8 +158,8 @@ private[state] class SlothDBNoCKPTStateStoreProvider extends StateStoreProvider 
     //   newMap.putAll(loadMap(version))
     // }
     val newMap = loadMap(version)
-    val store = new SlothDBNoCKPTStateStore(version, newMap)
-    logInfo(s"Retrieved version $version of ${SlothDBNoCKPTStateStoreProvider.this} for update")
+    val store = new XXXXDBNoCKPTStateStore(version, newMap)
+    logInfo(s"Retrieved version $version of ${XXXXDBNoCKPTStateStoreProvider.this} for update")
     store
   }
 
@@ -194,7 +194,7 @@ private[state] class SlothDBNoCKPTStateStoreProvider extends StateStoreProvider 
   }
 
   override def toString(): String = {
-    s"SlothDBNoCKPTStateStoreProvider[" +
+    s"XXXXDBNoCKPTStateStoreProvider[" +
       s"id = (op=${stateStoreId.operatorId},part=${stateStoreId.partitionId})]"
   }
 

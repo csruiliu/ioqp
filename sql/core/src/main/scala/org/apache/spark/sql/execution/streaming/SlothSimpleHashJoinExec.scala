@@ -23,7 +23,7 @@ import org.apache.spark.sql.catalyst.expressions.{Attribute, AttributeReference,
 import org.apache.spark.sql.catalyst.plans._
 import org.apache.spark.sql.catalyst.plans.logical.EventTimeWatermark._
 import org.apache.spark.sql.catalyst.plans.physical._
-import org.apache.spark.sql.execution.{BinaryExecNode, SlothMetricsTracker, SlothUtils, SparkPlan}
+import org.apache.spark.sql.execution.{BinaryExecNode, XXXXMetricsTracker, XXXXUtils, SparkPlan}
 import org.apache.spark.sql.execution.metric.SQLMetrics
 import org.apache.spark.sql.execution.streaming.StreamingSymmetricHashJoinHelper._
 import org.apache.spark.sql.execution.streaming.state._
@@ -32,7 +32,7 @@ import org.apache.spark.sql.types.IntegerType
 import org.apache.spark.util.{CompletionIterator, SerializableConfiguration}
 
 
-case class SlothSimpleHashJoinExec(
+case class XXXXSimpleHashJoinExec(
     leftKeys: Seq[Expression],
     rightKeys: Seq[Expression],
     joinType: JoinType,
@@ -42,7 +42,7 @@ case class SlothSimpleHashJoinExec(
     stateWatermarkPredicates: JoinStateWatermarkPredicates,
     keepLeft: Boolean,
     left: SparkPlan,
-    right: SparkPlan) extends SparkPlan with BinaryExecNode with SlothMetricsTracker {
+    right: SparkPlan) extends SparkPlan with BinaryExecNode with XXXXMetricsTracker {
 
   def this(
       leftKeys: Seq[Expression],
@@ -116,11 +116,11 @@ case class SlothSimpleHashJoinExec(
     val leftKeyAttrs = leftKeys.map(expr => expr.asInstanceOf[Attribute])
     val rightKeyAttrs = rightKeys.map(expr => expr.asInstanceOf[Attribute])
 
-    val leftNonKeyAttrs = SlothUtils.attrDiff(left.output, leftKeyAttrs)
-    val rightNonKeyAttrs = SlothUtils.attrDiff(right.output, rightKeyAttrs)
+    val leftNonKeyAttrs = XXXXUtils.attrDiff(left.output, leftKeyAttrs)
+    val rightNonKeyAttrs = XXXXUtils.attrDiff(right.output, rightKeyAttrs)
 
-    leftPropagateUpdate = SlothUtils.attrIntersect(leftNonKeyAttrs, parentProjOutput).nonEmpty
-    rightPropagateUpdate = SlothUtils.attrIntersect(rightNonKeyAttrs, parentProjOutput).nonEmpty
+    leftPropagateUpdate = XXXXUtils.attrIntersect(leftNonKeyAttrs, parentProjOutput).nonEmpty
+    rightPropagateUpdate = XXXXUtils.attrIntersect(rightNonKeyAttrs, parentProjOutput).nonEmpty
   }
 
   private[this] var isFirstBatch = true
@@ -131,7 +131,7 @@ case class SlothSimpleHashJoinExec(
 
   protected override def doExecute(): RDD[InternalRow] = {
     val stateStoreCoord = sqlContext.sessionState.streamingQueryManager.stateStoreCoordinator
-    val stateStoreNames = SlothHashJoinStateManager.allStateStoreNames(LeftSide, RightSide)
+    val stateStoreNames = XXXXHashJoinStateManager.allStateStoreNames(LeftSide, RightSide)
     left.execute().stateStoreAwareZipPartitions(
       right.execute(), stateInfo.get, stateStoreNames, stateStoreCoord)(processPartitions)
   }
@@ -150,9 +150,9 @@ case class SlothSimpleHashJoinExec(
     val joinedRow1 = new JoinedRow
     val joinedRow2 = new JoinedRow
 
-    val opRtId = new SlothRuntimeOpId(stateInfo.get.operatorId, stateInfo.get.queryRunId)
-    val opRunTime = SlothRuntimeCache.get(opRtId)
-    var hashRunTime: SlothHashJoinRuntime = null
+    val opRtId = new XXXXRuntimeOpId(stateInfo.get.operatorId, stateInfo.get.queryRunId)
+    val opRunTime = XXXXRuntimeCache.get(opRtId)
+    var hashRunTime: XXXXHashJoinRuntime = null
 
     if (opRunTime == null) {
       val outputProj = UnsafeProjection.create(output, intermediateOutput)
@@ -163,7 +163,7 @@ case class SlothSimpleHashJoinExec(
       val leftKeyProj = UnsafeProjection.create(leftKeys, left.output)
       val leftDeleteKeyProj = UnsafeProjection.create(leftKeys, left.output)
       val leftStateManager = if (keepLeft) {
-        new SlothHashJoinStateManager(
+        new XXXXHashJoinStateManager(
           LeftSide, left.output, leftKeys, stateInfo, storeConf, hadoopConfBcast.value.value)
       } else null
       val leftRowGen = if (keepLeft) {
@@ -174,7 +174,7 @@ case class SlothSimpleHashJoinExec(
       val rightKeyProj = UnsafeProjection.create(rightKeys, right.output)
       val rightDeleteKeyProj = UnsafeProjection.create(rightKeys, right.output)
       val rightStateManager = if (!keepLeft) {
-        new SlothHashJoinStateManager(
+        new XXXXHashJoinStateManager(
           RightSide, right.output, rightKeys, stateInfo, storeConf, hadoopConfBcast.value.value)
       } else null
       val rightRowGen = if (!keepLeft) {
@@ -182,11 +182,11 @@ case class SlothSimpleHashJoinExec(
           right.output, right.output :+ AttributeReference("counter", IntegerType)())
       } else null
 
-      hashRunTime = new SlothHashJoinRuntime(
+      hashRunTime = new XXXXHashJoinRuntime(
         outputProj, postJoinFilter, leftKeyProj, leftDeleteKeyProj, leftRowGen, leftStateManager,
         rightKeyProj, rightDeleteKeyProj, rightRowGen, rightStateManager, null)
     } else {
-      hashRunTime = opRunTime.asInstanceOf[SlothHashJoinRuntime]
+      hashRunTime = opRunTime.asInstanceOf[XXXXHashJoinRuntime]
 
       if (keepLeft) {
         hashRunTime.leftStateManager.reInit(stateInfo, storeConf, hadoopConfBcast.value.value)
@@ -266,7 +266,7 @@ case class SlothSimpleHashJoinExec(
         }
       }
 
-      SlothRuntimeCache.put(opRtId, hashRunTime)
+      XXXXRuntimeCache.put(opRtId, hashRunTime)
     }
 
     CompletionIterator[InternalRow, Iterator[InternalRow]](
@@ -283,7 +283,7 @@ case class SlothSimpleHashJoinExec(
       stateWatermarkPredicate: Option[JoinStateWatermarkPredicate],
       keyGenerator: UnsafeProjection,
       deleteKeyGenerator: UnsafeProjection,
-      stateManager: SlothHashJoinStateManager,
+      stateManager: XXXXHashJoinStateManager,
       rowGenerator: UnsafeProjection) {
 
     // Filter the joined rows based on the given condition.

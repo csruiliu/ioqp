@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.apache.spark.sql.execution.aggregate.SlothAgg
+package org.apache.spark.sql.execution.aggregate.XXXXAgg
 
 import org.apache.hadoop.conf.Configuration
 import util.control.Breaks._
@@ -29,7 +29,7 @@ import org.apache.spark.sql.execution.streaming.StatefulOperatorStateInfo
 import org.apache.spark.sql.execution.streaming.state._
 import org.apache.spark.sql.types._
 
-class SlothAggFullMap(
+class XXXXAggFullMap(
     groupExpressions: Seq[NamedExpression],
     inputAttributes: Seq[Attribute],
     var stateInfo: Option[StatefulOperatorStateInfo],
@@ -143,7 +143,7 @@ class SlothAggFullMap(
 
   def getGroupIteratorbyExpr(nonIncMetaPerExpr: NonIncMetaPerExpr,
                              exprIndex: Int,
-                             hashMapforMetaData: SlothAggMetaMap): Iterator[UnsafeRowPair] = {
+                             hashMapforMetaData: XXXXAggMetaMap): Iterator[UnsafeRowPair] = {
     val aggFunc = nonIncMetaPerExpr.aggExpr.aggregateFunction
     val rowOffset = nonIncMetaPerExpr.rowOffset
     val dataType = nonIncMetaPerExpr.dataType

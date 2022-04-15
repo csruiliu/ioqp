@@ -30,7 +30,7 @@ import org.json4s.JsonDSL._
 import org.json4s.jackson.JsonMethods._
 
 import org.apache.spark.annotation.InterfaceStability
-import org.apache.spark.sql.execution.SlothProgressMetrics
+import org.apache.spark.sql.execution.XXXXProgressMetrics
 
 /**
  * Information about updates made to stateful operators in a [[StreamingQuery]] during a trigger.
@@ -153,7 +153,7 @@ class StreamingQueryProgress private[sql](
   }
 }
 
-class SlothDBProgress private[sql] (
+class XXXXDBProgress private[sql] (
       val id: UUID,
       val runId: UUID,
       val name: String,
@@ -161,7 +161,7 @@ class SlothDBProgress private[sql] (
       val batchId: Long,
       val processTime: Double,
       val totalProcessTime: Double,
-      val operatorProgress: Array[SlothProgressMetrics],
+      val operatorProgress: Array[XXXXProgressMetrics],
       val sources: Array[SourceProgress],
       val sink: SinkProgress) {
 

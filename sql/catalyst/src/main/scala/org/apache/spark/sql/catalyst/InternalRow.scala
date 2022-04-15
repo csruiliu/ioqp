@@ -50,7 +50,7 @@ abstract class InternalRow extends SpecializedGetters with Serializable {
   def setFloat(i: Int, value: Float): Unit = update(i, value)
   def setDouble(i: Int, value: Double): Unit = update(i, value)
 
-  // SlothDB: default implementation for inserts/deletes
+  // XXXXDB: default implementation for inserts/deletes
   def isInsert(): Boolean = true
   def setInsert(isInsert: Boolean): Unit = {}
   def cleanInsert(): Unit = {}

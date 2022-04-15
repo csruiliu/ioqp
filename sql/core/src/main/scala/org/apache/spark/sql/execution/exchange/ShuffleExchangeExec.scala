@@ -235,7 +235,7 @@ object ShuffleExchangeExec {
           override def numPartitions: Int = 1
           override def getPartition(key: Any): Int = 0
         }
-      case SlothBroadcastPartitioning(broadCastnumPartitions) =>
+      case XXXXBroadcastPartitioning(broadCastnumPartitions) =>
         new Partitioner {
           override def numPartitions: Int = broadCastnumPartitions
           override def getPartition(key: Any): Int = -1
@@ -256,7 +256,7 @@ object ShuffleExchangeExec {
       case h: HashPartitioning =>
         val projection = UnsafeProjection.create(h.partitionIdExpression :: Nil, outputAttributes)
         row => projection(row).getInt(0)
-      case RangePartitioning(_, _) | SinglePartition | SlothBroadcastPartitioning(_) => identity
+      case RangePartitioning(_, _) | SinglePartition | XXXXBroadcastPartitioning(_) => identity
       case _ => sys.error(s"Exchange not implemented for $newPartitioning")
     }
 
@@ -312,7 +312,7 @@ object ShuffleExchangeExec {
       val isOrderSensitive = isRoundRobin && !SQLConf.get.sortBeforeRepartition
       if (needToCopyObjectsBeforeShuffle(part)) {
         newPartitioning match {
-          case SlothBroadcastPartitioning(numPartitions) =>
+          case XXXXBroadcastPartitioning(numPartitions) =>
             newRdd.mapPartitionsWithIndexInternal((_, iter) => {
               iter.flatMap { row => {
                 (0 until numPartitions).map(partID => (partID, row.copy()))
@@ -326,7 +326,7 @@ object ShuffleExchangeExec {
         }
       } else {
         newPartitioning match {
-          case SlothBroadcastPartitioning(numPartitions) =>
+          case XXXXBroadcastPartitioning(numPartitions) =>
             newRdd.mapPartitionsWithIndexInternal((_, iter) => {
               val mutablePairArray = Array.fill(numPartitions)(new MutablePair[Int, InternalRow]())
               iter.flatMap{row => {

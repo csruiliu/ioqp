@@ -27,11 +27,11 @@ import org.apache.spark.sql.catalyst.expressions.Attribute
 import org.apache.spark.sql.catalyst.expressions.aggregate._
 import org.apache.spark.sql.catalyst.plans.physical._
 import org.apache.spark.sql.execution._
-import org.apache.spark.sql.execution.aggregate.SlothAgg.SlothFinalAgg
-import org.apache.spark.sql.execution.streaming.SlothRuntimeOpId
+import org.apache.spark.sql.execution.aggregate.XXXXAgg.XXXXFinalAgg
+import org.apache.spark.sql.execution.streaming.XXXXRuntimeOpId
 import org.apache.spark.util.{CompletionIterator, Utils}
 
-case class SlothFinalAggExec (
+case class XXXXFinalAggExec (
     requiredChildDistributionExpressions: Option[Seq[Expression]],
     groupingExpressions: Seq[NamedExpression],
     aggregateExpressions: Seq[AggregateExpression],
@@ -81,7 +81,7 @@ case class SlothFinalAggExec (
     child.execute().mapPartitionsWithIndex { (partIndex, iter) => {
       if (iter.isEmpty) Iterator.empty
       else {
-        val finalAgg = new SlothFinalAgg(
+        val finalAgg = new XXXXFinalAgg(
           partIndex,
           groupingExpressions,
           child.output,
@@ -91,7 +91,7 @@ case class SlothFinalAggExec (
           resultExpressions,
           (expressions, inputSchema) =>
             newMutableProjection(expressions, inputSchema, subexpressionEliminationEnabled),
-          new SlothRuntimeOpId(opId, runId))
+          new XXXXRuntimeOpId(opId, runId))
 
         CompletionIterator[InternalRow, Iterator[InternalRow]](
           iter.map(finalAgg.processFinalRow),
@@ -135,9 +135,9 @@ case class SlothFinalAggExec (
     val functionString = Utils.truncatedString(allAggregateExpressions, "[", ", ", "]")
     val outputString = Utils.truncatedString(output, "[", ", ", "]")
     if (verbose) {
-      s"SlothFinalHashAggregate(keys=$keyString, functions=$functionString, output=$outputString)"
+      s"XXXXFinalHashAggregate(keys=$keyString, functions=$functionString, output=$outputString)"
     } else {
-      s"SlothFinalHashAggregate(keys=$keyString, functions=$functionString)"
+      s"XXXXFinalHashAggregate(keys=$keyString, functions=$functionString)"
     }
   }
 }

@@ -41,7 +41,7 @@ import org.apache.spark.sql.types.StructType
 import org.apache.spark.util.{SizeEstimator, Utils}
 
 
-private[state] class SlothDBStateStoreProvider extends StateStoreProvider with Logging {
+private[state] class XXXXDBStateStoreProvider extends StateStoreProvider with Logging {
 
   // ConcurrentHashMap is used because it generates fail-safe iterators on filtering
   // - The iterator is weakly consistent with the map, i.e., iterator's data reflect the values in
@@ -51,7 +51,7 @@ private[state] class SlothDBStateStoreProvider extends StateStoreProvider with L
   type MapType = java.util.concurrent.ConcurrentHashMap[UnsafeRow, UnsafeRow]
 
   /** Implementation of [[StateStore]] API which is backed by a HDFS-compatible file system */
-  class SlothDBStateStore(val version: Long, mapToUpdate: MapType)
+  class XXXXDBStateStore(val version: Long, mapToUpdate: MapType)
     extends StateStore {
 
     /** Trait and classes representing the internal state of the store */
@@ -67,7 +67,7 @@ private[state] class SlothDBStateStoreProvider extends StateStoreProvider with L
     private lazy val deltaFileStream = fm.createAtomic(finalDeltaFile, overwriteIfPossible = true)
     private lazy val compressedStream = compressStream(deltaFileStream)
 
-    override def id: StateStoreId = SlothDBStateStoreProvider.this.stateStoreId
+    override def id: StateStoreId = XXXXDBStateStoreProvider.this.stateStoreId
 
     override def get(key: UnsafeRow): UnsafeRow = {
       mapToUpdate.get(key)
@@ -158,7 +158,7 @@ private[state] class SlothDBStateStoreProvider extends StateStoreProvider with L
     }
 
     override def toString(): String = {
-      s"SlothDBStateStore[id=(op=${id.operatorId},part=${id.partitionId})"
+      s"XXXXDBStateStore[id=(op=${id.operatorId},part=${id.partitionId})"
     }
   }
 
@@ -176,8 +176,8 @@ private[state] class SlothDBStateStoreProvider extends StateStoreProvider with L
        newMap.putAll(loadMap(version))
     }
     // val newMap = loadMap(version)
-    val store = new SlothDBStateStore(version, newMap)
-    logInfo(s"Retrieved version $version of ${SlothDBStateStoreProvider.this} for update")
+    val store = new XXXXDBStateStore(version, newMap)
+    logInfo(s"Retrieved version $version of ${XXXXDBStateStoreProvider.this} for update")
     store
   }
 
@@ -222,7 +222,7 @@ private[state] class SlothDBStateStoreProvider extends StateStoreProvider with L
   }
 
   override def toString(): String = {
-    s"SlothDBStateStoreProvider[" +
+    s"XXXXDBStateStoreProvider[" +
       s"id = (op=${stateStoreId.operatorId},part=${stateStoreId.partitionId}), dir = $baseDir]"
   }
 

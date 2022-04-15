@@ -65,7 +65,7 @@ object DataUtils {
       .load(staticPath)
   }
 
-  def loadIOLAPDoubleTable(spark: SparkSession, path: String): Double = {
+  def loadXXXXDoubleTable(spark: SparkSession, path: String): Double = {
     val reader = new BufferedReader(new FileReader((path)))
     val value = reader.readLine().toDouble
     reader.close()
@@ -73,7 +73,7 @@ object DataUtils {
     value
   }
 
-  def loadIOLAPLongTable(spark: SparkSession, path: String): Array[Long] = {
+  def loadXXXXLongTable(spark: SparkSession, path: String): Array[Long] = {
     val reader = new BufferedReader(new FileReader((path)))
     val keyArray = new ArrayBuffer[Long]()
 

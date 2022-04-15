@@ -34,32 +34,32 @@ class CardTPCH (bootstrap: String,
                 inputPartitions: Int,
                 constraint: String,
                 largeDataset: Boolean,
-                iOLAPConf: Int,
-                iOLAPRoot: String,
+                XXXXConf: Int,
+                XXXXRoot: String,
                 SR: Double) {
-  val iOLAP_Q11_src = "/q11_config.csv"
-  val iOLAP_Q17_src = "/q17_config.csv"
-  val iOLAP_Q18_src = "/q18_config.csv"
-  val iOLAP_Q20_src = "/q20_config.csv"
-  val iOLAP_Q22_src = "/q22_config.csv"
+  val XXXX_Q11_src = "/q11_config.csv"
+  val XXXX_Q17_src = "/q17_config.csv"
+  val XXXX_Q18_src = "/q18_config.csv"
+  val XXXX_Q20_src = "/q20_config.csv"
+  val XXXX_Q22_src = "/q22_config.csv"
 
-  val iOLAP_Q11_dst = "/iOLAP/q11_config.dst"
-  val iOLAP_Q17_dst = "/iOLAP/q17_config.dst"
-  val iOLAP_Q18_dst = "/iOLAP/q18_config.dst"
-  val iOLAP_Q20_dst = "/iOLAP/q20_config.dst"
-  val iOLAP_Q22_dst = "/iOLAP/q22_config.dst"
+  val XXXX_Q11_dst = "/XXXX/q11_config.dst"
+  val XXXX_Q17_dst = "/XXXX/q17_config.dst"
+  val XXXX_Q18_dst = "/XXXX/q18_config.dst"
+  val XXXX_Q20_dst = "/XXXX/q20_config.dst"
+  val XXXX_Q22_dst = "/XXXX/q22_config.dst"
 
-  val iOLAP_ON = 0
-  val iOLAP_OFF = 1
-  val iOLAP_TRAINING = 2
+  val XXXX_ON = 0
+  val XXXX_OFF = 1
+  val XXXX_TRAINING = 2
 
   DataUtils.bootstrap = bootstrap
   // TPCHSchema.setQueryMetaData(numBatch, SF, SR, hdfsRoot, inputPartitions, largeDataset)
 
   private var query_name: String = null
 
-  val enable_iOLAP =
-    if (iOLAPConf == iOLAP_ON) "true"
+  val enable_XXXX =
+    if (XXXXConf == XXXX_ON) "true"
     else "false"
 
   def execQuery(query: String): Unit = {
@@ -67,15 +67,15 @@ class CardTPCH (bootstrap: String,
 
     val sparkConf = new SparkConf()
       .set(SQLConf.SHUFFLE_PARTITIONS.key, shuffleNum)
-      .set(SQLConf.SLOTHDB_STAT_DIR.key, statDIR)
-      .set(SQLConf.SLOTHDB_EXECUTION_MODE.key, execution_mode)
-      .set(SQLConf.SLOTHDB_BATCH_NUM.key, numBatch.toString)
-      .set(SQLConf.SLOTHDB_IOLAP.key, enable_iOLAP)
-      .set(SQLConf.SLOTHDB_QUERYNAME.key, query_name)
+      .set(SQLConf.XXXXDB_STAT_DIR.key, statDIR)
+      .set(SQLConf.XXXXDB_EXECUTION_MODE.key, execution_mode)
+      .set(SQLConf.XXXXDB_BATCH_NUM.key, numBatch.toString)
+      .set(SQLConf.XXXXDB_XXXX.key, enable_XXXX)
+      .set(SQLConf.XXXXDB_QUERYNAME.key, query_name)
 
     val digit_constraint = constraint.toDouble
-    if (digit_constraint <= 1.0) sparkConf.set(SQLConf.SLOTHDB_LATENCY_CONSTRAINT.key, constraint)
-    else sparkConf.set(SQLConf.SLOTHDB_RESOURCE_CONSTRAINT.key, constraint)
+    if (digit_constraint <= 1.0) sparkConf.set(SQLConf.XXXXDB_LATENCY_CONSTRAINT.key, constraint)
+    else sparkConf.set(SQLConf.XXXXDB_RESOURCE_CONSTRAINT.key, constraint)
 
     val spark = SparkSession.builder()
       .config(sparkConf)
@@ -447,7 +447,7 @@ class CardTPCH (bootstrap: String,
 
     val subquery = execQ11_subquery(spark)
 
-    if (iOLAPConf == iOLAP_TRAINING) {
+    if (XXXXConf == XXXX_TRAINING) {
       DataUtils.writeToSink(subquery.agg(min($"small_value"), max($"small_value")), query_name)
     } else {
       val result =
@@ -610,7 +610,7 @@ class CardTPCH (bootstrap: String,
       .agg((doubleAvg($"l_quantity") * 0.2).as("avg_quantity"))
       .select($"l_partkey".as("agg_l_partkey"), $"avg_quantity")
 
-    if (iOLAPConf == iOLAP_TRAINING) {
+    if (XXXXConf == XXXX_TRAINING) {
       val tmpDF = l.join(agg_l, $"l_partkey" === $"agg_l_partkey"
         and $"l_quantity" < $"avg_quantity").select($"l_partkey")
         .dropDuplicates()
@@ -619,7 +619,7 @@ class CardTPCH (bootstrap: String,
       val result = fullP.join(tmpDF, $"p_partkey" === $"l_partkey", "left_anti")
           .select($"p_partkey")
 
-      DataUtils.writeToFile(result, query_name, hdfsRoot + iOLAP_Q17_dst)
+      DataUtils.writeToFile(result, query_name, hdfsRoot + XXXX_Q17_dst)
 
     } else {
       val result =
@@ -648,8 +648,8 @@ class CardTPCH (bootstrap: String,
       .filter($"sum_quantity" > 300)
       .select($"l_orderkey".as("agg_orderkey"))
 
-    if (iOLAPConf == iOLAP_TRAINING) {
-       DataUtils.writeToFile(agg_l, query_name, hdfsRoot + iOLAP_Q18_dst)
+    if (XXXXConf == XXXX_TRAINING) {
+       DataUtils.writeToFile(agg_l, query_name, hdfsRoot + XXXX_Q18_dst)
     } else {
       val result =
         o.join(agg_l, $"o_orderkey" === $"agg_orderkey", "left_semi")
@@ -658,8 +658,8 @@ class CardTPCH (bootstrap: String,
             .groupBy("c_name", "c_custkey", "o_orderkey", "o_orderdate", "o_totalprice")
             .agg(doubleSum2($"l_quantity"))
 
-        // if (iOLAPConf == iOLAP_ON) {
-        //   val keyArray = DataUtils.loadIOLAPLongTable(spark, iOLAPRoot + iOLAP_Q18_src)
+        // if (XXXXConf == XXXX_ON) {
+        //   val keyArray = DataUtils.loadXXXXLongTable(spark, XXXXRoot + XXXX_Q18_src)
 
         //   o.filter($"o_orderkey".isInCollection(keyArray))
         //     .join(agg_l, $"o_orderkey" === $"agg_orderkey", "left_semi")
@@ -736,15 +736,15 @@ class CardTPCH (bootstrap: String,
     val n = DataUtils.loadStreamTable(spark, "nation", "n")
       .filter($"n_name" === "CANADA")
 
-    if (iOLAPConf == iOLAP_TRAINING) {
-      DataUtils.writeToFile(subquery, query_name, hdfsRoot + iOLAP_Q20_dst)
+    if (XXXXConf == XXXX_TRAINING) {
+      DataUtils.writeToFile(subquery, query_name, hdfsRoot + XXXX_Q20_dst)
     } else {
       val result =
         s.join(n, $"s_nationkey" === $"n_nationkey")
           .join(subquery, $"s_suppkey" === $"ps_suppkey", "left_semi")
           .select($"s_name", $"s_address")
-        // if (iOLAPConf == iOLAP_ON) {
-        //   val keyArray = DataUtils.loadIOLAPLongTable(spark, iOLAPRoot + iOLAP_Q20_src)
+        // if (XXXXConf == XXXX_ON) {
+        //   val keyArray = DataUtils.loadXXXXLongTable(spark, XXXXRoot + XXXX_Q20_src)
         //   s.filter($"s_suppkey".isInCollection(keyArray))
         //     .join(subquery, $"s_suppkey" === $"ps_suppkey", "left_semi")
         //     .join(n, $"s_nationkey" === $"n_nationkey")
@@ -814,7 +814,7 @@ class CardTPCH (bootstrap: String,
 
     val o = DataUtils.loadStreamTable(spark, "orders", "o")
 
-    if (iOLAPConf == iOLAP_TRAINING) {
+    if (XXXXConf == XXXX_TRAINING) {
       DataUtils.writeToSink(subquery1.agg(min($"avg_acctbal"), max($"avg_acctbal")), query_name)
     } else {
       val result =
@@ -825,8 +825,8 @@ class CardTPCH (bootstrap: String,
           .agg(numcust(lit(1)).as("numcust"),
             doubleSum($"c_acctbal").as("totalacctbal"))
 
-        // if (iOLAPConf == iOLAP_ON) {
-        //   val bal = DataUtils.loadIOLAPDoubleTable(spark, iOLAPRoot + iOLAP_Q22_src)
+        // if (XXXXConf == XXXX_ON) {
+        //   val bal = DataUtils.loadXXXXDoubleTable(spark, XXXXRoot + XXXX_Q22_src)
 
         //   c.filter($"c_acctbal" > bal)
         //     .join(o, $"c_custkey" === $"o_custkey", "left_anti")
@@ -898,7 +898,7 @@ object CardTPCH {
         "<numBatch> <number-shuffle-partition> <statistics dir> <SF> <HDFS root>" +
         "<execution mode [0: inc-aware(subpath), 1: inc-aware(subplan), 2: inc-oblivious, " +
         "3: generate inc statistics, 4: training]>  <num of input partitions>" +
-        "<performance constraint> <large dataset> <iOLAP Config> <iOLAP root> <sample rate>")
+        "<performance constraint> <large dataset> <XXXX Config> <XXXX root> <sample rate>")
       System.exit(1)
     }
 

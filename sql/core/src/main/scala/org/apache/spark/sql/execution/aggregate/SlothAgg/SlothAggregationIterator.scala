@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.apache.spark.sql.execution.aggregate.SlothAgg
+package org.apache.spark.sql.execution.aggregate.XXXXAgg
 
 import org.apache.hadoop.conf.Configuration
 
@@ -25,13 +25,13 @@ import org.apache.spark.sql.catalyst.InternalRow
 import org.apache.spark.sql.catalyst.expressions._
 import org.apache.spark.sql.catalyst.expressions.aggregate._
 import org.apache.spark.sql.catalyst.expressions.codegen.{GenerateUnsafeRowJoiner, Predicate}
-import org.apache.spark.sql.execution.SlothAggResultMap
+import org.apache.spark.sql.execution.XXXXAggResultMap
 import org.apache.spark.sql.execution.metric.SQLMetric
-import org.apache.spark.sql.execution.streaming.{SlothRuntime, SlothRuntimeCache, SlothRuntimeOpId, StatefulOperatorStateInfo}
+import org.apache.spark.sql.execution.streaming.{XXXXRuntime, XXXXRuntimeCache, XXXXRuntimeOpId, StatefulOperatorStateInfo}
 import org.apache.spark.sql.execution.streaming.state._
 import org.apache.spark.sql.types._
 
-class SlothAggregationIterator (
+class XXXXAggregationIterator (
     partIndex: Int,
     groupingExpressions: Seq[NamedExpression],
     aggregateExpressions: Seq[AggregateExpression],
@@ -54,10 +54,10 @@ class SlothAggregationIterator (
     updateOuput: Boolean,
     repairMode: Boolean) extends Iterator[InternalRow] with Logging {
 
-  private val opRtId = new SlothRuntimeOpId(stateInfo.get.operatorId, stateInfo.get.queryRunId)
-  private val retRT = SlothRuntimeCache.get(opRtId)
+  private val opRtId = new XXXXRuntimeOpId(stateInfo.get.operatorId, stateInfo.get.queryRunId)
+  private val retRT = XXXXRuntimeCache.get(opRtId)
   private var aggRT =
-    if (retRT != null) retRT.asInstanceOf[SlothAggIterRuntime]
+    if (retRT != null) retRT.asInstanceOf[XXXXAggIterRuntime]
     else null
 
   // Initialize all AggregateFunctions by binding references if necessary,
@@ -124,7 +124,7 @@ class SlothAggregationIterator (
       TaskContext.get().taskMemoryManager().pageSizeBytes())
     aggRT.hashMapforResult
   } else {
-    new SlothAggResultMap (
+    new XXXXAggResultMap (
     initialAggregationBuffer,
     StructType.fromAttributes(aggregateFunctions.flatMap(_.aggBufferAttributes)),
     StructType.fromAttributes(groupingExpressions.map(_.toAttribute)),
@@ -212,7 +212,7 @@ class SlothAggregationIterator (
       aggRT.hashMapforMetaData.reInit(stateInfo, storeConf, hadoopConf, false)
       aggRT.hashMapforMetaData
     } else {
-      new SlothAggMetaMap(groupingExpressions,
+      new XXXXAggMetaMap(groupingExpressions,
         nonIncMetaData.length, stateInfo, storeConf, hadoopConf, watermarkForKey, false)
     }
 
@@ -223,19 +223,19 @@ class SlothAggregationIterator (
         aggRT.hashMapforFullData.reInit(stateInfo, storeConf, hadoopConf)
         aggRT.hashMapforFullData
       } else {
-        new SlothAggFullMap(groupingExpressions,
+        new XXXXAggFullMap(groupingExpressions,
           originalInputAttributes, stateInfo, storeConf, hadoopConf, watermarkForData)
       }
     } else { null }
 
-  // private[this] val hashMapforFullData: SlothAggFullMap = null
+  // private[this] val hashMapforFullData: XXXXAggFullMap = null
 
   private[this] val stateStoreforResult =
     if (aggRT != null) {
       aggRT.stateStoreforResult.reInit(stateInfo, storeConf, hadoopConf)
       aggRT.stateStoreforResult
     } else {
-      new SlothAggResultStore(
+      new XXXXAggResultStore(
         groupingExpressions, aggregateFunctions.flatMap(_.aggBufferAttributes),
         stateInfo, storeConf, hadoopConf, watermarkForKey)
     }
@@ -579,7 +579,7 @@ class SlothAggregationIterator (
     if (hashMapforFullData != null) hashMapforFullData.purge()
     stateStoreforResult.purge()
     if (aggRT == null) {
-      aggRT = new SlothAggIterRuntime(
+      aggRT = new XXXXAggIterRuntime(
         groupingProjection,
         initialAggregationBuffer,
         generateOutput,
@@ -588,15 +588,15 @@ class SlothAggregationIterator (
         hashMapforFullData,
         stateStoreforResult)
     }
-    SlothRuntimeCache.put(opRtId, aggRT)
+    XXXXRuntimeCache.put(opRtId, aggRT)
   }
 }
 
-case class SlothAggIterRuntime (
+case class XXXXAggIterRuntime (
   groupingProjection: UnsafeProjection,
   initialAggregationBuffer: UnsafeRow,
   generateOutput: (UnsafeRow, UnsafeRow) => UnsafeRow,
-  hashMapforResult: SlothAggResultMap,
-  hashMapforMetaData: SlothAggMetaMap,
-  hashMapforFullData: SlothAggFullMap,
-  stateStoreforResult: SlothAggResultStore) extends SlothRuntime {}
+  hashMapforResult: XXXXAggResultMap,
+  hashMapforMetaData: XXXXAggMetaMap,
+  hashMapforFullData: XXXXAggFullMap,
+  stateStoreforResult: XXXXAggResultStore) extends XXXXRuntime {}

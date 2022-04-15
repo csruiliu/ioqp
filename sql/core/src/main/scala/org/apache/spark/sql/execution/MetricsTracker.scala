@@ -27,16 +27,16 @@ import org.json4s.JsonAST.JValue
 import org.json4s.JsonDSL._
 import org.json4s.jackson.JsonMethods._
 
-import org.apache.spark.sql.SlothDBCostModel._
+import org.apache.spark.sql.XXXXDBCostModel._
 import org.apache.spark.util.Utils
 
-case class SlothSummarizedMetrics() {
+case class XXXXSummarizedMetrics() {
 
   var nodeType: Int = _
   var nodeName: String = _
   var joinType: String = _
   var numPart: Int = _
-  var children: Seq[SlothSummarizedMetrics] = _
+  var children: Seq[XXXXSummarizedMetrics] = _
   var numOfRows: Long = _
   var updateRows: Long = _
   var deleteRows: Long = _
@@ -65,7 +65,7 @@ case class SlothSummarizedMetrics() {
   var hasMetrics: Boolean = _
   val formatter = java.text.NumberFormat.getIntegerInstance
 
-  def updateMetrics(metricsTracker: SlothMetricsTracker): Unit = {
+  def updateMetrics(metricsTracker: XXXXMetricsTracker): Unit = {
     numBatch += 1
 
     numOfRows += metricsTracker.getNumOutputRows
@@ -116,7 +116,7 @@ case class SlothSummarizedMetrics() {
 
   def getCostModelInfo(): String = {
     val nodeName = findNameFromType(nodeType)
-    if (nodeType == SLOTHJOIN) {
+    if (nodeType == XXXXJOIN) {
       var totalNum = scala.math.max(numPart * left_insert_batch, 1)
       val left_insert_prob = (left_insert_to_insert/totalNum).toDouble/SF.toDouble
 
@@ -137,9 +137,9 @@ case class SlothSummarizedMetrics() {
 
       f"$nodeName,$joinType,$left_insert_prob,$left_delete_prob," +
         f"$left_update_prob,$right_insert_prob,$right_delete_prob,$right_update_prob\n"
-    } else if (nodeType == SLOTHAGGREGATE) {
+    } else if (nodeType == XXXXAGGREGATE) {
       f"$nodeName,$numGroups\n"
-    } else if (nodeType == SLOTHSELECT) {
+    } else if (nodeType == XXXXSELECT) {
       var totalNum = scala.math.max(numPart * insert_batch, 1)
       val insert_prob = (insert_to_insert/totalNum).toDouble/SF.toDouble
 
@@ -150,9 +150,9 @@ case class SlothSummarizedMetrics() {
       val update_prob = (update_to_update/totalNum).toDouble/SF.toDouble
 
       f"$nodeName,$insert_prob,$delete_prob,$update_prob\n"
-    } else if (nodeType == SLOTHSCAN) {
+    } else if (nodeType == XXXXSCAN) {
       f"$nodeName,$numOfRows\n"
-    } else if (nodeType == SLOTHDISTINCT) {
+    } else if (nodeType == XXXXDISTINCT) {
       f"$nodeName,$numGroups\n"
     } else {
       f"$nodeName\n"
@@ -160,7 +160,7 @@ case class SlothSummarizedMetrics() {
   }
 }
 
-class SlothProgressMetrics (val shortName: String,
+class XXXXProgressMetrics (val shortName: String,
                             val metricMap: ju.Map[String, JLong]) {
   /** The compact JSON representation of this progress. */
   def json: String = compact(render(jsonValue))
@@ -182,15 +182,15 @@ class SlothProgressMetrics (val shortName: String,
   override def toString: String = prettyJson
 }
 
-trait SlothMetricsTracker extends SparkPlan { self: SparkPlan =>
+trait XXXXMetricsTracker extends SparkPlan { self: SparkPlan =>
 
-  def getProgress(): SlothProgressMetrics = {
+  def getProgress(): XXXXProgressMetrics = {
     val extractedMetrics = metrics.map(entry => entry._1 -> longMetric(entry._1).value)
 
     val javaMetrics: java.util.HashMap[String, java.lang.Long] =
       new java.util.HashMap(extractedMetrics.mapValues(long2Long).asJava)
 
-    new SlothProgressMetrics(nodeName, javaMetrics)
+    new XXXXProgressMetrics(nodeName, javaMetrics)
   }
 
   def getRowProgress(): String = {

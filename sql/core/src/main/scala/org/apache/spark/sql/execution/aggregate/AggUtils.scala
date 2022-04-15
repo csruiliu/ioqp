@@ -340,12 +340,12 @@ object AggUtils {
   }
 
     /**
-   * Plans a SlothDB streaming aggregation using the following progression:
+   * Plans a XXXXDB streaming aggregation using the following progression:
       - Shuffle
    *  - Partial Aggregation and Merge with States
    *  - Complete (output the current result of the aggregation)
    */
-  def planSlothAggregation(
+  def planXXXXAggregation(
       groupingExpressions: Seq[NamedExpression],
       functionsWithoutDistinct: Seq[AggregateExpression],
       resultExpressions: Seq[NamedExpression],
@@ -357,7 +357,7 @@ object AggUtils {
     val partialAggregate: SparkPlan = {
       val aggregateExpressions = functionsWithoutDistinct.map(_.copy(mode = Partial))
       val aggregateAttributes = aggregateExpressions.map(_.resultAttribute)
-      new SlothHashAggregateExec (
+      new XXXXHashAggregateExec (
         requiredChildDistributionExpressions = Some(groupingAttributes),
         groupingExpressions = groupingExpressions,
         aggregateExpressions = aggregateExpressions,
@@ -376,7 +376,7 @@ object AggUtils {
       // projection:
       val finalAggregateAttributes = finalAggregateExpressions.map(_.resultAttribute)
 
-      new SlothFinalAggExec(
+      new XXXXFinalAggExec(
         requiredChildDistributionExpressions = Some(groupingAttributes),
         groupingExpressions = groupingAttributes,
         aggregateExpressions = finalAggregateExpressions,

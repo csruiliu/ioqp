@@ -150,12 +150,12 @@ object SQLConf {
     }
   }
 
-  val SLOTHDB_MAX_STEP = buildConf("spark.sql.slothdb.maxstep")
+  val XXXXDB_MAX_STEP = buildConf("spark.sql.XXXXdb.maxstep")
     .doc("Max number of steps for simulation algorithm")
     .intConf
     .createOptional
 
-  val SLOTHDB_EXECUTION_MODE = buildConf("spark.sql.slothdb.executionmode")
+  val XXXXDB_EXECUTION_MODE = buildConf("spark.sql.XXXXdb.executionmode")
     .doc("In which way we execute the query: " +
       "0 -> incrementability-aware;" +
       "1 -> incrementability-oblivious" +
@@ -163,52 +163,52 @@ object SQLConf {
     .intConf
     .createOptional
 
-  val SLOTHDB_TOTAL_TIME = buildConf("spark.sql.slothdb.totaltime")
+  val XXXXDB_TOTAL_TIME = buildConf("spark.sql.XXXXdb.totaltime")
     .doc("total time")
     .doubleConf
     .createOptional
 
-  val SLOTHDB_BATCH_NUM = buildConf("spark.sql.slothdb.batchnum")
+  val XXXXDB_BATCH_NUM = buildConf("spark.sql.XXXXdb.batchnum")
     .doc("batch number")
     .intConf
     .createOptional
 
-  val SLOTHDB_LATENCY_CONSTRAINT = buildConf("spark.sql.slothdb.latency.constraint")
+  val XXXXDB_LATENCY_CONSTRAINT = buildConf("spark.sql.XXXXdb.latency.constraint")
     .doc("Latency constraint")
     .doubleConf
     .createOptional
 
-  val SLOTHDB_RESOURCE_CONSTRAINT = buildConf("spark.sql.slothdb.resource.constraint")
+  val XXXXDB_RESOURCE_CONSTRAINT = buildConf("spark.sql.XXXXdb.resource.constraint")
     .doc("Resource constraint")
     .doubleConf
     .createOptional
 
-  val SLOTHDB_INC_PERCENTAGE = buildConf("spark.sql.slothdb.inc.percentage")
+  val XXXXDB_INC_PERCENTAGE = buildConf("spark.sql.XXXXdb.inc.percentage")
     .doc("Percentage of choosing right orders of incrementability")
     .doubleConf
     .createOptional
 
-  val SLOTHDB_SAMPLE_TIME = buildConf("spark.sql.slothdb.sample.time")
+  val XXXXDB_SAMPLE_TIME = buildConf("spark.sql.XXXXdb.sample.time")
     .doc("Time invested into random sampling")
     .doubleConf
     .createOptional
 
-  val SLOTHDB_COST_MODEL_BIAS = buildConf("spark.sql.slothdb.inc.bias")
+  val XXXXDB_COST_MODEL_BIAS = buildConf("spark.sql.XXXXdb.inc.bias")
     .doc("cost model bias")
     .doubleConf
     .createOptional
 
-  val SLOTHDB_STAT_DIR = buildConf("spark.sql.slothdb.stat.dir")
-    .doc("A directory for statistics of SlothDB")
+  val XXXXDB_STAT_DIR = buildConf("spark.sql.XXXXdb.stat.dir")
+    .doc("A directory for statistics of XXXXDB")
     .stringConf
     .createOptional
 
-  val SLOTHDB_IOLAP = buildConf("spark.sql.slothdb.iOLAP")
-    .doc("enable iOLAP or not")
+  val XXXXDB_XXXX = buildConf("spark.sql.XXXXdb.XXXX")
+    .doc("enable XXXX or not")
     .booleanConf
     .createOptional
 
-  val SLOTHDB_QUERYNAME = buildConf("spark.sql.slothdb.queryname")
+  val XXXXDB_QUERYNAME = buildConf("spark.sql.XXXXdb.queryname")
     .doc("queryname")
     .stringConf
     .createOptional

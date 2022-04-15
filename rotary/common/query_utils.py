@@ -87,7 +87,7 @@ def generate_job_cmd(res_unit, job_name):
     command.append(f"{QueryRuntimeConstants.INPUT_PARTITION}")
     command.append(f"{QueryRuntimeConstants.CONSTRAINT}")
     command.append(f"{QueryRuntimeConstants.LARGEDATASET}")
-    command.append(f"{QueryRuntimeConstants.IOLAP}")
+    command.append(f"{QueryRuntimeConstants.XXXX}")
     command.append(f"{QueryRuntimeConstants.INC_PERCENTAGE}")
     command.append(f"{QueryRuntimeConstants.COST_BIAS}")
     command.append(f"{QueryRuntimeConstants.MAX_STEP}")

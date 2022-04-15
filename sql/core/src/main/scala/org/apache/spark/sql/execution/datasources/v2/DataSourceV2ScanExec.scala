@@ -24,7 +24,7 @@ import org.apache.spark.sql.catalyst.InternalRow
 import org.apache.spark.sql.catalyst.expressions._
 import org.apache.spark.sql.catalyst.plans.physical
 import org.apache.spark.sql.catalyst.plans.physical.SinglePartition
-import org.apache.spark.sql.execution.{ColumnarBatchScan, LeafExecNode, SlothMetricsTracker, WholeStageCodegenExec}
+import org.apache.spark.sql.execution.{ColumnarBatchScan, LeafExecNode, XXXXMetricsTracker, WholeStageCodegenExec}
 import org.apache.spark.sql.execution.streaming.continuous._
 import org.apache.spark.sql.sources.v2.DataSourceV2
 import org.apache.spark.sql.sources.v2.reader._
@@ -33,7 +33,7 @@ import org.apache.spark.sql.vectorized.ColumnarBatch
 
 /**
  * Physical plan node for scanning data from a data source.
- * SlothDB: Added MetricsTracker support
+ * XXXXDB: Added MetricsTracker support
  */
 case class DataSourceV2ScanExec(
     output: Seq[AttributeReference],
@@ -42,7 +42,7 @@ case class DataSourceV2ScanExec(
     @transient pushedFilters: Seq[Expression],
     @transient reader: DataSourceReader)
   extends LeafExecNode with DataSourceV2StringFormat
-    with ColumnarBatchScan with SlothMetricsTracker {
+    with ColumnarBatchScan with XXXXMetricsTracker {
 
   override def simpleString: String = "ScanV2 " + metadataString
 
@@ -118,7 +118,7 @@ case class DataSourceV2ScanExec(
       WholeStageCodegenExec(this)(codegenStageId = 0).execute()
     } else {
       val numOutputRows = longMetric("numOutputRows")
-      // SlothDB
+      // XXXXDB
       inputRDD.map { r =>
         numOutputRows += 1
         r.setInsert(true)

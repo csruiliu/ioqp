@@ -67,7 +67,7 @@ public final class UnsafeRow extends InternalRow implements Externalizable, Kryo
   // Static methods
   //////////////////////////////////////////////////////////////////////////////
 
-  // SlothDB: need 2 more bits to indicate is this a delete/insert/update
+  // XXXXDB: need 2 more bits to indicate is this a delete/insert/update
   public static int calculateBitSetWidthInBytes(int numFields) {
     return ((numFields + 2 + 63)/ 64) * 8;
   }

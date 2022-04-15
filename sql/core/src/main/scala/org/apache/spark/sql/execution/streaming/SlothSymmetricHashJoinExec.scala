@@ -22,13 +22,13 @@ import java.io.{BufferedReader, FileReader}
 import scala.collection.mutable
 
 import org.apache.spark.rdd.RDD
-import org.apache.spark.sql.SlothDBCostModel._
+import org.apache.spark.sql.XXXXDBCostModel._
 import org.apache.spark.sql.catalyst.InternalRow
 import org.apache.spark.sql.catalyst.expressions.{Attribute, AttributeReference, Expression, GenericInternalRow, JoinedRow, Literal, UnsafeProjection, UnsafeRow}
 import org.apache.spark.sql.catalyst.plans._
 import org.apache.spark.sql.catalyst.plans.logical.EventTimeWatermark._
 import org.apache.spark.sql.catalyst.plans.physical._
-import org.apache.spark.sql.execution.{BinaryExecNode, SlothMetricsTracker, SlothUtils, SparkPlan}
+import org.apache.spark.sql.execution.{BinaryExecNode, XXXXMetricsTracker, XXXXUtils, SparkPlan}
 import org.apache.spark.sql.execution.metric.SQLMetrics
 import org.apache.spark.sql.execution.streaming.StreamingSymmetricHashJoinHelper._
 import org.apache.spark.sql.execution.streaming.state._
@@ -129,7 +129,7 @@ import org.apache.spark.util.{CompletionIterator, SerializableConfiguration}
  * @param left      Left child plan
  * @param right     Right child plan
  */
-case class SlothSymmetricHashJoinExec(
+case class XXXXSymmetricHashJoinExec(
     leftKeys: Seq[Expression],
     rightKeys: Seq[Expression],
     joinType: JoinType,
@@ -138,7 +138,7 @@ case class SlothSymmetricHashJoinExec(
     eventTimeWatermark: Option[Long],
     stateWatermarkPredicates: JoinStateWatermarkPredicates,
     left: SparkPlan,
-    right: SparkPlan) extends SparkPlan with BinaryExecNode with SlothMetricsTracker {
+    right: SparkPlan) extends SparkPlan with BinaryExecNode with XXXXMetricsTracker {
 
   def this(
       leftKeys: Seq[Expression],
@@ -191,12 +191,12 @@ case class SlothSymmetricHashJoinExec(
     new SerializableConfiguration(SessionState.newHadoopConf(
       sparkContext.hadoopConfiguration, sqlContext.conf)))
 
-  private val enableIOLAP =
-    sqlContext.sparkSession.conf.get(SQLConf.SLOTHDB_IOLAP).getOrElse(false)
+  private val enableXXXX =
+    sqlContext.sparkSession.conf.get(SQLConf.XXXXDB_XXXX).getOrElse(false)
   private val query_name =
-    sqlContext.sparkSession.conf.get(SQLConf.SLOTHDB_QUERYNAME).get
+    sqlContext.sparkSession.conf.get(SQLConf.XXXXDB_QUERYNAME).get
   private val statRoot =
-    sqlContext.sparkSession.conf.get(SQLConf.SLOTHDB_STAT_DIR).get
+    sqlContext.sparkSession.conf.get(SQLConf.XXXXDB_STAT_DIR).get
 
   val nullLeft = new GenericInternalRow(left.output.map(_.withNullability(true)).length)
   val nullRight = new GenericInternalRow(right.output.map(_.withNullability(true)).length)
@@ -245,16 +245,16 @@ case class SlothSymmetricHashJoinExec(
     val leftKeyAttrs = leftKeys.map(expr => expr.asInstanceOf[Attribute])
     val rightKeyAttrs = rightKeys.map(expr => expr.asInstanceOf[Attribute])
 
-    val leftNonKeyAttrs = SlothUtils.attrDiff(left.output, leftKeyAttrs)
-    val rightNonKeyAttrs = SlothUtils.attrDiff(right.output, rightKeyAttrs)
+    val leftNonKeyAttrs = XXXXUtils.attrDiff(left.output, leftKeyAttrs)
+    val rightNonKeyAttrs = XXXXUtils.attrDiff(right.output, rightKeyAttrs)
 
-    leftPropagateUpdate = SlothUtils.attrIntersect(leftNonKeyAttrs, parentProjOutput).nonEmpty
-    rightPropagateUpdate = SlothUtils.attrIntersect(rightNonKeyAttrs, parentProjOutput).nonEmpty
+    leftPropagateUpdate = XXXXUtils.attrIntersect(leftNonKeyAttrs, parentProjOutput).nonEmpty
+    rightPropagateUpdate = XXXXUtils.attrIntersect(rightNonKeyAttrs, parentProjOutput).nonEmpty
   }
 
   protected override def doExecute(): RDD[InternalRow] = {
     val stateStoreCoord = sqlContext.sessionState.streamingQueryManager.stateStoreCoordinator
-    val stateStoreNames = SlothHashJoinStateManager.allStateStoreNames(LeftSide, RightSide)
+    val stateStoreNames = XXXXHashJoinStateManager.allStateStoreNames(LeftSide, RightSide)
     left.execute().stateStoreAwareZipPartitions(
       right.execute(), stateInfo.get, stateStoreNames, stateStoreCoord)(processPartitions)
   }
@@ -281,9 +281,9 @@ case class SlothSymmetricHashJoinExec(
     val joinedRow1 = new JoinedRow
     val joinedRow2 = new JoinedRow
 
-    val opRtId = new SlothRuntimeOpId(stateInfo.get.operatorId, stateInfo.get.queryRunId)
-    val opRunTime = SlothRuntimeCache.get(opRtId)
-    var hashRunTime: SlothHashJoinRuntime = null
+    val opRtId = new XXXXRuntimeOpId(stateInfo.get.operatorId, stateInfo.get.queryRunId)
+    val opRunTime = XXXXRuntimeCache.get(opRtId)
+    var hashRunTime: XXXXHashJoinRuntime = null
 
     if (opRunTime == null) {
       val outputProj = UnsafeProjection.create(output, intermediateOutput)
@@ -293,25 +293,25 @@ case class SlothSymmetricHashJoinExec(
 
       val leftKeyProj = UnsafeProjection.create(leftKeys, left.output)
       val leftDeleteKeyProj = UnsafeProjection.create(leftKeys, left.output)
-      val leftStateManager = new SlothHashJoinStateManager(
+      val leftStateManager = new XXXXHashJoinStateManager(
         LeftSide, left.output, leftKeys, stateInfo, storeConf, hadoopConfBcast.value.value)
       val leftRowGen = UnsafeProjection.create(
         left.output, left.output :+ AttributeReference("counter", IntegerType)())
 
       val rightKeyProj = UnsafeProjection.create(rightKeys, right.output)
       val rightDeleteKeyProj = UnsafeProjection.create(rightKeys, right.output)
-      val rightStateManager = new SlothHashJoinStateManager(
+      val rightStateManager = new XXXXHashJoinStateManager(
         RightSide, right.output, rightKeys, stateInfo, storeConf, hadoopConfBcast.value.value)
       val rightRowGen = UnsafeProjection.create(
          right.output, right.output :+ AttributeReference("counter", IntegerType)())
 
-      loadIOLAPTable()
+      loadXXXXTable()
 
-      hashRunTime = new SlothHashJoinRuntime(
+      hashRunTime = new XXXXHashJoinRuntime(
         outputProj, postJoinFilter, leftKeyProj, leftDeleteKeyProj, leftRowGen, leftStateManager,
         rightKeyProj, rightDeleteKeyProj, rightRowGen, rightStateManager, keySet)
     } else {
-      hashRunTime = opRunTime.asInstanceOf[SlothHashJoinRuntime]
+      hashRunTime = opRunTime.asInstanceOf[XXXXHashJoinRuntime]
 
       keySet = hashRunTime.keySet
 
@@ -319,7 +319,7 @@ case class SlothSymmetricHashJoinExec(
       hashRunTime.rightStateManager.reInit(stateInfo, storeConf, hadoopConfBcast.value.value)
     }
 
-    iOLAPFilter = getIOLAPFilter()
+    XXXXFilter = getXXXXFilter()
 
     val leftSideJoiner = new OneSideHashJoiner(
       LeftSide, left.output, leftKeys, leftInputIter, condition.leftSideOnly,
@@ -430,14 +430,14 @@ case class SlothSymmetricHashJoinExec(
 
       hashRunTime.leftStateManager.purgeState()
       hashRunTime.rightStateManager.purgeState()
-      SlothRuntimeCache.put(opRtId, hashRunTime)
+      XXXXRuntimeCache.put(opRtId, hashRunTime)
     }
 
     CompletionIterator[InternalRow, Iterator[InternalRow]](
         outputIterWithMetrics, onAllCompletion)
   }
 
-  private var iOLAPFilter: (UnsafeRow => Boolean) = _
+  private var XXXXFilter: (UnsafeRow => Boolean) = _
   private var keySet: mutable.HashSet[Long] = _
   val Q17_KEY = 0
   val Q17_OP_ID = 2
@@ -446,9 +446,9 @@ case class SlothSymmetricHashJoinExec(
   val Q20_KEY = 0
   val Q20_OP_ID = 1
 
-  private def getIOLAPFilter(): (UnsafeRow => Boolean) = {
+  private def getXXXXFilter(): (UnsafeRow => Boolean) = {
 
-    if (enableIOLAP) {
+    if (enableXXXX) {
       query_name match {
         case "q17" if Q17_OP_ID == stateInfo.get.operatorId =>
           (row: UnsafeRow) => {
@@ -478,23 +478,23 @@ case class SlothSymmetricHashJoinExec(
 
   }
 
-  private def loadIOLAPTable(): Unit = {
+  private def loadXXXXTable(): Unit = {
 
-    if (enableIOLAP) {
+    if (enableXXXX) {
       query_name match {
         case "q17" if Q17_OP_ID == stateInfo.get.operatorId =>
-          loadIOLAPLongTable(statRoot + "/iOLAP/q17_config.csv")
+          loadXXXXLongTable(statRoot + "/XXXX/q17_config.csv")
         case "q18" if Q18_OP_ID == stateInfo.get.operatorId =>
-          loadIOLAPLongTable(statRoot + "/iOLAP/q18_config.csv")
+          loadXXXXLongTable(statRoot + "/XXXX/q18_config.csv")
         case "q20" if Q20_OP_ID == stateInfo.get.operatorId =>
-          loadIOLAPLongTable(statRoot + "/iOLAP/q20_config.csv")
+          loadXXXXLongTable(statRoot + "/XXXX/q20_config.csv")
         case _ =>
       }
     }
 
   }
 
-  private def loadIOLAPLongTable(path: String): Unit = {
+  private def loadXXXXLongTable(path: String): Unit = {
 
     val reader = new BufferedReader(new FileReader((path)))
     val keySet = new mutable.HashSet[Long]()
@@ -542,7 +542,7 @@ case class SlothSymmetricHashJoinExec(
       stateWatermarkPredicate: Option[JoinStateWatermarkPredicate],
       keyGenerator: UnsafeProjection,
       deleteKeyGenerator: UnsafeProjection,
-      stateManager: SlothHashJoinStateManager,
+      stateManager: XXXXHashJoinStateManager,
       rowGenerator: UnsafeProjection) {
 
     // Filter the joined rows based on the given condition.
@@ -1254,7 +1254,7 @@ case class SlothSymmetricHashJoinExec(
         val isUpdate = thisRow.isUpdate
 
         if (preJoinFilter(thisRow) &&
-            ((joinSide == LeftSide && iOLAPFilter(thisRow)) ||
+            ((joinSide == LeftSide && XXXXFilter(thisRow)) ||
             joinSide == RightSide)) {
           thisRow.cleanStates()
 
@@ -1394,15 +1394,15 @@ case class SlothSymmetricHashJoinExec(
   }
 }
 
-case class SlothHashJoinRuntime (
+case class XXXXHashJoinRuntime (
   outputProj: UnsafeProjection,
   postFilterFunc: InternalRow => Boolean,
   leftKeyProj: UnsafeProjection,
   leftDeleteKeyProj: UnsafeProjection,
   leftRowGen: UnsafeProjection,
-  leftStateManager: SlothHashJoinStateManager,
+  leftStateManager: XXXXHashJoinStateManager,
   rightKeyProj: UnsafeProjection,
   rightDeleteKeyProj: UnsafeProjection,
   rightRowGen: UnsafeProjection,
-  rightStateManager: SlothHashJoinStateManager,
-  keySet: mutable.HashSet[Long]) extends SlothRuntime {}
+  rightStateManager: XXXXHashJoinStateManager,
+  keySet: mutable.HashSet[Long]) extends XXXXRuntime {}

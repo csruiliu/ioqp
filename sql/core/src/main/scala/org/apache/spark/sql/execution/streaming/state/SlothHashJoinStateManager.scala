@@ -85,7 +85,7 @@ case class KeyWithIndexAndValueWithCounter(
  *          by overwriting with the value of (key, maxIndex), and removing [(key, maxIndex),
  *          decrement corresponding num values in KeyToNumValuesStore
  */
-class SlothHashJoinStateManager (
+class XXXXHashJoinStateManager (
     val joinSide: JoinSide,
     inputValueAttributes: Seq[Attribute],
     joinKeys: Seq[Expression],
@@ -93,7 +93,7 @@ class SlothHashJoinStateManager (
     var storeConf: StateStoreConf,
     var hadoopConf: Configuration) extends Logging {
 
-  import SlothHashJoinStateManager._
+  import XXXXHashJoinStateManager._
 
   private var stateSize = 0
 
@@ -475,7 +475,7 @@ class SlothHashJoinStateManager (
   }
 }
 
-object SlothHashJoinStateManager {
+object XXXXHashJoinStateManager {
 
   def allStateStoreNames(joinSides: JoinSide*): Seq[String] = {
     val allStateStoreTypes: Seq[StateStoreType] =

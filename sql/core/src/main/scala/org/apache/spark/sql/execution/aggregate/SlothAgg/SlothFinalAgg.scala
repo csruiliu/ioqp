@@ -15,16 +15,16 @@
  * limitations under the License.
  */
 
-package org.apache.spark.sql.execution.aggregate.SlothAgg
+package org.apache.spark.sql.execution.aggregate.XXXXAgg
 
 import scala.collection.mutable.ArrayBuffer
 
 import org.apache.spark.sql.catalyst.InternalRow
 import org.apache.spark.sql.catalyst.expressions._
 import org.apache.spark.sql.catalyst.expressions.aggregate._
-import org.apache.spark.sql.execution.streaming.{SlothRuntime, SlothRuntimeCache, SlothRuntimeOpId}
+import org.apache.spark.sql.execution.streaming.{XXXXRuntime, XXXXRuntimeCache, XXXXRuntimeOpId}
 
-class SlothFinalAgg(
+class XXXXFinalAgg(
     partIndex: Int,
     groupingExpressions: Seq[NamedExpression],
     originalInputAttributes: Seq[Attribute],
@@ -33,7 +33,7 @@ class SlothFinalAgg(
     initialInputBufferOffset: Int,
     resultExpressions: Seq[NamedExpression],
     newMutableProjection: (Seq[Expression], Seq[Attribute]) => MutableProjection,
-    opRtId: SlothRuntimeOpId) {
+    opRtId: XXXXRuntimeOpId) {
 
   // Initialize all AggregateFunctions by binding references if necessary,
   // and set inputBufferOffset and mutableBufferOffset.
@@ -141,9 +141,9 @@ class SlothFinalAgg(
     }
   }
 
-  private val curRt = SlothRuntimeCache.get(opRtId)
+  private val curRt = XXXXRuntimeCache.get(opRtId)
   private var finalRt =
-    if (curRt != null) {curRt.asInstanceOf[SlothFinalAggRuntime]}
+    if (curRt != null) {curRt.asInstanceOf[XXXXFinalAggRuntime]}
     else null
 
   private val generateOutput: (UnsafeRow, InternalRow) => UnsafeRow =
@@ -174,18 +174,18 @@ class SlothFinalAgg(
 
   def onCompletion(): Unit = {
     if (finalRt == null) {
-      finalRt = new SlothFinalAggRuntime(
+      finalRt = new XXXXFinalAggRuntime(
         generateOutput,
         groupingProjection,
         bufferProjection)
     }
 
-    SlothRuntimeCache.put(opRtId, finalRt)
+    XXXXRuntimeCache.put(opRtId, finalRt)
   }
 
 }
 
-case class SlothFinalAggRuntime (
+case class XXXXFinalAggRuntime (
   generateOutput: (UnsafeRow, InternalRow) => UnsafeRow,
   groupingProjection: UnsafeProjection,
-  bufferProjection: UnsafeProjection) extends SlothRuntime {}
+  bufferProjection: UnsafeProjection) extends XXXXRuntime {}

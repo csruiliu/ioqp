@@ -29,7 +29,7 @@ import org.apache.hadoop.fs.Path
 
 import org.apache.spark.{SparkContext, SparkEnv}
 import org.apache.spark.internal.Logging
-import org.apache.spark.sql.SlothDBContext
+import org.apache.spark.sql.XXXXDBContext
 import org.apache.spark.sql.catalyst.expressions.UnsafeRow
 import org.apache.spark.sql.execution.streaming.StatefulOperatorStateInfo
 import org.apache.spark.sql.types.StructType
@@ -213,15 +213,15 @@ object StateStoreProvider {
    * Return a instance of the given provider class name. The instance will not be initialized.
    */
   def create(providerClassName: String): StateStoreProvider = {
-    val providerClass = if (SlothDBContext.enable_slothdb) {
-      if (SlothDBContext.enable_checkpoint) {
+    val providerClass = if (XXXXDBContext.enable_XXXXdb) {
+      if (XXXXDBContext.enable_checkpoint) {
         Utils.classForName(
-          "org.apache.spark.sql.execution.streaming.state.SlothDBStateStoreProvider"
+          "org.apache.spark.sql.execution.streaming.state.XXXXDBStateStoreProvider"
         )
       }
       else {
         Utils.classForName(
-          "org.apache.spark.sql.execution.streaming.state.SlothDBNoCKPTStateStoreProvider"
+          "org.apache.spark.sql.execution.streaming.state.XXXXDBNoCKPTStateStoreProvider"
         )
       }
     }

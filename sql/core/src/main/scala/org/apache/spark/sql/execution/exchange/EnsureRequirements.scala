@@ -25,7 +25,7 @@ import org.apache.spark.sql.catalyst.plans.physical._
 import org.apache.spark.sql.catalyst.rules.Rule
 import org.apache.spark.sql.execution._
 import org.apache.spark.sql.execution.joins.{BroadcastHashJoinExec, ShuffledHashJoinExec, SortMergeJoinExec}
-import org.apache.spark.sql.execution.streaming.SlothThetaJoinExec
+import org.apache.spark.sql.execution.streaming.XXXXThetaJoinExec
 import org.apache.spark.sql.internal.SQLConf
 
 /**
@@ -151,7 +151,7 @@ case class EnsureRequirements(conf: SQLConf) extends Rule[SparkPlan] {
         child
       case (child, BroadcastDistribution(mode)) =>
         BroadcastExchangeExec(mode, child)
-      // SlothDB: SlothBroadcastDistribution falls into this case
+      // XXXXDB: XXXXBroadcastDistribution falls into this case
       case (child, distribution) =>
         val numPartitions = distribution.requiredNumPartitions
           .getOrElse(defaultNumPreShufflePartitions)

@@ -118,7 +118,7 @@ abstract class SparkPlan extends QueryPlan[SparkPlan] with Logging with Serializ
   /** Specifies sort order for each partition requirements on the input data for this operator. */
   def requiredChildOrdering: Seq[Seq[SortOrder]] = Seq.fill(children.size)(Nil)
 
-  /** SlothDB: defined to indicate whether this operator should output delta or full results */
+  /** XXXXDB: defined to indicate whether this operator should output delta or full results */
   def setDeltaOutput(deltaOutput: Boolean): Unit = {}
 
   def setUpdateOutput(updateOutput: Boolean): Unit = {}

@@ -27,7 +27,7 @@ import org.apache.hadoop.fs.Path
 import org.apache.spark.SparkException
 import org.apache.spark.annotation.InterfaceStability
 import org.apache.spark.internal.Logging
-import org.apache.spark.sql.{AnalysisException, DataFrame, SlothDBContext, SparkSession}
+import org.apache.spark.sql.{AnalysisException, DataFrame, XXXXDBContext, SparkSession}
 import org.apache.spark.sql.catalyst.analysis.UnsupportedOperationChecker
 import org.apache.spark.sql.execution.streaming._
 import org.apache.spark.sql.execution.streaming.continuous.{ContinuousExecution, ContinuousTrigger}
@@ -247,8 +247,8 @@ class StreamingQueryManager private[sql] (sparkSession: SparkSession) extends Lo
     df.queryExecution.assertAnalyzed()
 
     if (sparkSession.sessionState.conf.isUnsupportedOperationCheckEnabled) {
-      if (SlothDBContext.enable_slothdb) {
-        UnsupportedOperationChecker.checkForSlothDB(analyzedPlan, outputMode)
+      if (XXXXDBContext.enable_XXXXdb) {
+        UnsupportedOperationChecker.checkForXXXXDB(analyzedPlan, outputMode)
       }
       else {
         UnsupportedOperationChecker.checkForStreaming(analyzedPlan, outputMode)

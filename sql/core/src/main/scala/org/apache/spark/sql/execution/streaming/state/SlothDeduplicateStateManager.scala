@@ -30,7 +30,7 @@ import org.apache.spark.sql.types.{StructField, StructType}
 
 private case class DedupMetaData (var counter: Int, val isNewGroup: Boolean)
 
-class SlothDeduplicateStateManager(
+class XXXXDeduplicateStateManager(
                                     keyExpressions: Seq[Expression],
                                     stateInfo: Option[StatefulOperatorStateInfo],
                                     storeConf: StateStoreConf,

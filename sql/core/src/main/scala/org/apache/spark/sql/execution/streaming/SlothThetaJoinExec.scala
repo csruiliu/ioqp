@@ -20,13 +20,13 @@ package org.apache.spark.sql.execution.streaming
 import java.io.{BufferedReader, FileReader}
 
 import org.apache.spark.rdd.RDD
-import org.apache.spark.sql.SlothDBCostModel._
+import org.apache.spark.sql.XXXXDBCostModel._
 import org.apache.spark.sql.catalyst.InternalRow
 import org.apache.spark.sql.catalyst.expressions.{Attribute, Expression, JoinedRow, Literal, UnsafeProjection, UnsafeRow}
 import org.apache.spark.sql.catalyst.plans._
 import org.apache.spark.sql.catalyst.plans.logical.EventTimeWatermark._
 import org.apache.spark.sql.catalyst.plans.physical._
-import org.apache.spark.sql.execution.{BinaryExecNode, SlothMetricsTracker, SlothUtils, SparkPlan}
+import org.apache.spark.sql.execution.{BinaryExecNode, XXXXMetricsTracker, XXXXUtils, SparkPlan}
 import org.apache.spark.sql.execution.metric.SQLMetrics
 import org.apache.spark.sql.execution.streaming.StreamingSymmetricHashJoinHelper._
 import org.apache.spark.sql.execution.streaming.state._
@@ -46,7 +46,7 @@ import org.apache.spark.util.{CompletionIterator, SerializableConfiguration}
  * @param left
  * @param right
  */
-case class SlothThetaJoinExec (
+case class XXXXThetaJoinExec (
     leftKeys: Seq[Expression],
     rightKeys: Seq[Expression],
     joinType: JoinType,
@@ -55,7 +55,7 @@ case class SlothThetaJoinExec (
     eventTimeWatermark: Option[Long],
     stateWatermarkPredicates: JoinStateWatermarkPredicates,
     left: SparkPlan,
-    right: SparkPlan) extends SparkPlan with BinaryExecNode with SlothMetricsTracker {
+    right: SparkPlan) extends SparkPlan with BinaryExecNode with XXXXMetricsTracker {
 
   def this(
       leftKeys: Seq[Expression],
@@ -108,15 +108,15 @@ case class SlothThetaJoinExec (
     new SerializableConfiguration(SessionState.newHadoopConf(
       sparkContext.hadoopConfiguration, sqlContext.conf)))
 
-  private val enableIOLAP =
-    sqlContext.sparkSession.conf.get(SQLConf.SLOTHDB_IOLAP).getOrElse(false)
+  private val enableXXXX =
+    sqlContext.sparkSession.conf.get(SQLConf.XXXXDB_XXXX).getOrElse(false)
   private val query_name =
-    sqlContext.sparkSession.conf.get(SQLConf.SLOTHDB_QUERYNAME).get
+    sqlContext.sparkSession.conf.get(SQLConf.XXXXDB_QUERYNAME).get
   private val statRoot =
-    sqlContext.sparkSession.conf.get(SQLConf.SLOTHDB_STAT_DIR).get
+    sqlContext.sparkSession.conf.get(SQLConf.XXXXDB_STAT_DIR).get
 
   override def requiredChildDistribution: Seq[Distribution] = {
-    UnspecifiedDistribution :: new SlothBroadcastDistribution() :: Nil
+    UnspecifiedDistribution :: new XXXXBroadcastDistribution() :: Nil
   }
 
   override def output: Seq[Attribute] = joinType match {
@@ -139,16 +139,16 @@ case class SlothThetaJoinExec (
     val leftKeyAttrs = leftKeys.map(expr => expr.asInstanceOf[Attribute])
     val rightKeyAttrs = rightKeys.map(expr => expr.asInstanceOf[Attribute])
 
-    val leftNonKeyAttrs = SlothUtils.attrDiff(left.output, leftKeyAttrs)
-    val rightNonKeyAttrs = SlothUtils.attrDiff(right.output, rightKeyAttrs)
+    val leftNonKeyAttrs = XXXXUtils.attrDiff(left.output, leftKeyAttrs)
+    val rightNonKeyAttrs = XXXXUtils.attrDiff(right.output, rightKeyAttrs)
 
-    leftPropagateUpdate = SlothUtils.attrIntersect(leftNonKeyAttrs, parentProjOutput).nonEmpty
-    rightPropagateUpdate = SlothUtils.attrIntersect(rightNonKeyAttrs, parentProjOutput).nonEmpty
+    leftPropagateUpdate = XXXXUtils.attrIntersect(leftNonKeyAttrs, parentProjOutput).nonEmpty
+    rightPropagateUpdate = XXXXUtils.attrIntersect(rightNonKeyAttrs, parentProjOutput).nonEmpty
   }
 
   protected override def doExecute(): RDD[InternalRow] = {
     val stateStoreCoord = sqlContext.sessionState.streamingQueryManager.stateStoreCoordinator
-    val stateStoreNames = SlothThetaJoinStateManager.allStateStoreNames(LeftSide, RightSide)
+    val stateStoreNames = XXXXThetaJoinStateManager.allStateStoreNames(LeftSide, RightSide)
     left.execute().stateStoreAwareZipPartitions(
       right.execute(), stateInfo.get, stateStoreNames, stateStoreCoord)(processPartitions)
   }
@@ -160,7 +160,7 @@ case class SlothThetaJoinExec (
       throw new IllegalStateException(s"Cannot execute join as state info was not specified\n$this")
     }
 
-    iOLAPFilter = getIOLAPFilter()
+    XXXXFilter = getXXXXFilter()
 
     val numOutputRows = longMetric("numOutputRows")
     val deleteRows = longMetric("deleteRows")
@@ -177,24 +177,24 @@ case class SlothThetaJoinExec (
     val joinedRow1 = new JoinedRow
     val joinedRow2 = new JoinedRow
 
-    val opRtId = new SlothRuntimeOpId(stateInfo.get.operatorId, stateInfo.get.queryRunId)
-    val opRunTime = SlothRuntimeCache.get(opRtId)
-    var thetaRunTime: SlothThetaJoinRuntime = null
+    val opRtId = new XXXXRuntimeOpId(stateInfo.get.operatorId, stateInfo.get.queryRunId)
+    val opRunTime = XXXXRuntimeCache.get(opRtId)
+    var thetaRunTime: XXXXThetaJoinRuntime = null
 
     if (opRunTime == null) {
       val outputProj = UnsafeProjection.create(left.output ++ right.output, output)
       val postJoinFilter =
         newPredicate(condition.bothSides.getOrElse(Literal(true)),
           left.output ++ right.output).eval _
-      val leftStateManager = new SlothThetaJoinStateManager(
+      val leftStateManager = new XXXXThetaJoinStateManager(
         LeftSide, left.output, stateInfo, storeConf, hadoopConfBcast.value.value)
-      val rightStateManager = new SlothThetaJoinStateManager(
+      val rightStateManager = new XXXXThetaJoinStateManager(
         RightSide, right.output, stateInfo, storeConf, hadoopConfBcast.value.value)
 
-      thetaRunTime = new SlothThetaJoinRuntime(
+      thetaRunTime = new XXXXThetaJoinRuntime(
         outputProj, postJoinFilter, leftStateManager, rightStateManager)
     } else {
-      thetaRunTime = opRunTime.asInstanceOf[SlothThetaJoinRuntime]
+      thetaRunTime = opRunTime.asInstanceOf[XXXXThetaJoinRuntime]
 
       thetaRunTime.leftStateManager.reInit(stateInfo, storeConf, hadoopConfBcast.value.value)
       thetaRunTime.rightStateManager.reInit(stateInfo, storeConf, hadoopConfBcast.value.value)
@@ -277,14 +277,14 @@ case class SlothThetaJoinExec (
 
       thetaRunTime.leftStateManager.purgeState()
       thetaRunTime.rightStateManager.purgeState()
-      SlothRuntimeCache.put(opRtId, thetaRunTime)
+      XXXXRuntimeCache.put(opRtId, thetaRunTime)
     }
 
     CompletionIterator[InternalRow, Iterator[InternalRow]](
       outputIterWithMetrics, onAllCompletion)
   }
 
-  private var iOLAPFilter: (UnsafeRow => Boolean) = _
+  private var XXXXFilter: (UnsafeRow => Boolean) = _
   private var minValue: Double = _
   private var maxValue: Double = _
   val Q11_KEY = 1
@@ -292,19 +292,19 @@ case class SlothThetaJoinExec (
   val Q22_KEY = 1
   val Q22_OP_ID = 1
 
-  private def getIOLAPFilter(): (UnsafeRow => Boolean) = {
+  private def getXXXXFilter(): (UnsafeRow => Boolean) = {
 
-    if (enableIOLAP) {
+    if (enableXXXX) {
       query_name match {
         case "q11" if Q11_OP_ID == stateInfo.get.operatorId =>
-          loadIOLAPDoubleTable(statRoot + "/iOLAP/q11_config.csv")
+          loadXXXXDoubleTable(statRoot + "/XXXX/q11_config.csv")
           (row: UnsafeRow) => {
             val key = row.getDouble(Q11_KEY)
             if (key <= maxValue && key >= minValue) true
             else false
           }
         case "q22" if Q22_OP_ID == stateInfo.get.operatorId =>
-          loadIOLAPDoubleTable(statRoot + "/iOLAP/q22_config.csv")
+          loadXXXXDoubleTable(statRoot + "/XXXX/q22_config.csv")
           (row: UnsafeRow) => {
             val key = row.getDouble(Q22_KEY)
             if (key >= minValue) true
@@ -320,7 +320,7 @@ case class SlothThetaJoinExec (
 
   }
 
-  private def loadIOLAPDoubleTable(path: String): Unit = {
+  private def loadXXXXDoubleTable(path: String): Unit = {
     val reader = new BufferedReader(new FileReader((path)))
     minValue = reader.readLine().toDouble
     maxValue = reader.readLine().toDouble
@@ -355,7 +355,7 @@ case class SlothThetaJoinExec (
       preJoinFilterExpr: Option[Expression],
       postJoinFilter: InternalRow => Boolean,
       stateWatermarkPredicate: Option[JoinStateWatermarkPredicate],
-      stateManager: SlothThetaJoinStateManager) {
+      stateManager: XXXXThetaJoinStateManager) {
 
     // Filter the joined rows based on the given condition.
     val preJoinFilter: InternalRow => Boolean =
@@ -511,13 +511,13 @@ case class SlothThetaJoinExec (
               updateOutput += 1
               row})
 
-        if ((joinSide == LeftSide && iOLAPFilter(deleteRow) ||
+        if ((joinSide == LeftSide && XXXXFilter(deleteRow) ||
              joinSide == RightSide)) {
           updatedStateRowsCount += 1
           joinStateManager.remove(deleteKey, deleteRow)
         }
 
-        if ((joinSide == LeftSide && iOLAPFilter(insertRow) ||
+        if ((joinSide == LeftSide && XXXXFilter(insertRow) ||
              joinSide == RightSide)) {
           updatedStateRowsCount += 1
           joinStateManager.append(insertKey, insertRow)
@@ -526,7 +526,7 @@ case class SlothThetaJoinExec (
       } else {
         outputIter = outputIter.filter(postJoinFilter)
 
-        if ((joinSide == LeftSide && iOLAPFilter(thisRow) ||
+        if ((joinSide == LeftSide && XXXXFilter(thisRow) ||
              joinSide == RightSide)) {
           updatedStateRowsCount += 1
           if (isInsert) joinStateManager.append(key, thisRow)
@@ -664,8 +664,8 @@ case class SlothThetaJoinExec (
   }
 }
 
-case class SlothThetaJoinRuntime (
+case class XXXXThetaJoinRuntime (
   outputProj: UnsafeProjection,
   postFilterFunc: InternalRow => Boolean,
-  leftStateManager: SlothThetaJoinStateManager,
-  rightStateManager: SlothThetaJoinStateManager) extends SlothRuntime {}
+  leftStateManager: XXXXThetaJoinStateManager,
+  rightStateManager: XXXXThetaJoinStateManager) extends XXXXRuntime {}

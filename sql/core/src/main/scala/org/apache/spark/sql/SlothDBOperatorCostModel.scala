@@ -26,7 +26,7 @@ import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
 
 abstract class OperatorCostModel {
 
-  import SlothDBCostModel._
+  import XXXXDBCostModel._
 
   var children: Array[OperatorCostModel] = _
 
@@ -150,7 +150,7 @@ abstract class OperatorCostModel {
     if (!this.hasNewData()) return 0.0
 
     var totalRows = this.opResource
-    if (nodeType == SLOTHSELECT) {
+    if (nodeType == XXXXSELECT) {
       this.children(0).children.foreach(child => {
         val childTotal = child.collectTotalRows()
         totalRows += childTotal
@@ -250,7 +250,7 @@ abstract class OperatorCostModel {
 
   // private def additionalCardForPostgres(): Double = {
   //   var additionalCard =
-  //     if (this.nodeType == SLOTHSELECT) {
+  //     if (this.nodeType == XXXXSELECT) {
   //       val child = this.children(0)
   //       child.outputRows
   //     } else 0.0
@@ -443,10 +443,10 @@ abstract class OperatorCostModel {
 
 class JoinCostModel extends OperatorCostModel {
 
-  import SlothDBCostModel._
+  import XXXXDBCostModel._
 
-  nodeType = SLOTHJOIN
-  nodeName = findNameFromType(SLOTHJOIN)
+  nodeType = XXXXJOIN
+  nodeName = findNameFromType(XXXXJOIN)
 
   var left_insert_to_insert: Double = _
   var left_delete_to_delete: Double = _
@@ -631,10 +631,10 @@ class JoinCostModel extends OperatorCostModel {
 
 class ScanCostModel extends OperatorCostModel {
 
-  import SlothDBCostModel._
+  import XXXXDBCostModel._
 
-  nodeType = SLOTHSCAN
-  nodeName = findNameFromType(SLOTHSCAN)
+  nodeType = XXXXSCAN
+  nodeName = findNameFromType(XXXXSCAN)
 
   var inputRows: Double = _
   var isStatic: Boolean = _
@@ -689,10 +689,10 @@ class ScanCostModel extends OperatorCostModel {
 
 class AggregateCostModel extends OperatorCostModel {
 
-  import SlothDBCostModel._
+  import XXXXDBCostModel._
 
-  nodeType = SLOTHAGGREGATE
-  nodeName = findNameFromType(SLOTHAGGREGATE)
+  nodeType = XXXXAGGREGATE
+  nodeName = findNameFromType(XXXXAGGREGATE)
 
   var numGroups: Double = _
   var stateSize: Double = _
@@ -750,10 +750,10 @@ class AggregateCostModel extends OperatorCostModel {
 
 class SortCostModel extends OperatorCostModel {
 
-  import SlothDBCostModel._
+  import XXXXDBCostModel._
 
-  nodeType = SLOTHSORT
-  nodeName = findNameFromType(SLOTHSORT)
+  nodeType = XXXXSORT
+  nodeName = findNameFromType(XXXXSORT)
 
   var stateSize: Double = _
 
@@ -793,10 +793,10 @@ class SortCostModel extends OperatorCostModel {
 
 class SelectCostModel extends OperatorCostModel {
 
-  import SlothDBCostModel._
+  import XXXXDBCostModel._
 
-  nodeType = SLOTHSELECT
-  nodeName = findNameFromType(SLOTHSELECT)
+  nodeType = XXXXSELECT
+  nodeName = findNameFromType(XXXXSELECT)
 
   var insert_to_insert: Double = _
   var delete_to_delete: Double = _
@@ -847,10 +847,10 @@ class SelectCostModel extends OperatorCostModel {
 
 class DistinctCostModel extends OperatorCostModel {
 
-  import SlothDBCostModel._
+  import XXXXDBCostModel._
 
-  nodeType = SLOTHDISTINCT
-  nodeName = findNameFromType(SLOTHDISTINCT)
+  nodeType = XXXXDISTINCT
+  nodeName = findNameFromType(XXXXDISTINCT)
 
   var numGroups: Double = _
   var stateSize: Double = _

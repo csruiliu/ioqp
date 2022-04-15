@@ -24,7 +24,7 @@ import org.apache.spark.sql.catalyst.expressions._
 import org.apache.spark.sql.catalyst.expressions.aggregate._
 import org.apache.spark.sql.catalyst.plans.physical._
 import org.apache.spark.sql.execution._
-import org.apache.spark.sql.execution.aggregate.SlothAgg.SlothAggregationIterator
+import org.apache.spark.sql.execution.aggregate.XXXXAgg.XXXXAggregationIterator
 import org.apache.spark.sql.execution.metric.SQLMetrics
 import org.apache.spark.sql.execution.streaming.{StatefulOperatorStateInfo, WatermarkSupport}
 import org.apache.spark.sql.execution.streaming.state._
@@ -34,7 +34,7 @@ import org.apache.spark.util.SerializableConfiguration
 import org.apache.spark.util.Utils
 
 
-case class SlothHashAggregateExec (
+case class XXXXHashAggregateExec (
     requiredChildDistributionExpressions: Option[Seq[Expression]],
     groupingExpressions: Seq[NamedExpression],
     aggregateExpressions: Seq[AggregateExpression],
@@ -44,7 +44,7 @@ case class SlothHashAggregateExec (
     eventTimeWatermark: Option[Long],
     stateInfo: Option[StatefulOperatorStateInfo],
     child: SparkPlan)
-  extends UnaryExecNode with SlothMetricsTracker with WatermarkSupport {
+  extends UnaryExecNode with XXXXMetricsTracker with WatermarkSupport {
 
   private[this] val aggregateBufferAttributes = {
     aggregateExpressions.flatMap(_.aggregateFunction.aggBufferAttributes)
@@ -89,7 +89,7 @@ case class SlothHashAggregateExec (
     new SerializableConfiguration(SessionState.newHadoopConf(
       sparkContext.hadoopConfiguration, sqlContext.conf)))
 
-  private[this] var aggIter: SlothAggregationIterator = _
+  private[this] var aggIter: XXXXAggregationIterator = _
 
   private[this] def onCompletion: Unit = {
     val commitTimeMs = longMetric("commitTimeMs")
@@ -110,7 +110,7 @@ case class SlothHashAggregateExec (
 
       val beforeAgg = System.nanoTime()
       val resIter =
-        new SlothAggregationIterator(
+        new XXXXAggregationIterator(
           partIndex,
           groupingExpressions,
           aggregateExpressions,
@@ -163,9 +163,9 @@ case class SlothHashAggregateExec (
     val functionString = Utils.truncatedString(allAggregateExpressions, "[", ", ", "]")
     val outputString = Utils.truncatedString(output, "[", ", ", "]")
     if (verbose) {
-      s"SlothHashAggregate(keys=$keyString, functions=$functionString, output=$outputString)"
+      s"XXXXHashAggregate(keys=$keyString, functions=$functionString, output=$outputString)"
     } else {
-      s"SlothHashAggregate(keys=$keyString, functions=$functionString)"
+      s"XXXXHashAggregate(keys=$keyString, functions=$functionString)"
     }
   }
 }
